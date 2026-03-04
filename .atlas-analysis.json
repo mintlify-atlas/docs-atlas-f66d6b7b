@@ -1,0 +1,177 @@
+{
+  "projectType": "sdk-library",
+  "projectName": "AG Grid",
+  "projectDescription": "A fully-featured and highly customizable JavaScript Data Grid with outstanding performance and framework support for React, Angular, and Vue.",
+  "theme": "sequoia",
+  "primaryColor": "#04dcfc",
+  "lightColor": "#040404",
+  "darkColor": "#f30809",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "installation",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Framework Integration",
+            "pages": [
+              "frameworks/react",
+              "frameworks/angular",
+              "frameworks/vue"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/grid-options",
+              "concepts/column-definitions",
+              "concepts/row-data",
+              "concepts/grid-api"
+            ]
+          },
+          {
+            "group": "Features",
+            "pages": [
+              "features/sorting",
+              "features/filtering",
+              "features/pagination",
+              "features/editing",
+              "features/selection",
+              "features/csv-export"
+            ]
+          },
+          {
+            "group": "Enterprise Features",
+            "pages": [
+              "enterprise/overview",
+              "enterprise/row-grouping",
+              "enterprise/pivoting",
+              "enterprise/charts",
+              "enterprise/excel-export",
+              "enterprise/master-detail"
+            ]
+          },
+          {
+            "group": "Customization",
+            "pages": [
+              "customization/custom-components",
+              "customization/cell-renderers",
+              "customization/cell-editors",
+              "customization/filters"
+            ]
+          },
+          {
+            "group": "Themes",
+            "pages": [
+              "themes/overview",
+              "themes/quartz",
+              "themes/material",
+              "themes/alpine",
+              "themes/balham",
+              "themes/custom-themes"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Core API",
+            "pages": [
+              "api/grid-api",
+              "api/grid-options",
+              "api/column-api"
+            ]
+          },
+          {
+            "group": "Column Types",
+            "pages": [
+              "api/column-properties",
+              "api/column-definitions"
+            ]
+          },
+          {
+            "group": "Events",
+            "pages": [
+              "api/grid-events",
+              "api/column-events",
+              "api/row-events"
+            ]
+          },
+          {
+            "group": "Components",
+            "pages": [
+              "api/cell-renderer",
+              "api/cell-editor",
+              "api/filter-component",
+              "api/header-component"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Examples",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "examples/basic-grid",
+              "examples/simple-example"
+            ]
+          },
+          {
+            "group": "Framework Examples",
+            "pages": [
+              "examples/react-example",
+              "examples/angular-example",
+              "examples/vue-example"
+            ]
+          },
+          {
+            "group": "Advanced Examples",
+            "pages": [
+              "examples/master-detail",
+              "examples/integrated-charts",
+              "examples/row-grouping"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "High-performance JavaScript data grid with virtual DOM rendering",
+    "Framework support for React, Angular, and Vue 3",
+    "Zero third-party runtime dependencies",
+    "Community (MIT) and Enterprise (commercial) editions",
+    "Sorting, filtering, pagination, and editing",
+    "Custom components and theming API",
+    "Enterprise features: row grouping, pivoting, charting, Excel export",
+    "Integrated charting and AI toolkit (Enterprise)",
+    "Accessibility compliant with WCAG standards",
+    "Server-side row model for large datasets"
+  ],
+  "publicApiSurface": [
+    "createGrid() - Main grid initialization function",
+    "GridApi - Core grid API for programmatic control",
+    "GridOptions - Configuration interface for grid behavior",
+    "ColDef - Column definition interface",
+    "ICellRendererParams - Cell renderer component interface",
+    "ICellEditorParams - Cell editor component interface",
+    "IFilterParams - Filter component interface",
+    "ag-grid-community - Community edition package (MIT)",
+    "ag-grid-enterprise - Enterprise edition package (Commercial)",
+    "ag-grid-react - React wrapper component",
+    "ag-grid-angular - Angular wrapper component",
+    "ag-grid-vue3 - Vue 3 wrapper component",
+    "Theme classes: ag-theme-quartz, ag-theme-material, ag-theme-alpine, ag-theme-balham"
+  ]
+}
