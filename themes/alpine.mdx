@@ -1,0 +1,44 @@
+---
+title: Alpine Theme
+description: Compact, data-dense theme for enterprise applications
+---
+
+The Alpine theme is designed for data-dense enterprise applications with a compact layout and high information density.
+
+## Installation
+
+Import the Alpine theme stylesheet:
+
+```javascript
+import 'ag-grid-community/styles/ag-grid.css';
+import 'ag-grid-community/styles/ag-theme-alpine.css';
+```
+
+## Usage
+
+Apply the `ag-theme-alpine` class to your grid container:
+
+```html
+<div id="myGrid" class="ag-theme-alpine" style="height: 500px;"></div>
+```
+
+## Dark Mode
+
+Use the dark variant with the `ag-theme-alpine-dark` class:
+
+```html
+<div id="myGrid" class="ag-theme-alpine-dark" style="height: 500px;"></div>
+```
+
+## Customization
+
+```css
+.ag-theme-alpine {
+  --ag-row-height: 42px;
+  --ag-header-height: 48px;
+  --ag-foreground-color: #181d1f;
+  --ag-background-color: #fff;
+}
+```
+
+<Tip>Alpine is ideal for applications that need to display large amounts of data efficiently.</Tip>

@@ -1,0 +1,741 @@
+---
+title: "React Integration"
+description: "Integrate AG Grid with React using hooks, TypeScript, and modern patterns"
+icon: "react"
+---
+
+AG Grid provides first-class React support through the `ag-grid-react` package, with full TypeScript support, hooks, and optimized rendering.
+
+## Installation
+
+<Steps>
+<Step title="Install the packages">
+  Install AG Grid React along with the core library:
+
+  ```bash
+  npm install ag-grid-react ag-grid-community
+  ```
+
+  For enterprise features:
+
+  ```bash
+  npm install ag-grid-react ag-grid-community ag-grid-enterprise
+  ```
+</Step>
+
+<Step title="Import the component">
+  ```tsx
+  import { AgGridReact } from 'ag-grid-react';
+  import 'ag-grid-community/styles/ag-grid.css';
+  import 'ag-grid-community/styles/ag-theme-quartz.css';
+  ```
+</Step>
+</Steps>
+
+## Basic Usage
+
+<Tabs>
+<Tab title="Functional Component">
+  ```tsx
+  import React, { useState } from 'react';
+  import { AgGridReact } from 'ag-grid-react';
+  import { ColDef } from 'ag-grid-community';
+  import 'ag-grid-community/styles/ag-grid.css';
+  import 'ag-grid-community/styles/ag-theme-quartz.css';
+
+  interface IRow {
+    make: string;
+    model: string;
+    price: number;
+  }
+
+  export default function App() {
+    const [rowData] = useState<IRow[]>([
+      { make: 'Tesla', model: 'Model Y', price: 64950 },
+      { make: 'Ford', model: 'F-Series', price: 33850 },
+      { make: 'Toyota', model: 'Corolla', price: 29600 },
+    ]);
+
+    const [colDefs] = useState<ColDef<IRow>[]>([
+      { field: 'make' },
+      { field: 'model' },
+      { field: 'price' }
+    ]);
+
+    return (
+      <div className="ag-theme-quartz" style={{ height: 500 }}>
+        <AgGridReact<IRow>
+          rowData={rowData}
+          columnDefs={colDefs}
+        />
+      </div>
+    );
+  }
+  ```
+</Tab>
+
+<Tab title="Class Component">
+  ```tsx
+  import React, { Component } from 'react';
+  import { AgGridReact } from 'ag-grid-react';
+  import { ColDef } from 'ag-grid-community';
+  import 'ag-grid-community/styles/ag-grid.css';
+  import 'ag-grid-community/styles/ag-theme-quartz.css';
+
+  interface IRow {
+    make: string;
+    model: string;
+    price: number;
+  }
+
+  export default class App extends Component {
+    rowData: IRow[] = [
+      { make: 'Tesla', model: 'Model Y', price: 64950 },
+      { make: 'Ford', model: 'F-Series', price: 33850 },
+      { make: 'Toyota', model: 'Corolla', price: 29600 },
+    ];
+
+    colDefs: ColDef<IRow>[] = [
+      { field: 'make' },
+      { field: 'model' },
+      { field: 'price' }
+    ];
+
+    render() {
+      return (
+        <div className="ag-theme-quartz" style={{ height: 500 }}>
+          <AgGridReact<IRow>
+            rowData={this.rowData}
+            columnDefs={this.colDefs}
+          />
+        </div>
+      );
+    }
+  }
+  ```
+</Tab>
+</Tabs>
+
+## TypeScript Support
+
+The `AgGridReact` component is fully typed with generics for type-safe row data.
+
+### Component Props Interface
+
+```typescript
+import { GridOptions, Module } from 'ag-grid-community';
+
+interface AgGridReactProps<TData = any> extends GridOptions<TData> {
+  /** Initial grid configuration */
+  gridOptions?: GridOptions<TData>;
+  
+  /** Register AG Grid modules for this instance */
+  modules?: Module[];
+  
+  /** CSS style for the grid container */
+  containerStyle?: React.CSSProperties;
+  
+  /** CSS class for the grid container */
+  className?: string;
+}
+```
+
+### Type-Safe Column Definitions
+
+```tsx
+import { ColDef } from 'ag-grid-community';
+
+interface UserData {
+  id: number;
+  name: string;
+  email: string;
+  age: number;
+}
+
+const columnDefs: ColDef<UserData>[] = [
+  { 
+    field: 'name',
+    headerName: 'Full Name',
+    valueGetter: (params) => {
+      // params.data is typed as UserData
+      return params.data?.name.toUpperCase();
+    }
+  },
+  { field: 'email' },
+  { field: 'age', filter: 'agNumberColumnFilter' }
+];
+```
+
+## Accessing the Grid API
+
+The Grid API provides methods to interact with the grid programmatically.
+
+<Tabs>
+<Tab title="Functional Component">
+  ```tsx
+  import { useRef } from 'react';
+  import { AgGridReact } from 'ag-grid-react';
+  import { GridApi } from 'ag-grid-community';
+
+  export default function App() {
+    const gridRef = useRef<AgGridReact>(null);
+
+    const onExportClick = () => {
+      gridRef.current?.api.exportDataAsCsv();
+    };
+
+    const onSelectAll = () => {
+      gridRef.current?.api.selectAll();
+    };
+
+    return (
+      <>
+        <button onClick={onExportClick}>Export CSV</button>
+        <button onClick={onSelectAll}>Select All</button>
+        <div className="ag-theme-quartz" style={{ height: 500 }}>
+          <AgGridReact
+            ref={gridRef}
+            rowData={rowData}
+            columnDefs={columnDefs}
+          />
+        </div>
+      </>
+    );
+  }
+  ```
+</Tab>
+
+<Tab title="Class Component">
+  ```tsx
+  import { Component, createRef } from 'react';
+  import { AgGridReact } from 'ag-grid-react';
+
+  export default class App extends Component {
+    private gridRef = createRef<AgGridReact>();
+
+    onExportClick = () => {
+      this.gridRef.current?.api.exportDataAsCsv();
+    };
+
+    onSelectAll = () => {
+      this.gridRef.current?.api.selectAll();
+    };
+
+    render() {
+      return (
+        <>
+          <button onClick={this.onExportClick}>Export CSV</button>
+          <button onClick={this.onSelectAll}>Select All</button>
+          <div className="ag-theme-quartz" style={{ height: 500 }}>
+            <AgGridReact
+              ref={this.gridRef}
+              rowData={this.rowData}
+              columnDefs={this.colDefs}
+            />
+          </div>
+        </>
+      );
+    }
+  }
+  ```
+</Tab>
+
+<Tab title="onGridReady Callback">
+  ```tsx
+  import { useState } from 'react';
+  import { GridApi, GridReadyEvent } from 'ag-grid-community';
+
+  export default function App() {
+    const [gridApi, setGridApi] = useState<GridApi>();
+
+    const onGridReady = (params: GridReadyEvent) => {
+      setGridApi(params.api);
+    };
+
+    const onExportClick = () => {
+      gridApi?.exportDataAsCsv();
+    };
+
+    return (
+      <>
+        <button onClick={onExportClick}>Export CSV</button>
+        <div className="ag-theme-quartz" style={{ height: 500 }}>
+          <AgGridReact
+            onGridReady={onGridReady}
+            rowData={rowData}
+            columnDefs={columnDefs}
+          />
+        </div>
+      </>
+    );
+  }
+  ```
+</Tab>
+</Tabs>
+
+<Note>
+  The Grid API is available after the `onGridReady` event fires.
+</Note>
+
+## Event Handling
+
+AG Grid fires events for user interactions and grid state changes.
+
+```tsx
+import { 
+  CellClickedEvent, 
+  RowSelectedEvent,
+  GridReadyEvent 
+} from 'ag-grid-community';
+
+export default function App() {
+  const onCellClicked = (event: CellClickedEvent) => {
+    console.log('Cell clicked:', event.value);
+  };
+
+  const onRowSelected = (event: RowSelectedEvent) => {
+    console.log('Row selected:', event.node.data);
+  };
+
+  const onGridReady = (event: GridReadyEvent) => {
+    console.log('Grid is ready');
+    event.api.sizeColumnsToFit();
+  };
+
+  return (
+    <AgGridReact
+      rowData={rowData}
+      columnDefs={columnDefs}
+      onCellClicked={onCellClicked}
+      onRowSelected={onRowSelected}
+      onGridReady={onGridReady}
+      rowSelection="multiple"
+    />
+  );
+}
+```
+
+## Custom React Components
+
+You can use React components as cell renderers, editors, and filters.
+
+<CodeGroup>
+```tsx Cell Renderer
+import { CustomCellRendererProps } from 'ag-grid-react';
+
+const StatusRenderer = (props: CustomCellRendererProps) => {
+  const status = props.value;
+  const color = status === 'active' ? 'green' : 'red';
+  
+  return (
+    <span style={{ color, fontWeight: 'bold' }}>
+      {status}
+    </span>
+  );
+};
+
+const columnDefs: ColDef[] = [
+  { 
+    field: 'status',
+    cellRenderer: StatusRenderer
+  }
+];
+```
+
+```tsx Cell Editor
+import { forwardRef, useImperativeHandle, useState } from 'react';
+import { CustomCellEditorProps } from 'ag-grid-react';
+
+const RatingEditor = forwardRef((props: CustomCellEditorProps, ref) => {
+  const [value, setValue] = useState(props.value);
+
+  useImperativeHandle(ref, () => ({
+    getValue: () => value,
+  }));
+
+  return (
+    <select value={value} onChange={(e) => setValue(Number(e.target.value))}>
+      <option value="1">1 Star</option>
+      <option value="2">2 Stars</option>
+      <option value="3">3 Stars</option>
+      <option value="4">4 Stars</option>
+      <option value="5">5 Stars</option>
+    </select>
+  );
+});
+
+const columnDefs: ColDef[] = [
+  { 
+    field: 'rating',
+    cellEditor: RatingEditor,
+    editable: true
+  }
+];
+```
+
+```tsx Custom Filter
+import { forwardRef, useImperativeHandle, useState } from 'react';
+import { CustomFilterProps, IDoesFilterPassParams } from 'ag-grid-community';
+
+const YearFilter = forwardRef((props: CustomFilterProps, ref) => {
+  const [year, setYear] = useState<number>(2023);
+
+  useImperativeHandle(ref, () => ({
+    doesFilterPass: (params: IDoesFilterPassParams) => {
+      return params.data.year >= year;
+    },
+    isFilterActive: () => year !== 2023,
+    getModel: () => ({ year }),
+    setModel: (model: any) => setYear(model?.year || 2023)
+  }));
+
+  return (
+    <div style={{ padding: 10 }}>
+      <label>
+        Year From:
+        <input
+          type="number"
+          value={year}
+          onChange={(e) => {
+            setYear(Number(e.target.value));
+            props.filterChangedCallback();
+          }}
+        />
+      </label>
+    </div>
+  );
+});
+
+const columnDefs: ColDef[] = [
+  { 
+    field: 'year',
+    filter: YearFilter,
+    floatingFilter: true
+  }
+];
+```
+</CodeGroup>
+
+## State Management
+
+Manage grid state with React hooks and state management libraries.
+
+<Tabs>
+<Tab title="React State">
+  ```tsx
+  import { useState, useCallback } from 'react';
+
+  export default function App() {
+    const [rowData, setRowData] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    const onGridReady = useCallback((params: GridReadyEvent) => {
+      setLoading(true);
+      fetch('https://api.example.com/data')
+        .then(resp => resp.json())
+        .then(data => {
+          setRowData(data);
+          setLoading(false);
+        });
+    }, []);
+
+    return (
+      <AgGridReact
+        rowData={rowData}
+        columnDefs={columnDefs}
+        onGridReady={onGridReady}
+        loading={loading}
+      />
+    );
+  }
+  ```
+</Tab>
+
+<Tab title="Redux">
+  ```tsx
+  import { useSelector, useDispatch } from 'react-redux';
+  import { fetchGridData } from './store/gridSlice';
+
+  export default function App() {
+    const dispatch = useDispatch();
+    const { data, loading } = useSelector((state: RootState) => state.grid);
+
+    const onGridReady = () => {
+      dispatch(fetchGridData());
+    };
+
+    return (
+      <AgGridReact
+        rowData={data}
+        columnDefs={columnDefs}
+        onGridReady={onGridReady}
+        loading={loading}
+      />
+    );
+  }
+  ```
+</Tab>
+</Tabs>
+
+## Key Props Reference
+
+The `AgGridReact` component accepts all `GridOptions` as props plus these React-specific properties:
+
+<ParamField path="rowData" type="TData[]">
+  The data to display in the grid rows
+</ParamField>
+
+<ParamField path="columnDefs" type="ColDef<TData>[]">
+  Column definitions for the grid
+</ParamField>
+
+<ParamField path="gridOptions" type="GridOptions<TData>">
+  Initial grid configuration (component props take precedence)
+</ParamField>
+
+<ParamField path="modules" type="Module[]">
+  AG Grid modules to register for this instance
+</ParamField>
+
+<ParamField path="containerStyle" type="React.CSSProperties">
+  CSS styles for the grid container div
+</ParamField>
+
+<ParamField path="className" type="string">
+  CSS class for the grid container div
+</ParamField>
+
+<ParamField path="onGridReady" type="(event: GridReadyEvent) => void">
+  Callback when grid initialization is complete
+</ParamField>
+
+## Module Registration
+
+AG Grid uses a modular architecture. Register only the modules you need.
+
+<Tabs>
+<Tab title="Global Registration">
+  ```tsx
+  import { ModuleRegistry } from 'ag-grid-community';
+  import { ClientSideRowModelModule } from 'ag-grid-community';
+  import { ColumnsToolPanelModule } from 'ag-grid-enterprise';
+  import { MenuModule } from 'ag-grid-enterprise';
+
+  // Register once at app startup
+  ModuleRegistry.registerModules([
+    ClientSideRowModelModule,
+    ColumnsToolPanelModule,
+    MenuModule
+  ]);
+
+  export default function App() {
+    return (
+      <AgGridReact
+        rowData={rowData}
+        columnDefs={columnDefs}
+      />
+    );
+  }
+  ```
+</Tab>
+
+<Tab title="Per-Grid Registration">
+  ```tsx
+  import { ClientSideRowModelModule } from 'ag-grid-community';
+  import { ColumnsToolPanelModule } from 'ag-grid-enterprise';
+
+  export default function App() {
+    return (
+      <AgGridReact
+        rowData={rowData}
+        columnDefs={columnDefs}
+        modules={[
+          ClientSideRowModelModule,
+          ColumnsToolPanelModule
+        ]}
+      />
+    );
+  }
+  ```
+</Tab>
+</Tabs>
+
+## Performance Optimization
+
+<Steps>
+<Step title="Use React.memo for custom components">
+  Prevent unnecessary re-renders of cell renderers:
+
+  ```tsx
+  import { memo } from 'react';
+
+  const MyCellRenderer = memo((props: CustomCellRendererProps) => {
+    return <span>{props.value}</span>;
+  });
+  ```
+</Step>
+
+<Step title="Memoize column definitions">
+  Use `useMemo` to prevent column definition recreation:
+
+  ```tsx
+  const columnDefs = useMemo<ColDef[]>(() => [
+    { field: 'make' },
+    { field: 'model' },
+    { field: 'price' }
+  ], []);
+  ```
+</Step>
+
+<Step title="Use immutable data updates">
+  When updating row data, create new arrays:
+
+  ```tsx
+  const addRow = () => {
+    setRowData(prev => [...prev, newRow]);
+  };
+  ```
+</Step>
+
+<Step title="Enable delta row data mode">
+  For large datasets with frequent updates:
+
+  ```tsx
+  <AgGridReact
+    rowData={rowData}
+    getRowId={(params) => params.data.id}
+  />
+  ```
+</Step>
+</Steps>
+
+## Common Patterns
+
+### Dynamic Column Definitions
+
+```tsx
+import { useState } from 'react';
+
+export default function App() {
+  const [showPrice, setShowPrice] = useState(true);
+  
+  const columnDefs = useMemo(() => [
+    { field: 'make' },
+    { field: 'model' },
+    ...(showPrice ? [{ field: 'price' }] : [])
+  ], [showPrice]);
+
+  return (
+    <>
+      <label>
+        <input
+          type="checkbox"
+          checked={showPrice}
+          onChange={(e) => setShowPrice(e.target.checked)}
+        />
+        Show Price
+      </label>
+      <AgGridReact
+        rowData={rowData}
+        columnDefs={columnDefs}
+      />
+    </>
+  );
+}
+```
+
+### Server-Side Data Loading
+
+```tsx
+import { useEffect, useState } from 'react';
+import { GridReadyEvent } from 'ag-grid-community';
+
+export default function App() {
+  const [rowData, setRowData] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetch('https://api.example.com/data')
+      .then(resp => resp.json())
+      .then(data => setRowData(data));
+  }, []);
+
+  return (
+    <AgGridReact
+      rowData={rowData}
+      columnDefs={columnDefs}
+    />
+  );
+}
+```
+
+## Troubleshooting
+
+<AccordionGroup>
+<Accordion title="Grid not displaying correctly">
+  Make sure you've imported the CSS files:
+  
+  ```tsx
+  import 'ag-grid-community/styles/ag-grid.css';
+  import 'ag-grid-community/styles/ag-theme-quartz.css';
+  ```
+  
+  And set a theme class with explicit height:
+  
+  ```tsx
+  <div className="ag-theme-quartz" style={{ height: 500 }}>
+    <AgGridReact ... />
+  </div>
+  ```
+</Accordion>
+
+<Accordion title="TypeScript errors with column definitions">
+  Use the generic type parameter to ensure type safety:
+  
+  ```tsx
+  interface MyData {
+    name: string;
+    age: number;
+  }
+  
+  const colDefs: ColDef<MyData>[] = [...];
+  
+  <AgGridReact<MyData>
+    rowData={data}
+    columnDefs={colDefs}
+  />
+  ```
+</Accordion>
+
+<Accordion title="Grid API methods not available">
+  Ensure you're accessing the API after `onGridReady` fires:
+  
+  ```tsx
+  const gridRef = useRef<AgGridReact>(null);
+  
+  // Wrong: Called immediately
+  gridRef.current?.api.sizeColumnsToFit(); // API might not be ready
+  
+  // Correct: Called after grid ready
+  const onGridReady = () => {
+    gridRef.current?.api.sizeColumnsToFit();
+  };
+  ```
+</Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+<Card title="Column Definitions" icon="table-columns" href="/column-definitions">
+  Learn how to configure columns
+</Card>
+<Card title="Grid API" icon="code" href="/grid-api">
+  Explore the Grid API methods
+</Card>
+<Card title="Custom Components" icon="puzzle-piece" href="/custom-components">
+  Build custom cell renderers and editors
+</Card>
+<Card title="Styling" icon="palette" href="/styling">
+  Customize the grid appearance
+</Card>
+</CardGroup>

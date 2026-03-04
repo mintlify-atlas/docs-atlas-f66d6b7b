@@ -1,0 +1,338 @@
+---
+title: Column Events
+description: Reference for column-related events in AG Grid
+---
+
+Column events are fired in response to column operations such as resizing, moving, sorting, and visibility changes.
+
+## Overview
+
+Listen to column events using GridOptions callbacks:
+
+```javascript
+const gridOptions = {
+  onColumnResized: (event) => {
+    console.log('Column resized:', event.column.getId());
+  },
+  onColumnMoved: (event) => {
+    console.log('Column moved to index:', event.toIndex);
+  }
+};
+```
+
+## Column Visibility
+
+<ParamField path="columnVisible" type="ColumnVisibleEvent<TData, TContext>">
+  Fired when a column's visibility is changed.
+  
+  **Event Properties:**
+  - `column`: The impacted column (or `null` if multiple)
+  - `columns`: List of all impacted columns
+  - `visible`: `true` if column was set to visible, `false` if hidden, `undefined` if mixed
+  - `source`: String describing where the event is coming from
+  
+  ```javascript
+  onColumnVisible: (event) => {
+    const colIds = event.columns.map(col => col.getId());
+    console.log('Columns visibility changed:', colIds, event.visible);
+  }
+  ```
+</ParamField>
+
+## Column Sizing
+
+<ParamField path="columnResized" type="ColumnResizedEvent<TData, TContext>">
+  Fired when a column is resized.
+  
+  **Event Properties:**
+  - `column`: The impacted column (or `null` if multiple)
+  - `columns`: List of all impacted columns
+  - `finished`: Set to true for last event in a sequence of resize events
+  - `flexColumns`: Any columns resized due to flex
+  - `source`: String describing where the event is coming from
+  
+  ```javascript
+  onColumnResized: (event) => {
+    if (event.finished) {
+      console.log('Resize finished:', event.column.getId());
+      console.log('New width:', event.column.getActualWidth());
+    }
+  }
+  ```
+</ParamField>
+
+## Column Movement
+
+<ParamField path="columnMoved" type="ColumnMovedEvent<TData, TContext>">
+  Fired when a column is moved (reordered).
+  
+  **Event Properties:**
+  - `column`: The impacted column (or `null` if multiple)
+  - `columns`: List of all impacted columns
+  - `toIndex`: The position the column was moved to
+  - `finished`: `true` when the column has finished moving
+  - `source`: String describing where the event is coming from
+  
+  ```javascript
+  onColumnMoved: (event) => {
+    if (event.finished) {
+      console.log('Column moved to:', event.toIndex);
+    }
+  }
+  ```
+</ParamField>
+
+## Column Pinning
+
+<ParamField path="columnPinned" type="ColumnPinnedEvent<TData, TContext>">
+  Fired when a column is pinned or unpinned.
+  
+  **Event Properties:**
+  - `column`: The impacted column (or `null` if multiple)
+  - `columns`: List of all impacted columns
+  - `pinned`: Either `'left'`, `'right'`, or `null` (if not pinned)
+  - `source`: String describing where the event is coming from
+  
+  ```javascript
+  onColumnPinned: (event) => {
+    console.log('Column pinned:', event.pinned);
+  }
+  ```
+</ParamField>
+
+## Column Groups
+
+<ParamField path="columnGroupOpened" type="ColumnGroupOpenedEvent<TData, TContext>">
+  Fired when a column group is opened or closed.
+  
+  **Event Properties:**
+  - `columnGroup`: The column group that was opened/closed
+  - `columnGroups`: All column groups affected
+  
+  ```javascript
+  onColumnGroupOpened: (event) => {
+    const group = event.columnGroup;
+    console.log('Group', group.getGroupId(), 'is now', group.isExpanded() ? 'open' : 'closed');
+  }
+  ```
+</ParamField>
+
+<ParamField path="expandOrCollapseAll" type="ExpandOrCollapseAllEvent<TData, TContext>">
+  Fired when all column groups are expanded or collapsed.
+  
+  **Event Properties:**
+  - `source`: String describing where the event is coming from
+  
+  ```javascript
+  onExpandOrCollapseAll: (event) => {
+    console.log('All groups toggled, source:', event.source);
+  }
+  ```
+</ParamField>
+
+## Column State
+
+<ParamField path="displayedColumnsChanged" type="DisplayedColumnsChangedEvent<TData, TContext>">
+  Fired when the displayed columns change (e.g., due to column grouping, pivoting, or visibility).
+  
+  **Event Properties:**
+  - `source`: String describing where the event is coming from
+  
+  ```javascript
+  onDisplayedColumnsChanged: (event) => {
+    const visibleCols = event.api.getAllDisplayedColumns();
+    console.log('Visible columns:', visibleCols.length);
+  }
+  ```
+</ParamField>
+
+<ParamField path="virtualColumnsChanged" type="VirtualColumnsChangedEvent<TData, TContext>">
+  Fired when the columns in the viewport change due to horizontal scrolling (column virtualization).
+  
+  **Event Properties:**
+  - `afterScroll`: True if triggered by scrolling
+  
+  ```javascript
+  onVirtualColumnsChanged: (event) => {
+    console.log('Virtual columns changed');
+  }
+  ```
+</ParamField>
+
+<ParamField path="gridColumnsChanged" type="GridColumnsChangedEvent<TData, TContext>">
+  Fired when the grid columns are changed (e.g., after pivoting).
+  
+  ```javascript
+  onGridColumnsChanged: (event) => {
+    console.log('Grid columns structure changed');
+  }
+  ```
+</ParamField>
+
+<ParamField path="newColumnsLoaded" type="NewColumnsLoadedEvent<TData, TContext>">
+  Fired when new columns are loaded via `api.setColumnDefs()`.
+  
+  **Event Properties:**
+  - `source`: String describing where the event is coming from
+  
+  ```javascript
+  onNewColumnsLoaded: (event) => {
+    console.log('New column definitions loaded');
+  }
+  ```
+</ParamField>
+
+## Column Header Events
+
+<ParamField path="columnHeaderClicked" type="ColumnHeaderClickedEvent<TData, TContext>">
+  Fired when a column header (or column group header) is clicked.
+  
+  **Event Properties:**
+  - `column`: Column or column-group related to the header that triggered the event
+  
+  ```javascript
+  onColumnHeaderClicked: (event) => {
+    console.log('Header clicked:', event.column.getId());
+  }
+  ```
+</ParamField>
+
+<ParamField path="columnHeaderContextMenu" type="ColumnHeaderContextMenuEvent<TData, TContext>">
+  Fired when a column header (or column group header) is right-clicked.
+  
+  **Event Properties:**
+  - `column`: Column or column-group related to the header that triggered the event
+  
+  ```javascript
+  onColumnHeaderContextMenu: (event) => {
+    console.log('Header right-clicked:', event.column.getId());
+    event.event.preventDefault(); // Prevent browser context menu
+  }
+  ```
+</ParamField>
+
+<ParamField path="columnHeaderMouseOver" type="ColumnHeaderMouseOverEvent<TData, TContext>">
+  Fired when the mouse enters a column header.
+  
+  **Event Properties:**
+  - `column`: Column or column-group related to the header that triggered the event
+  
+  ```javascript
+  onColumnHeaderMouseOver: (event) => {
+    console.log('Mouse over header:', event.column.getId());
+  }
+  ```
+</ParamField>
+
+<ParamField path="columnHeaderMouseLeave" type="ColumnHeaderMouseLeaveEvent<TData, TContext>">
+  Fired when the mouse leaves a column header.
+  
+  **Event Properties:**
+  - `column`: Column or column-group related to the header that triggered the event
+  
+  ```javascript
+  onColumnHeaderMouseLeave: (event) => {
+    console.log('Mouse left header:', event.column.getId());
+  }
+  ```
+</ParamField>
+
+## Pivot & Aggregation
+
+<ParamField path="columnPivotModeChanged" type="ColumnPivotModeChangedEvent<TData, TContext>">
+  Fired when pivot mode is enabled or disabled.
+  
+  **Module:** `PivotModule`
+  
+  ```javascript
+  onColumnPivotModeChanged: (event) => {
+    console.log('Pivot mode changed');
+  }
+  ```
+</ParamField>
+
+<ParamField path="columnPivotChanged" type="ColumnPivotChangedEvent<TData, TContext>">
+  Fired when the pivot columns are changed.
+  
+  **Event Properties:**
+  - `column`: The impacted column (or `null` if multiple)
+  - `columns`: List of all impacted columns
+  - `source`: String describing where the event is coming from
+  
+  **Module:** `PivotModule`
+  
+  ```javascript
+  onColumnPivotChanged: (event) => {
+    console.log('Pivot columns changed');
+  }
+  ```
+</ParamField>
+
+<ParamField path="columnRowGroupChanged" type="ColumnRowGroupChangedEvent<TData, TContext>">
+  Fired when the row group columns are changed.
+  
+  **Event Properties:**
+  - `column`: The impacted column (or `null` if multiple)
+  - `columns`: List of all impacted columns
+  - `source`: String describing where the event is coming from
+  
+  **Module:** `RowGroupingModule`
+  
+  ```javascript
+  onColumnRowGroupChanged: (event) => {
+    console.log('Row group columns changed');
+  }
+  ```
+</ParamField>
+
+<ParamField path="columnValueChanged" type="ColumnValueChangedEvent<TData, TContext>">
+  Fired when the value columns (used for aggregation) are changed.
+  
+  **Event Properties:**
+  - `column`: The impacted column (or `null` if multiple)
+  - `columns`: List of all impacted columns
+  - `source`: String describing where the event is coming from
+  
+  **Module:** `RowGroupingModule` / `PivotModule`
+  
+  ```javascript
+  onColumnValueChanged: (event) => {
+    console.log('Value columns changed');
+  }
+  ```
+</ParamField>
+
+## Menu Events
+
+<ParamField path="columnMenuVisibleChanged" type="ColumnMenuVisibleChangedEvent<TData, TContext>">
+  Fired when the column menu is opened or closed.
+  
+  **Event Properties:**
+  - `visible`: True if now visible; false if now hidden
+  - `switchingTab`: True if switching between tabs (legacy menu only)
+  - `key`: Currently displayed menu/tab
+  - `column`: Column the menu is opened for (or `null`)
+  - `columnGroup`: Column group the menu is opened for (if applicable)
+  
+  ```javascript
+  onColumnMenuVisibleChanged: (event) => {
+    if (event.visible) {
+      console.log('Column menu opened for:', event.column?.getId());
+    }
+  }
+  ```
+</ParamField>
+
+## Related APIs
+
+<Card title="Grid Events" icon="bolt" href="/api/grid-events">
+  Grid-level events
+</Card>
+
+<Card title="Row Events" icon="table-rows" href="/api/row-events">
+  Row interaction events
+</Card>
+
+<Card title="Column API" icon="code" href="/api/grid-api">
+  Programmatic column control
+</Card>

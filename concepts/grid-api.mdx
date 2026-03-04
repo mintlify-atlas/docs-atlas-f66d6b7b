@@ -1,0 +1,642 @@
+---
+title: Grid API
+description: Interact with your grid using the Grid API
+---
+
+The Grid API provides methods to interact with and control your grid programmatically. Access it through the `GridApi` object returned when creating the grid or via the `api` property in event callbacks.
+
+## Overview
+
+The Grid API is your main interface for controlling the grid after it's initialized:
+
+```typescript
+import { createGrid, GridApi, GridOptions } from 'ag-grid-community';
+
+const gridOptions: GridOptions = {
+  columnDefs: [...],
+  rowData: [...]
+};
+
+const gridDiv = document.querySelector('#myGrid');
+const api: GridApi = createGrid(gridDiv, gridOptions);
+
+// Use the API
+api.sizeColumnsToFit();
+```
+
+## Accessing the API
+
+### At Grid Creation
+
+```typescript
+const api = createGrid(gridDiv, gridOptions);
+```
+
+### In Event Handlers
+
+```typescript
+const gridOptions: GridOptions = {
+  onGridReady: (params) => {
+    // Access via event params
+    params.api.sizeColumnsToFit();
+  },
+  onCellClicked: (event) => {
+    // Available in all grid events
+    event.api.deselectAll();
+  }
+};
+```
+
+### In Framework Components
+
+<CodeGroup>
+
+```typescript React
+import { useRef } from 'react';
+import { AgGridReact } from 'ag-grid-react';
+import { GridApi } from 'ag-grid-community';
+
+function MyGrid() {
+  const gridRef = useRef<AgGridReact>(null);
+  
+  const handleClick = () => {
+    gridRef.current?.api.exportDataAsCsv();
+  };
+  
+  return (
+    <>
+      <button onClick={handleClick}>Export</button>
+      <AgGridReact ref={gridRef} {...gridOptions} />
+    </>
+  );
+}
+```
+
+```typescript Angular
+import { Component, ViewChild } from '@angular/core';
+import { AgGridAngular } from 'ag-grid-angular';
+import { GridApi } from 'ag-grid-community';
+
+@Component({
+  selector: 'app-my-grid',
+  template: `
+    <button (click)="exportCsv()">Export</button>
+    <ag-grid-angular
+      #agGrid
+      [gridOptions]="gridOptions"
+    ></ag-grid-angular>
+  `
+})
+export class MyGridComponent {
+  @ViewChild('agGrid') agGrid!: AgGridAngular;
+  
+  exportCsv() {
+    this.agGrid.api.exportDataAsCsv();
+  }
+}
+```
+
+```typescript Vue
+<template>
+  <div>
+    <button @click="exportCsv">Export</button>
+    <ag-grid-vue
+      ref="agGrid"
+      :gridOptions="gridOptions"
+    />
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref } from 'vue';
+import { AgGridVue } from 'ag-grid-vue3';
+import type { GridApi } from 'ag-grid-community';
+
+const agGrid = ref<{ api: GridApi }>();
+
+const exportCsv = () => {
+  agGrid.value?.api.exportDataAsCsv();
+};
+</script>
+```
+
+</CodeGroup>
+
+## Core Methods
+
+### Grid Lifecycle
+
+<ParamField path="destroy()" type="void">
+  Destroy the grid and release resources. Required when using vanilla JavaScript.
+  
+  ```typescript
+  // Clean up when done
+  api.destroy();
+  ```
+</ParamField>
+
+<ParamField path="isDestroyed()" type="boolean">
+  Check if the grid has been destroyed.
+  
+  ```typescript
+  if (!api.isDestroyed()) {
+    api.refreshCells();
+  }
+  ```
+</ParamField>
+
+### Grid Options
+
+<ParamField path="getGridOption(key)" type="<Key extends keyof GridOptions>(key: Key) => GridOptions[Key]">
+  Get the current value of a grid option.
+  
+  ```typescript
+  const pageSize = api.getGridOption('paginationPageSize');
+  const rowData = api.getGridOption('rowData');
+  ```
+</ParamField>
+
+<ParamField path="setGridOption(key, value)" type="<Key extends ManagedGridOptionKey>(key: Key, value: GridOptions[Key]) => void">
+  Update a single grid option.
+  
+  ```typescript
+  api.setGridOption('paginationPageSize', 50);
+  api.setGridOption('rowHeight', 40);
+  ```
+</ParamField>
+
+<ParamField path="updateGridOptions(options)" type="(options: GridOptions) => void">
+  Update multiple grid options at once (recommended over multiple `setGridOption` calls).
+  
+  ```typescript
+  api.updateGridOptions({
+    paginationPageSize: 50,
+    rowHeight: 40,
+    animateRows: true
+  });
+  ```
+</ParamField>
+
+## Row Data Methods
+
+### Transactions
+
+<ParamField path="applyTransaction(transaction)" type="(transaction: RowDataTransaction) => RowNodeTransaction | null" module="ClientSideRowModelApiModule">
+  Add, remove, or update rows efficiently.
+  
+  ```typescript
+  const result = api.applyTransaction({
+    add: [{ id: 1, name: 'New Row' }],
+    update: [{ id: 2, name: 'Updated' }],
+    remove: [oldRow]
+  });
+  ```
+</ParamField>
+
+<ParamField path="applyTransactionAsync(transaction, callback?)" type="(transaction: RowDataTransaction, callback?: (res: RowNodeTransaction) => void) => void" module="ClientSideRowModelApiModule">
+  Queue a transaction for async execution. Grid batches multiple async transactions for efficiency.
+  
+  ```typescript
+  // Queue updates
+  api.applyTransactionAsync({ add: [row1] });
+  api.applyTransactionAsync({ add: [row2] });
+  // Grid batches these automatically
+  ```
+</ParamField>
+
+<ParamField path="flushAsyncTransactions()" type="void" module="ClientSideRowModelApiModule">
+  Execute all queued async transactions immediately.
+  
+  ```typescript
+  api.applyTransactionAsync({ add: [row1] });
+  api.applyTransactionAsync({ add: [row2] });
+  api.flushAsyncTransactions();  // Execute now
+  ```
+</ParamField>
+
+### Row Access
+
+<ParamField path="forEachNode(callback)" type="(callback: (rowNode: IRowNode, index: number) => void) => void" module="RowApiModule">
+  Iterate through all row nodes (ignoring filtering/sorting).
+  
+  ```typescript
+  const allData: any[] = [];
+  api.forEachNode(node => {
+    allData.push(node.data);
+  });
+  ```
+</ParamField>
+
+<ParamField path="forEachNodeAfterFilterAndSort(callback)" type="(callback: (rowNode: IRowNode, index: number) => void) => void" module="ClientSideRowModelApiModule">
+  Iterate through displayed rows (after filtering and sorting).
+  
+  ```typescript
+  const displayedData: any[] = [];
+  api.forEachNodeAfterFilterAndSort(node => {
+    displayedData.push(node.data);
+  });
+  ```
+</ParamField>
+
+<ParamField path="getRowNode(id)" type="(id: string) => IRowNode | undefined" module="RowApiModule">
+  Get a specific row node by its ID.
+  
+  ```typescript
+  const rowNode = api.getRowNode('123');
+  if (rowNode) {
+    console.log('Row data:', rowNode.data);
+  }
+  ```
+</ParamField>
+
+<ParamField path="getDisplayedRowCount()" type="number" module="RowApiModule">
+  Get the total number of displayed rows.
+  
+  ```typescript
+  const count = api.getDisplayedRowCount();
+  console.log(`Showing ${count} rows`);
+  ```
+</ParamField>
+
+## Column Methods
+
+### Column Definitions
+
+<ParamField path="getColumnDefs()" type="(ColDef | ColGroupDef)[] | undefined" module="ColumnApiModule">
+  Get current column definitions.
+  
+  ```typescript
+  const currentCols = api.getColumnDefs();
+  ```
+</ParamField>
+
+<ParamField path="getColumnDef(key)" type="(key: string | Column) => ColDef | null" module="ColumnApiModule">
+  Get the column definition for a specific column.
+  
+  ```typescript
+  const colDef = api.getColumnDef('athlete');
+  ```
+</ParamField>
+
+### Column Visibility
+
+<ParamField path="setColumnsVisible(keys, visible)" type="(keys: (string | Column)[], visible: boolean) => void" module="ColumnApiModule">
+  Show or hide columns.
+  
+  ```typescript
+  // Hide columns
+  api.setColumnsVisible(['id', 'internal'], false);
+  
+  // Show columns
+  api.setColumnsVisible(['name', 'email'], true);
+  ```
+</ParamField>
+
+### Column Sizing
+
+<ParamField path="sizeColumnsToFit(params?)" type="(params?: ISizeColumnsToFitParams) => void" module="ColumnAutoSizeModule">
+  Size columns to fit the available grid width.
+  
+  ```typescript
+  api.sizeColumnsToFit();
+  ```
+</ParamField>
+
+<ParamField path="autoSizeColumns(keys, skipHeader?)" type="(keys: ColKey[] | ISizeColumnsToContentParams, skipHeader?: boolean) => void" module="ColumnAutoSizeModule">
+  Auto-size specific columns based on content.
+  
+  ```typescript
+  // Auto-size by column keys
+  api.autoSizeColumns(['athlete', 'country']);
+  
+  // With options
+  api.autoSizeColumns({
+    columns: ['athlete', 'country'],
+    skipHeader: false
+  });
+  ```
+</ParamField>
+
+<ParamField path="autoSizeAllColumns(skipHeader?)" type="(skipHeader?: boolean) => void" module="ColumnAutoSizeModule">
+  Auto-size all columns.
+  
+  ```typescript
+  api.autoSizeAllColumns();
+  ```
+</ParamField>
+
+### Column State
+
+<ParamField path="getColumnState()" type="ColumnState[]" module="ColumnApiModule">
+  Get current column state (width, position, sort, etc).
+  
+  ```typescript
+  const columnState = api.getColumnState();
+  localStorage.setItem('gridColumns', JSON.stringify(columnState));
+  ```
+</ParamField>
+
+<ParamField path="applyColumnState(params)" type="(params: ApplyColumnStateParams) => boolean" module="ColumnApiModule">
+  Restore column state.
+  
+  ```typescript
+  const savedState = JSON.parse(localStorage.getItem('gridColumns'));
+  api.applyColumnState({ state: savedState });
+  ```
+</ParamField>
+
+## Selection Methods
+
+<ParamField path="selectAll(mode?, source?)" type="(mode?: SelectAllMode, source?: SelectionEventSourceType) => void" module="RowSelectionModule">
+  Select all rows.
+  
+  ```typescript
+  api.selectAll();  // All rows
+  api.selectAll('filtered');  // Only filtered rows
+  api.selectAll('currentPage');  // Only current page
+  ```
+</ParamField>
+
+<ParamField path="deselectAll(mode?, source?)" type="(mode?: SelectAllMode, source?: SelectionEventSourceType) => void" module="RowSelectionModule">
+  Deselect all rows.
+  
+  ```typescript
+  api.deselectAll();
+  ```
+</ParamField>
+
+<ParamField path="getSelectedNodes()" type="IRowNode[]" module="RowSelectionModule">
+  Get selected row nodes.
+  
+  ```typescript
+  const selectedNodes = api.getSelectedNodes();
+  console.log(`Selected ${selectedNodes.length} rows`);
+  ```
+</ParamField>
+
+<ParamField path="getSelectedRows()" type="any[]" module="RowSelectionModule">
+  Get selected row data.
+  
+  ```typescript
+  const selectedData = api.getSelectedRows();
+  console.log('Selected:', selectedData);
+  ```
+</ParamField>
+
+## Filtering Methods
+
+<ParamField path="isAnyFilterPresent()" type="boolean" module="FilterModule">
+  Check if any filter is active.
+  
+  ```typescript
+  if (api.isAnyFilterPresent()) {
+    console.log('Filters are active');
+  }
+  ```
+</ParamField>
+
+<ParamField path="getFilterModel()" type="FilterModel" module="FilterModule">
+  Get the current filter state.
+  
+  ```typescript
+  const filterState = api.getFilterModel();
+  localStorage.setItem('filters', JSON.stringify(filterState));
+  ```
+</ParamField>
+
+<ParamField path="setFilterModel(model)" type="(model: FilterModel | null) => void" module="FilterModule">
+  Set filter state.
+  
+  ```typescript
+  // Apply filters
+  api.setFilterModel({
+    athlete: {
+      filterType: 'text',
+      type: 'contains',
+      filter: 'Michael'
+    }
+  });
+  
+  // Clear all filters
+  api.setFilterModel(null);
+  ```
+</ParamField>
+
+<ParamField path="onFilterChanged(source?)" type="(source?: FilterChangedEventSourceType) => void" module="FilterModule">
+  Notify grid that filters have changed (triggers re-filtering).
+  
+  ```typescript
+  api.onFilterChanged();
+  ```
+</ParamField>
+
+## Refresh Methods
+
+<ParamField path="refreshCells(params?)" type="(params?: RefreshCellsParams) => void">
+  Refresh specific cells.
+  
+  ```typescript
+  // Refresh all cells
+  api.refreshCells();
+  
+  // Refresh specific columns
+  api.refreshCells({ columns: ['age', 'country'] });
+  
+  // Refresh specific rows
+  api.refreshCells({ rowNodes: [rowNode1, rowNode2] });
+  
+  // Force refresh (re-render)
+  api.refreshCells({ force: true });
+  ```
+</ParamField>
+
+<ParamField path="redrawRows(params?)" type="(params?: RedrawRowsParams) => void" module="RowApiModule">
+  Completely redraw rows (removes and recreates DOM).
+  
+  ```typescript
+  // Redraw all rows
+  api.redrawRows();
+  
+  // Redraw specific rows
+  api.redrawRows({ rowNodes: [rowNode1, rowNode2] });
+  ```
+</ParamField>
+
+## Export Methods
+
+<ParamField path="exportDataAsCsv(params?)" type="(params?: CsvExportParams) => void" module="CsvExportModule">
+  Export grid data as CSV.
+  
+  ```typescript
+  api.exportDataAsCsv({
+    fileName: 'export.csv',
+    columnKeys: ['athlete', 'age', 'country']
+  });
+  ```
+</ParamField>
+
+<ParamField path="exportDataAsExcel(params?)" type="(params?: ExcelExportParams) => void" module="ExcelExportModule">
+  Export grid data as Excel (Enterprise only).
+  
+  ```typescript
+  api.exportDataAsExcel({
+    fileName: 'export.xlsx',
+    sheetName: 'Athletes'
+  });
+  ```
+</ParamField>
+
+## Editing Methods
+
+<ParamField path="startEditingCell(params)" type="(params: StartEditingCellParams) => void" module="EditingModule">
+  Start editing a specific cell.
+  
+  ```typescript
+  api.startEditingCell({
+    rowIndex: 0,
+    colKey: 'athlete'
+  });
+  ```
+</ParamField>
+
+<ParamField path="stopEditing(cancel?)" type="(cancel?: boolean) => void" module="EditingModule">
+  Stop editing.
+  
+  ```typescript
+  api.stopEditing();  // Save changes
+  api.stopEditing(true);  // Cancel changes
+  ```
+</ParamField>
+
+## Common Patterns
+
+### Save and Restore Grid State
+
+```typescript
+// Save state
+function saveGridState() {
+  const state = {
+    columns: api.getColumnState(),
+    filters: api.getFilterModel(),
+    sort: api.getColumnState().filter(col => col.sort != null)
+  };
+  
+  localStorage.setItem('gridState', JSON.stringify(state));
+}
+
+// Restore state
+function restoreGridState() {
+  const stateStr = localStorage.getItem('gridState');
+  if (stateStr) {
+    const state = JSON.parse(stateStr);
+    api.applyColumnState({ state: state.columns });
+    api.setFilterModel(state.filters);
+  }
+}
+
+// Hook up to events
+const gridOptions: GridOptions = {
+  onGridReady: () => restoreGridState(),
+  onColumnMoved: () => saveGridState(),
+  onColumnResized: () => saveGridState(),
+  onSortChanged: () => saveGridState(),
+  onFilterChanged: () => saveGridState()
+};
+```
+
+### Export Filtered Data
+
+```typescript
+function exportFiltered() {
+  if (api.isAnyFilterPresent()) {
+    api.exportDataAsCsv({
+      fileName: 'filtered-data.csv',
+      onlySelected: false,
+      skipPinnedTop: true,
+      skipPinnedBottom: true
+    });
+  } else {
+    alert('No filters applied');
+  }
+}
+```
+
+### Bulk Row Selection
+
+```typescript
+function selectByCondition(predicate: (data: any) => boolean) {
+  api.forEachNode(node => {
+    if (predicate(node.data)) {
+      node.setSelected(true, false, 'api');
+    }
+  });
+}
+
+// Usage
+selectByCondition(data => data.country === 'USA');
+```
+
+### Auto-refresh Data
+
+```typescript
+let intervalId: number;
+
+function startAutoRefresh(intervalMs: number = 5000) {
+  intervalId = setInterval(async () => {
+    try {
+      const changes = await fetchDataChanges();
+      api.applyTransaction(changes);
+    } catch (error) {
+      console.error('Failed to refresh:', error);
+    }
+  }, intervalMs);
+}
+
+function stopAutoRefresh() {
+  clearInterval(intervalId);
+}
+
+// Start on grid ready
+const gridOptions: GridOptions = {
+  onGridReady: () => startAutoRefresh(),
+  onGridPreDestroyed: () => stopAutoRefresh()
+};
+```
+
+## TypeScript Support
+
+The API is fully typed. Use generics for type safety:
+
+```typescript
+interface Athlete {
+  id: string;
+  athlete: string;
+  age: number;
+  country: string;
+}
+
+const api: GridApi<Athlete> = createGrid(gridDiv, gridOptions);
+
+// TypeScript knows the type of data
+api.forEachNode(node => {
+  const data: Athlete = node.data;  // Typed!
+  console.log(data.athlete);
+});
+
+const selected: Athlete[] = api.getSelectedRows();  // Typed array
+```
+
+## Best Practices
+
+1. **Store the API reference** - Keep a reference to use throughout your application
+2. **Check isDestroyed()** - Before calling API methods on long-lived references
+3. **Use updateGridOptions()** - Instead of multiple `setGridOption()` calls
+4. **Batch operations** - Use transactions instead of multiple individual updates
+5. **Leverage events** - React to grid events instead of polling the API
+6. **Type your data** - Use TypeScript generics for better IDE support
+
+## Related
+
+- [GridOptions](/concepts/grid-options) - Configure grid behavior
+- [Column Definitions](/concepts/column-definitions) - Column API methods
+- [Row Data](/concepts/row-data) - Row manipulation methods

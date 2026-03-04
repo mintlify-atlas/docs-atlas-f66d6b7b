@@ -1,80 +1,982 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quickstart Guide
+description: Build your first AG Grid in under 5 minutes with this step-by-step quickstart tutorial
 ---
 
-## Get started in three steps
+# Quickstart Guide
 
-Get your documentation site running locally and make your first customization.
-
-### Step 1: Set up your local environment
-
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 2: Deploy your changes
-
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
-
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
-
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 3: Go live
-
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
-
-## Next steps
-
-Now that you have your docs running, explore these key features:
-
-<CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
-</CardGroup>
+This quickstart guide will help you create your first AG Grid in under 5 minutes. We'll build a simple data grid with sorting, filtering, and pagination.
 
 <Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
+This guide uses React for examples, but AG Grid works identically with Angular, Vue, and vanilla JavaScript. Check the tabs for framework-specific code.
 </Note>
+
+## Prerequisites
+
+Before you begin, ensure you have:
+
+- Node.js 18+ installed
+- A package manager (npm, yarn, or pnpm)
+- Basic knowledge of your chosen framework (React, Angular, or Vue)
+
+## Step 1: Create a New Project
+
+<Steps>
+
+### Create your application
+
+If you don't have an existing project, create one using your framework's CLI:
+
+<CodeGroup>
+
+```bash React (Vite)
+npm create vite@latest my-grid-app -- --template react-ts
+cd my-grid-app
+npm install
+```
+
+```bash Angular
+npx @angular/cli new my-grid-app
+cd my-grid-app
+```
+
+```bash Vue (Vite)
+npm create vite@latest my-grid-app -- --template vue-ts
+cd my-grid-app
+npm install
+```
+
+```bash Vanilla (Vite)
+npm create vite@latest my-grid-app -- --template vanilla-ts
+cd my-grid-app
+npm install
+```
+
+</CodeGroup>
+
+### Install AG Grid
+
+Install AG Grid packages for your framework:
+
+<CodeGroup>
+
+```bash React
+npm install ag-grid-react ag-grid-community
+```
+
+```bash Angular
+npm install ag-grid-angular ag-grid-community
+```
+
+```bash Vue
+npm install ag-grid-vue3 ag-grid-community
+```
+
+```bash Vanilla
+npm install ag-grid-community
+```
+
+</CodeGroup>
+
+### Import Required Styles
+
+AG Grid requires two CSS files: structural styles and theme styles.
+
+</Steps>
+
+## Step 2: Create Your First Grid
+
+Let's create a simple grid displaying car data with three columns.
+
+<CodeGroup>
+
+```tsx React
+// src/App.tsx
+import { useState } from 'react';
+import { AgGridReact } from 'ag-grid-react';
+import type { ColDef } from 'ag-grid-community';
+import 'ag-grid-community/styles/ag-grid.css';
+import 'ag-grid-community/styles/ag-theme-quartz.css';
+
+interface CarData {
+  make: string;
+  model: string;
+  price: number;
+  electric: boolean;
+}
+
+function App() {
+  const [rowData] = useState<CarData[]>([
+    { make: 'Tesla', model: 'Model Y', price: 64950, electric: true },
+    { make: 'Ford', model: 'F-Series', price: 33850, electric: false },
+    { make: 'Toyota', model: 'Corolla', price: 29600, electric: false },
+    { make: 'Mercedes', model: 'EQA', price: 48890, electric: true },
+    { make: 'Fiat', model: '500', price: 15774, electric: false },
+    { make: 'Nissan', model: 'Juke', price: 20675, electric: false },
+  ]);
+
+  const [colDefs] = useState<ColDef<CarData>[]>([
+    { field: 'make' },
+    { field: 'model' },
+    { field: 'price' },
+    { field: 'electric' },
+  ]);
+
+  return (
+    <div className="ag-theme-quartz" style={{ height: 500 }}>
+      <AgGridReact
+        rowData={rowData}
+        columnDefs={colDefs}
+      />
+    </div>
+  );
+}
+
+export default App;
+```
+
+```typescript Angular
+// src/app/app.component.ts
+import { Component } from '@angular/core';
+import { AgGridAngular } from 'ag-grid-angular';
+import type { ColDef } from 'ag-grid-community';
+import 'ag-grid-community/styles/ag-grid.css';
+import 'ag-grid-community/styles/ag-theme-quartz.css';
+
+interface CarData {
+  make: string;
+  model: string;
+  price: number;
+  electric: boolean;
+}
+
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [AgGridAngular],
+  template: `
+    <ag-grid-angular
+      class="ag-theme-quartz"
+      style="height: 500px"
+      [rowData]="rowData"
+      [columnDefs]="columnDefs">
+    </ag-grid-angular>
+  `
+})
+export class AppComponent {
+  rowData: CarData[] = [
+    { make: 'Tesla', model: 'Model Y', price: 64950, electric: true },
+    { make: 'Ford', model: 'F-Series', price: 33850, electric: false },
+    { make: 'Toyota', model: 'Corolla', price: 29600, electric: false },
+    { make: 'Mercedes', model: 'EQA', price: 48890, electric: true },
+    { make: 'Fiat', model: '500', price: 15774, electric: false },
+    { make: 'Nissan', model: 'Juke', price: 20675, electric: false },
+  ];
+
+  columnDefs: ColDef<CarData>[] = [
+    { field: 'make' },
+    { field: 'model' },
+    { field: 'price' },
+    { field: 'electric' },
+  ];
+}
+```
+
+```vue Vue
+<!-- src/App.vue -->
+<template>
+  <ag-grid-vue
+    class="ag-theme-quartz"
+    style="height: 500px"
+    :rowData="rowData"
+    :columnDefs="columnDefs">
+  </ag-grid-vue>
+</template>
+
+<script setup lang="ts">
+import { ref } from 'vue';
+import { AgGridVue } from 'ag-grid-vue3';
+import type { ColDef } from 'ag-grid-community';
+import 'ag-grid-community/styles/ag-grid.css';
+import 'ag-grid-community/styles/ag-theme-quartz.css';
+
+interface CarData {
+  make: string;
+  model: string;
+  price: number;
+  electric: boolean;
+}
+
+const rowData = ref<CarData[]>([
+  { make: 'Tesla', model: 'Model Y', price: 64950, electric: true },
+  { make: 'Ford', model: 'F-Series', price: 33850, electric: false },
+  { make: 'Toyota', model: 'Corolla', price: 29600, electric: false },
+  { make: 'Mercedes', model: 'EQA', price: 48890, electric: true },
+  { make: 'Fiat', model: '500', price: 15774, electric: false },
+  { make: 'Nissan', model: 'Juke', price: 20675, electric: false },
+]);
+
+const columnDefs = ref<ColDef<CarData>[]>([
+  { field: 'make' },
+  { field: 'model' },
+  { field: 'price' },
+  { field: 'electric' },
+]);
+</script>
+```
+
+```typescript Vanilla
+// src/main.ts
+import { createGrid, GridOptions } from 'ag-grid-community';
+import 'ag-grid-community/styles/ag-grid.css';
+import 'ag-grid-community/styles/ag-theme-quartz.css';
+
+interface CarData {
+  make: string;
+  model: string;
+  price: number;
+  electric: boolean;
+}
+
+const gridOptions: GridOptions<CarData> = {
+  rowData: [
+    { make: 'Tesla', model: 'Model Y', price: 64950, electric: true },
+    { make: 'Ford', model: 'F-Series', price: 33850, electric: false },
+    { make: 'Toyota', model: 'Corolla', price: 29600, electric: false },
+    { make: 'Mercedes', model: 'EQA', price: 48890, electric: true },
+    { make: 'Fiat', model: '500', price: 15774, electric: false },
+    { make: 'Nissan', model: 'Juke', price: 20675, electric: false },
+  ],
+  columnDefs: [
+    { field: 'make' },
+    { field: 'model' },
+    { field: 'price' },
+    { field: 'electric' },
+  ],
+};
+
+const gridDiv = document.querySelector<HTMLElement>('#myGrid')!;
+const api = createGrid(gridDiv, gridOptions);
+```
+
+</CodeGroup>
+
+<Tip>
+The `ag-theme-quartz` class applies the Quartz theme. AG Grid includes four themes: Quartz, Alpine, Balham, and Material. Each is available in light and dark variants.
+</Tip>
+
+## Step 3: Add Sorting and Filtering
+
+Enable sorting and filtering by adding `defaultColDef`:
+
+<CodeGroup>
+
+```tsx React
+import { useState, useMemo } from 'react';
+import { AgGridReact } from 'ag-grid-react';
+import type { ColDef } from 'ag-grid-community';
+
+function App() {
+  const [rowData] = useState([/* ... */]);
+  const [colDefs] = useState<ColDef[]>([/* ... */]);
+
+  // Default column configuration
+  const defaultColDef = useMemo<ColDef>(() => ({
+    sortable: true,
+    filter: true,
+    resizable: true,
+  }), []);
+
+  return (
+    <div className="ag-theme-quartz" style={{ height: 500 }}>
+      <AgGridReact
+        rowData={rowData}
+        columnDefs={colDefs}
+        defaultColDef={defaultColDef}
+      />
+    </div>
+  );
+}
+```
+
+```typescript Angular
+@Component({
+  // ...
+  template: `
+    <ag-grid-angular
+      class="ag-theme-quartz"
+      style="height: 500px"
+      [rowData]="rowData"
+      [columnDefs]="columnDefs"
+      [defaultColDef]="defaultColDef">
+    </ag-grid-angular>
+  `
+})
+export class AppComponent {
+  rowData = [/* ... */];
+  columnDefs = [/* ... */];
+
+  defaultColDef: ColDef = {
+    sortable: true,
+    filter: true,
+    resizable: true,
+  };
+}
+```
+
+```vue Vue
+<template>
+  <ag-grid-vue
+    class="ag-theme-quartz"
+    style="height: 500px"
+    :rowData="rowData"
+    :columnDefs="columnDefs"
+    :defaultColDef="defaultColDef">
+  </ag-grid-vue>
+</template>
+
+<script setup lang="ts">
+import { ref } from 'vue';
+
+const rowData = ref([/* ... */]);
+const columnDefs = ref([/* ... */]);
+
+const defaultColDef = ref<ColDef>({
+  sortable: true,
+  filter: true,
+  resizable: true,
+});
+</script>
+```
+
+```typescript Vanilla
+const gridOptions: GridOptions = {
+  rowData: [/* ... */],
+  columnDefs: [/* ... */],
+  defaultColDef: {
+    sortable: true,
+    filter: true,
+    resizable: true,
+  },
+};
+```
+
+</CodeGroup>
+
+<Note>
+Click column headers to sort. Click the menu icon (≡) in the header to access filters.
+</Note>
+
+## Step 4: Add Pagination
+
+Enable pagination to handle large datasets:
+
+<CodeGroup>
+
+```tsx React
+<AgGridReact
+  rowData={rowData}
+  columnDefs={colDefs}
+  defaultColDef={defaultColDef}
+  pagination={true}
+  paginationPageSize={10}
+  paginationPageSizeSelector={[10, 25, 50]}
+/>
+```
+
+```typescript Angular
+<ag-grid-angular
+  class="ag-theme-quartz"
+  style="height: 500px"
+  [rowData]="rowData"
+  [columnDefs]="columnDefs"
+  [defaultColDef]="defaultColDef"
+  [pagination]="true"
+  [paginationPageSize]="10"
+  [paginationPageSizeSelector]="[10, 25, 50]">
+</ag-grid-angular>
+```
+
+```vue Vue
+<ag-grid-vue
+  class="ag-theme-quartz"
+  style="height: 500px"
+  :rowData="rowData"
+  :columnDefs="columnDefs"
+  :defaultColDef="defaultColDef"
+  :pagination="true"
+  :paginationPageSize="10"
+  :paginationPageSizeSelector="[10, 25, 50]">
+</ag-grid-vue>
+```
+
+```typescript Vanilla
+const gridOptions: GridOptions = {
+  // ... other options
+  pagination: true,
+  paginationPageSize: 10,
+  paginationPageSizeSelector: [10, 25, 50],
+};
+```
+
+</CodeGroup>
+
+## Step 5: Customize Columns
+
+Add custom formatting and column-specific settings:
+
+<CodeGroup>
+
+```tsx React
+const [colDefs] = useState<ColDef<CarData>[]>([
+  {
+    field: 'make',
+    headerName: 'Manufacturer',
+    flex: 1,
+  },
+  {
+    field: 'model',
+    flex: 1,
+  },
+  {
+    field: 'price',
+    valueFormatter: (params) => {
+      return '$' + params.value.toLocaleString();
+    },
+    filter: 'agNumberColumnFilter',
+    flex: 1,
+  },
+  {
+    field: 'electric',
+    cellRenderer: (params: any) => {
+      return params.value ? '⚡ Yes' : 'No';
+    },
+    filter: 'agSetColumnFilter',
+  },
+]);
+```
+
+```typescript Angular
+columnDefs: ColDef<CarData>[] = [
+  {
+    field: 'make',
+    headerName: 'Manufacturer',
+    flex: 1,
+  },
+  {
+    field: 'model',
+    flex: 1,
+  },
+  {
+    field: 'price',
+    valueFormatter: (params) => {
+      return '$' + params.value.toLocaleString();
+    },
+    filter: 'agNumberColumnFilter',
+    flex: 1,
+  },
+  {
+    field: 'electric',
+    cellRenderer: (params: any) => {
+      return params.value ? '⚡ Yes' : 'No';
+    },
+    filter: 'agSetColumnFilter',
+  },
+];
+```
+
+```vue Vue
+const columnDefs = ref<ColDef<CarData>[]>([
+  {
+    field: 'make',
+    headerName: 'Manufacturer',
+    flex: 1,
+  },
+  {
+    field: 'model',
+    flex: 1,
+  },
+  {
+    field: 'price',
+    valueFormatter: (params) => {
+      return '$' + params.value.toLocaleString();
+    },
+    filter: 'agNumberColumnFilter',
+    flex: 1,
+  },
+  {
+    field: 'electric',
+    cellRenderer: (params: any) => {
+      return params.value ? '⚡ Yes' : 'No';
+    },
+    filter: 'agSetColumnFilter',
+  },
+]);
+```
+
+```typescript Vanilla
+const gridOptions: GridOptions<CarData> = {
+  columnDefs: [
+    {
+      field: 'make',
+      headerName: 'Manufacturer',
+      flex: 1,
+    },
+    {
+      field: 'model',
+      flex: 1,
+    },
+    {
+      field: 'price',
+      valueFormatter: (params) => {
+        return '$' + params.value.toLocaleString();
+      },
+      filter: 'agNumberColumnFilter',
+      flex: 1,
+    },
+    {
+      field: 'electric',
+      cellRenderer: (params) => {
+        return params.value ? '⚡ Yes' : 'No';
+      },
+      filter: 'agSetColumnFilter',
+    },
+  ],
+  // ... other options
+};
+```
+
+</CodeGroup>
+
+<Tip>
+The `flex` property makes columns responsive. A flex value of 1 distributes available space equally among columns.
+</Tip>
+
+## Step 6: Load Data from API
+
+Fetch data from an external API:
+
+<CodeGroup>
+
+```tsx React
+import { useState, useEffect } from 'react';
+import { AgGridReact } from 'ag-grid-react';
+
+function App() {
+  const [rowData, setRowData] = useState([]);
+  const [colDefs] = useState([/* ... */]);
+
+  useEffect(() => {
+    fetch('https://www.ag-grid.com/example-assets/olympic-winners.json')
+      .then(response => response.json())
+      .then(data => setRowData(data));
+  }, []);
+
+  return (
+    <div className="ag-theme-quartz" style={{ height: 500 }}>
+      <AgGridReact
+        rowData={rowData}
+        columnDefs={colDefs}
+        defaultColDef={{ sortable: true, filter: true }}
+      />
+    </div>
+  );
+}
+```
+
+```typescript Angular
+import { OnInit } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+
+@Component({
+  // ...
+})
+export class AppComponent implements OnInit {
+  rowData: any[] = [];
+  columnDefs = [/* ... */];
+
+  constructor(private http: HttpClient) {}
+
+  ngOnInit() {
+    this.http
+      .get('https://www.ag-grid.com/example-assets/olympic-winners.json')
+      .subscribe(data => this.rowData = data);
+  }
+}
+```
+
+```vue Vue
+<script setup lang="ts">
+import { ref, onMounted } from 'vue';
+
+const rowData = ref([]);
+const columnDefs = ref([/* ... */]);
+
+onMounted(() => {
+  fetch('https://www.ag-grid.com/example-assets/olympic-winners.json')
+    .then(response => response.json())
+    .then(data => rowData.value = data);
+});
+</script>
+```
+
+```typescript Vanilla
+const gridOptions: GridOptions = {
+  columnDefs: [/* ... */],
+  rowData: [],
+};
+
+const gridDiv = document.querySelector('#myGrid')!;
+const api = createGrid(gridDiv, gridOptions);
+
+fetch('https://www.ag-grid.com/example-assets/olympic-winners.json')
+  .then(response => response.json())
+  .then(data => api.setGridOption('rowData', data));
+```
+
+</CodeGroup>
+
+## Step 7: Access Grid API
+
+Use the Grid API to interact with the grid programmatically:
+
+<CodeGroup>
+
+```tsx React
+import { useRef } from 'react';
+import { AgGridReact } from 'ag-grid-react';
+import type { GridApi } from 'ag-grid-community';
+
+function App() {
+  const gridRef = useRef<AgGridReact>(null);
+
+  const onExportClick = () => {
+    gridRef.current?.api.exportDataAsCsv();
+  };
+
+  const onClearFilters = () => {
+    gridRef.current?.api.setFilterModel(null);
+  };
+
+  return (
+    <div>
+      <div style={{ marginBottom: 10 }}>
+        <button onClick={onExportClick}>Export CSV</button>
+        <button onClick={onClearFilters}>Clear Filters</button>
+      </div>
+      <div className="ag-theme-quartz" style={{ height: 500 }}>
+        <AgGridReact
+          ref={gridRef}
+          rowData={rowData}
+          columnDefs={colDefs}
+        />
+      </div>
+    </div>
+  );
+}
+```
+
+```typescript Angular
+import { ViewChild } from '@angular/core';
+import { AgGridAngular } from 'ag-grid-angular';
+
+@Component({
+  // ...
+  template: `
+    <div>
+      <button (click)="onExportClick()">Export CSV</button>
+      <button (click)="onClearFilters()">Clear Filters</button>
+    </div>
+    <ag-grid-angular
+      #agGrid
+      class="ag-theme-quartz"
+      style="height: 500px"
+      [rowData]="rowData"
+      [columnDefs]="columnDefs">
+    </ag-grid-angular>
+  `
+})
+export class AppComponent {
+  @ViewChild('agGrid') agGrid!: AgGridAngular;
+
+  onExportClick() {
+    this.agGrid.api.exportDataAsCsv();
+  }
+
+  onClearFilters() {
+    this.agGrid.api.setFilterModel(null);
+  }
+}
+```
+
+```vue Vue
+<template>
+  <div>
+    <div style="margin-bottom: 10px">
+      <button @click="onExportClick">Export CSV</button>
+      <button @click="onClearFilters">Clear Filters</button>
+    </div>
+    <ag-grid-vue
+      ref="gridRef"
+      class="ag-theme-quartz"
+      style="height: 500px"
+      :rowData="rowData"
+      :columnDefs="columnDefs">
+    </ag-grid-vue>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref } from 'vue';
+import { AgGridVue } from 'ag-grid-vue3';
+
+const gridRef = ref<InstanceType<typeof AgGridVue>>();
+
+const onExportClick = () => {
+  gridRef.value?.api.exportDataAsCsv();
+};
+
+const onClearFilters = () => {
+  gridRef.value?.api.setFilterModel(null);
+};
+</script>
+```
+
+```typescript Vanilla
+const gridDiv = document.querySelector('#myGrid')!;
+const api = createGrid(gridDiv, gridOptions);
+
+// Export button handler
+document.querySelector('#exportBtn')?.addEventListener('click', () => {
+  api.exportDataAsCsv();
+});
+
+// Clear filters button handler
+document.querySelector('#clearFiltersBtn')?.addEventListener('click', () => {
+  api.setFilterModel(null);
+});
+```
+
+</CodeGroup>
+
+<Note>
+The Grid API provides 100+ methods for controlling the grid programmatically. See the [API Reference](/api-reference/grid-api) for the complete list.
+</Note>
+
+## Complete Example
+
+Here's a complete example with all features:
+
+<CodeGroup>
+
+```tsx React
+import { useState, useMemo, useRef, useEffect } from 'react';
+import { AgGridReact } from 'ag-grid-react';
+import type { ColDef } from 'ag-grid-community';
+import 'ag-grid-community/styles/ag-grid.css';
+import 'ag-grid-community/styles/ag-theme-quartz.css';
+
+interface CarData {
+  make: string;
+  model: string;
+  price: number;
+  electric: boolean;
+}
+
+function App() {
+  const gridRef = useRef<AgGridReact>(null);
+  const [rowData, setRowData] = useState<CarData[]>([
+    { make: 'Tesla', model: 'Model Y', price: 64950, electric: true },
+    { make: 'Ford', model: 'F-Series', price: 33850, electric: false },
+    { make: 'Toyota', model: 'Corolla', price: 29600, electric: false },
+    { make: 'Mercedes', model: 'EQA', price: 48890, electric: true },
+    { make: 'Fiat', model: '500', price: 15774, electric: false },
+    { make: 'Nissan', model: 'Juke', price: 20675, electric: false },
+  ]);
+
+  const columnDefs = useMemo<ColDef<CarData>[]>(() => [
+    {
+      field: 'make',
+      headerName: 'Manufacturer',
+      flex: 1,
+    },
+    {
+      field: 'model',
+      flex: 1,
+    },
+    {
+      field: 'price',
+      valueFormatter: (params) => '$' + params.value.toLocaleString(),
+      filter: 'agNumberColumnFilter',
+      flex: 1,
+    },
+    {
+      field: 'electric',
+      cellRenderer: (params: any) => params.value ? '⚡ Yes' : 'No',
+    },
+  ], []);
+
+  const defaultColDef = useMemo<ColDef>(() => ({
+    sortable: true,
+    filter: true,
+    resizable: true,
+  }), []);
+
+  const onExportClick = () => {
+    gridRef.current?.api.exportDataAsCsv();
+  };
+
+  return (
+    <div style={{ padding: 20 }}>
+      <h1>AG Grid Quickstart</h1>
+      <div style={{ marginBottom: 10 }}>
+        <button onClick={onExportClick}>Export to CSV</button>
+      </div>
+      <div className="ag-theme-quartz" style={{ height: 400, width: '100%' }}>
+        <AgGridReact
+          ref={gridRef}
+          rowData={rowData}
+          columnDefs={columnDefs}
+          defaultColDef={defaultColDef}
+          pagination={true}
+          paginationPageSize={10}
+        />
+      </div>
+    </div>
+  );
+}
+
+export default App;
+```
+
+</CodeGroup>
+
+## What's Next?
+
+Now that you have a working grid, explore these features:
+
+<CardGroup cols={2}>
+  <Card title="Column Definitions" icon="table-columns" href="/concepts/column-definitions">
+    Learn about advanced column configuration and types
+  </Card>
+  <Card title="Row Selection" icon="check-square" href="/concepts/row-selection">
+    Enable row and cell selection in your grid
+  </Card>
+  <Card title="Cell Editing" icon="pen" href="/concepts/cell-editing">
+    Make your grid editable with inline cell editors
+  </Card>
+  <Card title="Custom Components" icon="puzzle-piece" href="/concepts/custom-components">
+    Create custom cell renderers and editors
+  </Card>
+  <Card title="Themes" icon="palette" href="/concepts/themes">
+    Customize the appearance with themes and CSS
+  </Card>
+  <Card title="Grid API" icon="code" href="/api-reference/grid-api">
+    Explore all Grid API methods and events
+  </Card>
+</CardGroup>
+
+## Common Next Steps
+
+### Enable Cell Editing
+
+Make cells editable:
+
+```typescript
+const defaultColDef = {
+  editable: true,
+  // ... other defaults
+};
+```
+
+### Add Row Selection
+
+Enable row selection:
+
+```typescript
+<AgGridReact
+  rowSelection="multiple"
+  onSelectionChanged={(event) => {
+    console.log('Selected rows:', event.api.getSelectedRows());
+  }}
+  // ... other props
+/>
+```
+
+### Implement Server-Side Sorting and Filtering
+
+For large datasets, implement server-side operations:
+
+```typescript
+const gridOptions: GridOptions = {
+  rowModelType: 'serverSide',
+  serverSideDatasource: {
+    getRows: (params) => {
+      // Fetch data from server with params.request
+      fetch(`/api/data?${buildQueryString(params.request)}`)
+        .then(response => response.json())
+        .then(data => params.success({
+          rowData: data.rows,
+          rowCount: data.totalCount,
+        }));
+    }
+  },
+};
+```
+
+<Warning>
+Server-Side Row Model is an Enterprise feature. You'll need an Enterprise license to use it.
+</Warning>
+
+## Troubleshooting
+
+### Grid not showing
+
+Ensure:
+1. Both CSS files are imported
+2. Container has a defined height
+3. Theme class is applied to container
+
+### Columns not sizing correctly
+
+Use `flex` for responsive columns or set explicit `width`:
+
+```typescript
+columnDefs: [
+  { field: 'make', flex: 1 },      // Takes available space
+  { field: 'model', width: 200 },  // Fixed width
+]
+```
+
+### TypeScript errors
+
+Ensure your row data interface matches your column definitions:
+
+```typescript
+interface MyData {
+  make: string;
+  model: string;
+}
+
+const colDefs: ColDef<MyData>[] = [
+  { field: 'make' },  // TypeScript knows this is valid
+  { field: 'price' }, // TypeScript error: property doesn't exist
+];
+```
+
+## Get Help
+
+<CardGroup cols={2}>
+  <Card title="Stack Overflow" icon="stack-overflow" href="https://stackoverflow.com/questions/tagged/ag-grid">
+    Ask questions with the ag-grid tag
+  </Card>
+  <Card title="GitHub Issues" icon="github" href="https://github.com/ag-grid/ag-grid/issues">
+    Report bugs or request features
+  </Card>
+  <Card title="Documentation" icon="book" href="/">
+    Browse the complete documentation
+  </Card>
+  <Card title="Examples" icon="code" href="https://www.ag-grid.com/example">
+    Explore interactive examples
+  </Card>
+</CardGroup>

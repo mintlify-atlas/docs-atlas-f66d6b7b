@@ -1,0 +1,510 @@
+---
+title: ColDef Interface
+description: Complete reference for the ColDef interface used to define columns in AG Grid
+---
+
+The `ColDef` interface is used to define the configuration for individual columns in AG Grid. It combines display properties, behavior settings, and event handlers.
+
+## Overview
+
+Column definitions are provided via the `columnDefs` property in GridOptions:
+
+```javascript
+const gridOptions = {
+  columnDefs: [
+    {
+      field: 'name',
+      headerName: 'Full Name',
+      sortable: true,
+      filter: true,
+      editable: true,
+      cellRenderer: params => `<b>${params.value}</b>`
+    },
+    {
+      field: 'age',
+      type: 'numericColumn',
+      filter: 'agNumberColumnFilter'
+    }
+  ]
+};
+```
+
+## Core Interface
+
+### ColDef Interface
+
+```typescript
+interface ColDef<TData = any, TValue = any> extends AbstractColDef<TData, TValue>, IFilterDef {
+  // Column identification
+  colId?: string;
+  field?: ColDefField<TData, TValue>;
+  
+  // Display
+  headerName?: string;
+  hide?: boolean | null;
+  width?: number;
+  
+  // Behavior
+  sortable?: boolean;
+  filter?: any;
+  editable?: boolean | EditableCallback<TData, TValue>;
+  
+  // Rendering
+  cellRenderer?: any;
+  cellEditor?: any;
+  
+  // ... and many more properties
+}
+```
+
+## Column Identification
+
+<ParamField path="colId" type="string">
+  The unique ID to give the column. This is optional. If missing, the ID will default to the field. If both field and colId are missing, a unique ID will be generated. This ID is used to identify the column in the API for sorting, filtering etc.
+  
+  ```javascript
+  { colId: 'uniqueColumnId', headerName: 'My Column' }
+  ```
+</ParamField>
+
+<ParamField path="field" type="ColDefField<TData, TValue>">
+  The field of the row object to get the cell's data from. Deep references into a row object is supported via dot notation, i.e `'address.firstLine'`.
+  
+  ```javascript
+  { field: 'user.name' }
+  { field: 'scores.0' } // array index access
+  ```
+</ParamField>
+
+## Column Types
+
+<ParamField path="type" type="string | string[]">
+  A comma separated string or array of strings containing `ColumnType` keys which can be used as a template for a column.
+  
+  ```javascript
+  // Single type
+  { field: 'age', type: 'numericColumn' }
+  
+  // Multiple types
+  { field: 'date', type: ['dateColumn', 'editableColumn'] }
+  ```
+</ParamField>
+
+Define reusable column types in `columnTypes`:
+
+```javascript
+const gridOptions = {
+  columnTypes: {
+    numericColumn: {
+      width: 100,
+      filter: 'agNumberColumnFilter',
+      cellStyle: { textAlign: 'right' }
+    },
+    dateColumn: {
+      filter: 'agDateColumnFilter',
+      valueFormatter: params => new Date(params.value).toLocaleDateString()
+    }
+  },
+  columnDefs: [
+    { field: 'age', type: 'numericColumn' },
+    { field: 'birthDate', type: 'dateColumn' }
+  ]
+};
+```
+
+## Value Handling
+
+<Accordion title="Value Getters and Formatters">
+
+<ParamField path="valueGetter" type="string | ValueGetterFunc<TData, TValue>">
+  Function or expression. Gets the value from your data for display.
+  
+  **Parameters:**
+  - `params.data`: The row data
+  - `params.node`: The row node
+  - `params.getValue(field)`: Utility to get other column values
+  
+  ```javascript
+  {
+    headerName: 'Full Name',
+    valueGetter: params => {
+      return params.data.firstName + ' ' + params.data.lastName;
+    }
+  }
+  ```
+</ParamField>
+
+<ParamField path="valueFormatter" type="string | ValueFormatterFunc<TData, TValue>">
+  A function or expression to format a value, should return a string.
+  
+  ```javascript
+  {
+    field: 'price',
+    valueFormatter: params => {
+      return params.value == null ? '' : '$' + params.value.toFixed(2);
+    }
+  }
+  ```
+</ParamField>
+
+<ParamField path="valueSetter" type="string | ValueSetterFunc<TData, TValue>">
+  Function or expression. Sets the value into your data for saving. Return `true` if the data changed.
+  
+  ```javascript
+  {
+    field: 'price',
+    valueSetter: params => {
+      const newValue = parseFloat(params.newValue);
+      if (!isNaN(newValue) && newValue >= 0) {
+        params.data.price = newValue;
+        return true; // data changed
+      }
+      return false; // data not changed
+    }
+  }
+  ```
+</ParamField>
+
+<ParamField path="valueParser" type="string | ValueParserFunc<TData, TValue>">
+  Function or expression. Parses the value for saving.
+  
+  ```javascript
+  {
+    field: 'quantity',
+    editable: true,
+    valueParser: params => Number(params.newValue)
+  }
+  ```
+</ParamField>
+
+</Accordion>
+
+## Cell Rendering
+
+<ParamField path="cellRenderer" type="any">
+  Provide your own cell Renderer component for this column's cells. See [Cell Renderer](/api/cell-renderer) for framework specific implementation details.
+  
+  ```javascript
+  // String reference to built-in renderer
+  { field: 'value', cellRenderer: 'agAnimateShowChangeCellRenderer' }
+  
+  // Function renderer
+  {
+    field: 'status',
+    cellRenderer: params => {
+      return `<span class="status-${params.value}">${params.value}</span>`;
+    }
+  }
+  
+  // Component renderer
+  { field: 'actions', cellRenderer: ActionsCellRenderer }
+  ```
+</ParamField>
+
+<ParamField path="cellRendererParams" type="any">
+  Params to be passed to the `cellRenderer` component.
+  
+  ```javascript
+  {
+    field: 'actions',
+    cellRenderer: ActionsCellRenderer,
+    cellRendererParams: {
+      onEdit: (data) => console.log('Edit', data),
+      onDelete: (data) => console.log('Delete', data)
+    }
+  }
+  ```
+</ParamField>
+
+<ParamField path="cellRendererSelector" type="CellRendererSelectorFunc<TData, TValue>">
+  Callback to select which cell renderer to be used for a given row within the same column.
+  
+  ```javascript
+  {
+    field: 'content',
+    cellRendererSelector: params => {
+      if (params.data.type === 'image') {
+        return { component: ImageRenderer };
+      }
+      return { component: TextRenderer };
+    }
+  }
+  ```
+</ParamField>
+
+## Cell Editing
+
+<ParamField path="editable" type="boolean | EditableCallback<TData, TValue>" default="false">
+  Set to `true` if this column is editable, otherwise `false`. Can also be a function to have different rows editable.
+  
+  ```javascript
+  // All rows editable
+  { field: 'name', editable: true }
+  
+  // Conditional editing
+  {
+    field: 'price',
+    editable: params => params.data.status === 'draft'
+  }
+  ```
+</ParamField>
+
+<ParamField path="cellEditor" type="any">
+  Provide your own cell editor component for this column's cells. See [Cell Editor](/api/cell-editor) for details.
+  
+  ```javascript
+  // Built-in editors
+  { field: 'country', editable: true, cellEditor: 'agSelectCellEditor' }
+  { field: 'notes', editable: true, cellEditor: 'agLargeTextCellEditor' }
+  
+  // Custom editor
+  { field: 'rating', editable: true, cellEditor: CustomRatingEditor }
+  ```
+</ParamField>
+
+<ParamField path="cellEditorParams" type="any">
+  Params to be passed to the `cellEditor` component.
+  
+  ```javascript
+  {
+    field: 'status',
+    editable: true,
+    cellEditor: 'agSelectCellEditor',
+    cellEditorParams: {
+      values: ['Active', 'Inactive', 'Pending']
+    }
+  }
+  ```
+</ParamField>
+
+## Sorting
+
+<ParamField path="sortable" type="boolean" default="true">
+  Set to `false` to disable sorting which is enabled by default.
+  
+  ```javascript
+  { field: 'actions', sortable: false }
+  ```
+</ParamField>
+
+<ParamField path="comparator" type="SortComparatorFn<TData, TValue>">
+  Override the default sorting order by providing a custom sort comparator.
+  
+  **Parameters:**
+  - `valueA`, `valueB`: The values to compare
+  - `nodeA`, `nodeB`: The corresponding RowNodes
+  - `isDescending`: `true` if sort direction is `desc`
+  
+  **Returns:**
+  - `0`: valueA is the same as valueB
+  - `> 0`: Sort valueA after valueB
+  - `< 0`: Sort valueA before valueB
+  
+  ```javascript
+  {
+    field: 'name',
+    comparator: (valueA, valueB) => {
+      return valueA.toLowerCase().localeCompare(valueB.toLowerCase());
+    }
+  }
+  ```
+</ParamField>
+
+## Filtering
+
+<ParamField path="filter" type="any">
+  Filter to use for this column.
+  - Set to `true` to use the default filter.
+  - Set to the name of a provided filter: `'agNumberColumnFilter'`, `'agTextColumnFilter'`, `'agDateColumnFilter'`, `'agSetColumnFilter'`.
+  - Set to a custom filter component.
+  
+  ```javascript
+  { field: 'name', filter: 'agTextColumnFilter' }
+  { field: 'age', filter: 'agNumberColumnFilter' }
+  { field: 'date', filter: 'agDateColumnFilter' }
+  { field: 'custom', filter: MyCustomFilter }
+  ```
+</ParamField>
+
+<ParamField path="filterParams" type="any">
+  Params to be passed to the filter component specified in `filter`.
+  
+  ```javascript
+  {
+    field: 'age',
+    filter: 'agNumberColumnFilter',
+    filterParams: {
+      buttons: ['apply', 'reset'],
+      closeOnApply: true,
+      maxNumConditions: 2
+    }
+  }
+  ```
+</ParamField>
+
+<ParamField path="floatingFilter" type="boolean" default="false">
+  Whether to display a floating filter for this column.
+  
+  ```javascript
+  { field: 'name', filter: true, floatingFilter: true }
+  ```
+</ParamField>
+
+## Styling
+
+<ParamField path="cellClass" type="string | string[] | CellClassFunc<TData, TValue>">
+  Class to use for the cell. Can be string, array of strings, or function that returns a string or array of strings.
+  
+  **Module:** `CellStyleModule`
+  
+  ```javascript
+  // Static class
+  { field: 'status', cellClass: 'status-cell' }
+  
+  // Multiple classes
+  { field: 'priority', cellClass: ['cell', 'priority-cell'] }
+  
+  // Dynamic classes
+  {
+    field: 'value',
+    cellClass: params => {
+      if (params.value < 0) return 'negative';
+      if (params.value > 0) return 'positive';
+      return 'zero';
+    }
+  }
+  ```
+</ParamField>
+
+<ParamField path="cellStyle" type="CellStyle | CellStyleFunc<TData, TValue>">
+  An object of CSS values / or function returning an object of CSS values for a particular cell.
+  
+  **Module:** `CellStyleModule`
+  
+  ```javascript
+  {
+    field: 'value',
+    cellStyle: params => {
+      if (params.value < 0) {
+        return { color: 'red', fontWeight: 'bold' };
+      }
+      return { color: 'green' };
+    }
+  }
+  ```
+</ParamField>
+
+<ParamField path="cellClassRules" type="CellClassRules<TData, TValue>">
+  Rules which can be applied to include certain CSS classes.
+  
+  **Module:** `CellStyleModule`
+  
+  ```javascript
+  {
+    field: 'age',
+    cellClassRules: {
+      'rag-green': params => params.value >= 18,
+      'rag-amber': params => params.value >= 12 && params.value < 18,
+      'rag-red': params => params.value < 12
+    }
+  }
+  ```
+</ParamField>
+
+## Events
+
+<ParamField path="onCellValueChanged" type="(event: NewValueParams<TData, TValue>) => void">
+  Callback for after the value of a cell has changed, either due to editing or the application calling `api.setValue()`.
+  
+  ```javascript
+  {
+    field: 'price',
+    editable: true,
+    onCellValueChanged: event => {
+      console.log('Price changed from', event.oldValue, 'to', event.newValue);
+    }
+  }
+  ```
+</ParamField>
+
+<ParamField path="onCellClicked" type="(event: CellClickedEvent<TData, TValue>) => void">
+  Callback called when a cell is clicked.
+  
+  ```javascript
+  {
+    field: 'actions',
+    onCellClicked: event => {
+      console.log('Cell clicked:', event.data);
+    }
+  }
+  ```
+</ParamField>
+
+## Column Groups
+
+### ColGroupDef Interface
+
+```typescript
+interface ColGroupDef<TData = any> extends AbstractColDef<TData> {
+  children: (ColDef<TData> | ColGroupDef<TData>)[];
+  groupId?: string;
+  openByDefault?: boolean;
+  marryChildren?: boolean;
+}
+```
+
+<ParamField path="children" type="(ColDef<TData> | ColGroupDef<TData>)[]">
+  A list containing a mix of columns and column groups.
+  
+  ```javascript
+  {
+    headerName: 'User Details',
+    children: [
+      { field: 'firstName' },
+      { field: 'lastName' },
+      { field: 'email' }
+    ]
+  }
+  ```
+</ParamField>
+
+<ParamField path="groupId" type="string">
+  The unique ID to give the column group. This is optional. If missing, a unique ID will be generated.
+  
+  ```javascript
+  {
+    groupId: 'userGroup',
+    headerName: 'User',
+    children: [...]
+  }
+  ```
+</ParamField>
+
+<ParamField path="marryChildren" type="boolean" default="false">
+  Set to `true` to keep columns in this group beside each other in the grid. Moving the columns outside of the group (and hence breaking the group) is not allowed.
+  
+  ```javascript
+  {
+    headerName: 'Name',
+    marryChildren: true,
+    children: [
+      { field: 'firstName' },
+      { field: 'lastName' }
+    ]
+  }
+  ```
+</ParamField>
+
+## Related APIs
+
+<Card title="Column Properties" icon="sliders" href="/api/column-properties">
+  Detailed property reference
+</Card>
+
+<Card title="GridOptions" icon="gear" href="/api/grid-options">
+  Grid-level configuration
+</Card>
+
+<Card title="Cell Renderer" icon="code" href="/api/cell-renderer">
+  Custom cell rendering
+</Card>

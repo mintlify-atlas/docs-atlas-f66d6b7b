@@ -1,0 +1,725 @@
+---
+title: 'Cell Renderers'
+description: 'Create custom cell renderer components to control how cell values are displayed'
+icon: 'eye'
+---
+
+## Overview
+
+Cell Renderers allow you to customize how cell values are displayed in the grid without entering edit mode. Use cell renderers to:
+
+- Format and display complex data structures
+- Add icons, images, and rich HTML content
+- Create interactive elements like buttons and links
+- Display progress bars, charts, and custom visualizations
+- Implement conditional formatting and styling
+
+<Note>
+Cell renderers are read-only components. For editable cells, use [Cell Editors](/customization/cell-editors) instead.
+</Note>
+
+## ICellRendererParams Interface
+
+The grid provides cell renderers with a params object containing all necessary information:
+
+```typescript
+interface ICellRendererParams<TData = any, TValue = any, TContext = any> 
+  extends AgGridCommon<TData, TContext> {
+  /** Value to be rendered */
+  value: TValue | null | undefined;
+  
+  /** Formatted value (if valueFormatter is defined) */
+  valueFormatted: string | null | undefined;
+  
+  /** True if this is a full width row */
+  fullWidth?: boolean;
+  
+  /** Pinned state of the cell ('left', 'right', or null) */
+  pinned?: 'left' | 'right' | null;
+  
+  /** The row's data (can be undefined for row grouping) */
+  data: TData | undefined;
+  
+  /** The row node */
+  node: IRowNode<TData>;
+  
+  /** The cell's column definition */
+  colDef?: ColDef<TData, TValue>;
+  
+  /** The cell's column */
+  column?: Column<TValue>;
+  
+  /** The grid's cell DOM element */
+  eGridCell: HTMLElement;
+  
+  /** Parent DOM element for the cell renderer */
+  eParentOfValue: HTMLElement;
+  
+  /** Get the most recent value */
+  getValue?: () => TValue | null | undefined;
+  
+  /** Set the cell value */
+  setValue?: (value: TValue | null | undefined) => void;
+  
+  /** Format a value using the column's formatter */
+  formatValue?: (value: TValue | null | undefined) => string;
+  
+  /** Refresh the cell */
+  refreshCell?: () => void;
+  
+  /** Register a row dragger element */
+  registerRowDragger: (
+    rowDraggerElement: HTMLElement,
+    dragStartPixels?: number,
+    value?: string,
+    suppressVisibilityChange?: boolean
+  ) => void;
+  
+  /** Set a tooltip for this component */
+  setTooltip: (value: string, shouldDisplayTooltip?: () => boolean) => void;
+}
+```
+
+## ICellRenderer Interface
+
+Implement this interface to create a custom cell renderer:
+
+```typescript
+interface ICellRenderer<TData = any> {
+  /**
+   * Called when the cell is refreshed.
+   * Return true if successful, false to destroy and recreate.
+   */
+  refresh(params: ICellRendererParams<TData>): boolean;
+}
+```
+
+### Complete Component Interface
+
+```typescript
+interface ICellRendererComp<TData = any> 
+  extends IComponent<ICellRendererParams<TData>>, 
+          ICellRenderer<TData> {
+  /** Initialize the component */
+  init(params: ICellRendererParams<TData>): void;
+  
+  /** Return the DOM element */
+  getGui(): HTMLElement;
+  
+  /** Refresh the component */
+  refresh(params: ICellRendererParams<TData>): boolean;
+  
+  /** Called after GUI is attached */
+  afterGuiAttached?(): void;
+  
+  /** Clean up resources */
+  destroy?(): void;
+}
+```
+
+## Basic Examples
+
+<Tabs>
+  <Tab title="Vanilla JS">
+    ```javascript
+    class SimpleCellRenderer {
+      init(params) {
+        this.eGui = document.createElement('div');
+        this.eGui.innerHTML = `
+          <strong style="color: #04dcfc;">
+            ${params.value || ''}
+          </strong>
+        `;
+      }
+
+      getGui() {
+        return this.eGui;
+      }
+
+      refresh(params) {
+        this.eGui.querySelector('strong').textContent = params.value || '';
+        return true;
+      }
+
+      destroy() {
+        // Cleanup if needed
+      }
+    }
+
+    // Column definition
+    const columnDefs = [
+      {
+        field: 'athlete',
+        cellRenderer: SimpleCellRenderer
+      }
+    ];
+    ```
+  </Tab>
+
+  <Tab title="React">
+    ```jsx
+    import { forwardRef, useImperativeHandle, useState } from 'react';
+
+    const SimpleCellRenderer = forwardRef((props, ref) => {
+      const [value, setValue] = useState(props.value);
+
+      useImperativeHandle(ref, () => ({
+        refresh(params) {
+          setValue(params.value);
+          return true;
+        }
+      }));
+
+      return (
+        <strong style={{ color: '#04dcfc' }}>
+          {value || ''}
+        </strong>
+      );
+    });
+
+    export default SimpleCellRenderer;
+
+    // Column definition
+    const columnDefs = [
+      {
+        field: 'athlete',
+        cellRenderer: SimpleCellRenderer
+      }
+    ];
+    ```
+  </Tab>
+
+  <Tab title="Angular">
+    ```typescript
+    import { Component } from '@angular/core';
+    import { ICellRendererAngularComp } from 'ag-grid-angular';
+    import { ICellRendererParams } from 'ag-grid-community';
+
+    @Component({
+      selector: 'simple-cell-renderer',
+      template: `
+        <strong style="color: #04dcfc;">
+          {{ params.value || '' }}
+        </strong>
+      `
+    })
+    export class SimpleCellRenderer implements ICellRendererAngularComp {
+      public params: ICellRendererParams;
+
+      agInit(params: ICellRendererParams): void {
+        this.params = params;
+      }
+
+      refresh(params: ICellRendererParams): boolean {
+        this.params = params;
+        return true;
+      }
+    }
+
+    // Column definition
+    columnDefs = [
+      {
+        field: 'athlete',
+        cellRenderer: SimpleCellRenderer
+      }
+    ];
+    ```
+  </Tab>
+
+  <Tab title="Vue">
+    ```vue
+    <template>
+      <strong style="color: #04dcfc;">
+        {{ params.value || '' }}
+      </strong>
+    </template>
+
+    <script>
+    export default {
+      data() {
+        return {
+          params: null
+        };
+      },
+      methods: {
+        refresh(params) {
+          this.params = params;
+          return true;
+        }
+      }
+    };
+    </script>
+
+    // Column definition
+    const columnDefs = [
+      {
+        field: 'athlete',
+        cellRenderer: SimpleCellRenderer
+      }
+    ];
+    ```
+  </Tab>
+</Tabs>
+
+## Advanced Examples
+
+### Button Renderer with Event Handling
+
+<CodeGroup>
+```javascript Vanilla JS
+class ButtonCellRenderer {
+  init(params) {
+    this.params = params;
+    this.eGui = document.createElement('div');
+    this.eButton = document.createElement('button');
+    this.eButton.className = 'btn-simple';
+    this.eButton.textContent = 'Click Me';
+    
+    this.eventListener = () => {
+      alert(`Clicked: ${params.data.athlete}`);
+    };
+    this.eButton.addEventListener('click', this.eventListener);
+    
+    this.eGui.appendChild(this.eButton);
+  }
+
+  getGui() {
+    return this.eGui;
+  }
+
+  refresh() {
+    return false; // Don't refresh, recreate instead
+  }
+
+  destroy() {
+    if (this.eventListener) {
+      this.eButton.removeEventListener('click', this.eventListener);
+    }
+  }
+}
+```
+
+```jsx React
+import { forwardRef } from 'react';
+
+const ButtonCellRenderer = forwardRef((props, ref) => {
+  const handleClick = () => {
+    alert(`Clicked: ${props.data.athlete}`);
+  };
+
+  return (
+    <button className="btn-simple" onClick={handleClick}>
+      Click Me
+    </button>
+  );
+});
+
+export default ButtonCellRenderer;
+```
+
+```typescript Angular
+import { Component } from '@angular/core';
+import { ICellRendererAngularComp } from 'ag-grid-angular';
+import { ICellRendererParams } from 'ag-grid-community';
+
+@Component({
+  selector: 'button-cell-renderer',
+  template: `
+    <button class="btn-simple" (click)="handleClick()">
+      Click Me
+    </button>
+  `
+})
+export class ButtonCellRenderer implements ICellRendererAngularComp {
+  public params: ICellRendererParams;
+
+  agInit(params: ICellRendererParams): void {
+    this.params = params;
+  }
+
+  refresh(): boolean {
+    return false;
+  }
+
+  handleClick(): void {
+    alert(`Clicked: ${this.params.data.athlete}`);
+  }
+}
+```
+
+```vue Vue
+<template>
+  <button class="btn-simple" @click="handleClick">
+    Click Me
+  </button>
+</template>
+
+<script>
+export default {
+  data() {
+    return {
+      params: null
+    };
+  },
+  methods: {
+    refresh() {
+      return false;
+    },
+    handleClick() {
+      alert(`Clicked: ${this.params.data.athlete}`);
+    }
+  }
+};
+</script>
+```
+</CodeGroup>
+
+### Image Renderer with Fallback
+
+<CodeGroup>
+```javascript Vanilla JS
+class ImageCellRenderer {
+  init(params) {
+    this.eGui = document.createElement('div');
+    this.eGui.className = 'image-cell';
+    
+    const img = document.createElement('img');
+    img.src = params.value || 'default-avatar.png';
+    img.alt = params.data.name;
+    img.style.width = '32px';
+    img.style.height = '32px';
+    img.style.borderRadius = '50%';
+    
+    img.onerror = () => {
+      img.src = 'default-avatar.png';
+    };
+    
+    this.eGui.appendChild(img);
+  }
+
+  getGui() {
+    return this.eGui;
+  }
+
+  refresh(params) {
+    const img = this.eGui.querySelector('img');
+    img.src = params.value || 'default-avatar.png';
+    img.alt = params.data.name;
+    return true;
+  }
+}
+```
+
+```jsx React
+import { useState } from 'react';
+
+const ImageCellRenderer = (props) => {
+  const [imgSrc, setImgSrc] = useState(props.value || 'default-avatar.png');
+
+  const handleError = () => {
+    setImgSrc('default-avatar.png');
+  };
+
+  return (
+    <div className="image-cell">
+      <img
+        src={imgSrc}
+        alt={props.data.name}
+        onError={handleError}
+        style={{
+          width: '32px',
+          height: '32px',
+          borderRadius: '50%'
+        }}
+      />
+    </div>
+  );
+};
+
+export default ImageCellRenderer;
+```
+</CodeGroup>
+
+### Status Badge Renderer
+
+```javascript
+class StatusCellRenderer {
+  init(params) {
+    this.eGui = document.createElement('span');
+    this.refresh(params);
+  }
+
+  getGui() {
+    return this.eGui;
+  }
+
+  refresh(params) {
+    const status = params.value?.toLowerCase();
+    const statusConfig = {
+      active: { color: '#10b981', label: 'Active' },
+      pending: { color: '#f59e0b', label: 'Pending' },
+      inactive: { color: '#ef4444', label: 'Inactive' }
+    };
+
+    const config = statusConfig[status] || statusConfig.inactive;
+    
+    this.eGui.innerHTML = `
+      <span style="
+        background-color: ${config.color}20;
+        color: ${config.color};
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+      ">
+        ${config.label}
+      </span>
+    `;
+    
+    return true;
+  }
+}
+```
+
+## Cell Renderer Functions
+
+For simple cases, you can use a function instead of a class:
+
+```javascript
+const columnDefs = [
+  {
+    field: 'price',
+    cellRenderer: (params) => {
+      if (params.value == null) return '';
+      return `$${params.value.toFixed(2)}`;
+    }
+  },
+  {
+    field: 'status',
+    cellRenderer: (params) => {
+      const icon = params.value === 'active' ? '✓' : '✗';
+      return `<span>${icon} ${params.value}</span>`;
+    }
+  }
+];
+```
+
+<Warning>
+Cell renderer functions cannot implement the `refresh()` method. The cell will be recreated on every data change, which may impact performance.
+</Warning>
+
+## Built-in Cell Renderers
+
+AG Grid provides several built-in cell renderers:
+
+### Checkbox Cell Renderer
+
+```javascript
+const columnDefs = [
+  {
+    field: 'selected',
+    cellRenderer: 'agCheckboxCellRenderer',
+    cellRendererParams: {
+      disabled: false
+    }
+  }
+];
+```
+
+### Group Cell Renderer
+
+```javascript
+const columnDefs = [
+  {
+    field: 'country',
+    cellRenderer: 'agGroupCellRenderer',
+    cellRendererParams: {
+      innerRenderer: (params) => params.value,
+      suppressCount: false
+    }
+  }
+];
+```
+
+## Suppressing Mouse Event Handling
+
+Prevent the grid from handling mouse events in your cell renderer:
+
+```typescript
+interface EventCellRendererParams<TData = any, TValue = any, TContext = any> {
+  suppressMouseEventHandling?: (
+    params: SuppressMouseEventHandlingParams<TData, TValue, TContext>
+  ) => boolean;
+}
+
+interface SuppressMouseEventHandlingParams<TData = any, TValue = any, TContext = any> {
+  node: IRowNode<TData>;
+  column?: Column<TValue>;
+  event: MouseEvent;
+}
+```
+
+Example usage:
+
+```javascript
+const columnDefs = [
+  {
+    field: 'action',
+    cellRenderer: ButtonCellRenderer,
+    suppressMouseEventHandling: (params) => {
+      // Prevent grid from handling clicks on buttons
+      return params.event.target.tagName === 'BUTTON';
+    }
+  }
+];
+```
+
+## Row Dragging
+
+Register elements as row drag handles:
+
+```javascript
+class DragHandleCellRenderer {
+  init(params) {
+    this.eGui = document.createElement('div');
+    this.eGui.innerHTML = `
+      <div class="drag-handle">⋮⋮</div>
+      <span>${params.value}</span>
+    `;
+    
+    const dragHandle = this.eGui.querySelector('.drag-handle');
+    params.registerRowDragger(dragHandle);
+  }
+
+  getGui() {
+    return this.eGui;
+  }
+
+  refresh() {
+    return false;
+  }
+}
+```
+
+## Tooltips
+
+Set custom tooltips from your cell renderer:
+
+```javascript
+class TooltipCellRenderer {
+  init(params) {
+    this.eGui = document.createElement('div');
+    this.eGui.textContent = params.value;
+    
+    // Set tooltip
+    params.setTooltip(
+      `Full value: ${params.value}`,
+      () => params.value?.length > 20 // Only show if value is long
+    );
+  }
+
+  getGui() {
+    return this.eGui;
+  }
+
+  refresh() {
+    return true;
+  }
+}
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Implement refresh() for Performance">
+    Always try to implement `refresh()` to update your component instead of recreating it. Return `true` if successful, `false` to recreate:
+
+    ```javascript
+    refresh(params) {
+      // Update existing DOM instead of recreating
+      this.eGui.querySelector('.value').textContent = params.value;
+      return true; // Successfully refreshed
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Clean Up Event Listeners">
+    Always remove event listeners in the `destroy()` method:
+
+    ```javascript
+    destroy() {
+      if (this.clickListener) {
+        this.eButton.removeEventListener('click', this.clickListener);
+      }
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Use valueFormatted When Available">
+    The `valueFormatted` parameter contains the formatted value if a `valueFormatter` is defined:
+
+    ```javascript
+    init(params) {
+      const displayValue = params.valueFormatted ?? params.value;
+      this.eGui.textContent = displayValue;
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Handle Null and Undefined Values">
+    Always check for null/undefined values:
+
+    ```javascript
+    init(params) {
+      const value = params.value ?? 'N/A';
+      this.eGui.textContent = value;
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## TypeScript Support
+
+Use generics for type-safe cell renderers:
+
+```typescript
+interface Athlete {
+  name: string;
+  country: string;
+  sport: string;
+}
+
+class TypedCellRenderer implements ICellRendererComp<Athlete> {
+  private eGui: HTMLElement;
+  private params: ICellRendererParams<Athlete>;
+
+  init(params: ICellRendererParams<Athlete>): void {
+    this.params = params;
+    this.eGui = document.createElement('div');
+    
+    // TypeScript knows params.data is Athlete
+    this.eGui.textContent = `${params.data.name} - ${params.data.country}`;
+  }
+
+  getGui(): HTMLElement {
+    return this.eGui;
+  }
+
+  refresh(params: ICellRendererParams<Athlete>): boolean {
+    this.params = params;
+    this.eGui.textContent = `${params.data.name} - ${params.data.country}`;
+    return true;
+  }
+}
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Cell Editors" icon="pen-to-square" href="/customization/cell-editors">
+    Learn about custom cell editors for data input
+  </Card>
+  <Card title="Filters" icon="filter" href="/customization/filters">
+    Create custom filter components
+  </Card>
+</CardGroup>

@@ -1,0 +1,381 @@
+---
+title: GridOptions
+description: Configure your AG Grid instance with the GridOptions interface
+---
+
+The `GridOptions` interface is the main configuration object for AG Grid. It controls all aspects of the grid's behavior, from data binding to UI customization.
+
+## Overview
+
+GridOptions is the central configuration point for your grid instance. You provide it when creating the grid, and can update many properties dynamically at runtime.
+
+```typescript
+import { GridOptions } from 'ag-grid-community';
+
+const gridOptions: GridOptions = {
+  columnDefs: [...],
+  rowData: [...],
+  // ... other options
+};
+```
+
+## Core Configuration
+
+### Column Definitions
+
+<ParamField path="columnDefs" type="(ColDef | ColGroupDef)[]">
+  Array of column and column group definitions that define the grid's columns.
+  
+  ```typescript
+  columnDefs: [
+    { field: 'athlete', headerName: 'Athlete Name' },
+    { field: 'age', type: 'number' },
+    { field: 'country' }
+  ]
+  ```
+</ParamField>
+
+<ParamField path="defaultColDef" type="ColDef">
+  Default column definition applied to all columns. Properties in individual column definitions take precedence.
+  
+  ```typescript
+  defaultColDef: {
+    sortable: true,
+    filter: true,
+    resizable: true,
+    flex: 1
+  }
+  ```
+</ParamField>
+
+<ParamField path="defaultColGroupDef" type="Partial<ColGroupDef>" initial>
+  Default column group definition. All column group definitions inherit these properties.
+  
+  ```typescript
+  defaultColGroupDef: {
+    marryChildren: true
+  }
+  ```
+</ParamField>
+
+<ParamField path="columnTypes" type="ColTypeDefs">
+  Map of custom column types for reusable column configurations.
+  
+  ```typescript
+  columnTypes: {
+    numberColumn: { filter: 'agNumberColumnFilter', width: 100 },
+    dateColumn: { filter: 'agDateColumnFilter', valueFormatter: dateFormatter }
+  }
+  ```
+</ParamField>
+
+### Row Data
+
+<ParamField path="rowData" type="TData[]">
+  The data to display in the grid. Each array item represents one row.
+  
+  ```typescript
+  rowData: [
+    { athlete: 'Michael Phelps', age: 23, country: 'United States' },
+    { athlete: 'Usain Bolt', age: 22, country: 'Jamaica' }
+  ]
+  ```
+</ParamField>
+
+<ParamField path="getRowId" type="(params: GetRowIdParams) => string">
+  Callback to provide unique IDs for rows. Essential for data updates and transactions.
+  
+  ```typescript
+  getRowId: (params) => params.data.id
+  ```
+</ParamField>
+
+### Row Model
+
+<ParamField path="rowModelType" type="'clientSide' | 'infinite' | 'viewport' | 'serverSide'" default="'clientSide'">
+  Determines how the grid manages row data:
+  - `clientSide`: All data loaded into the grid
+  - `infinite`: Lazy loading with infinite scroll
+  - `serverSide`: Server-side operations (grouping, filtering, etc.)
+  - `viewport`: Only render visible rows
+</ParamField>
+
+## Display Options
+
+<Accordion title="Layout & Sizing">
+
+<ParamField path="domLayout" type="'normal' | 'autoHeight' | 'print'" default="'normal'">
+  Controls how the grid sizes itself:
+  - `normal`: Grid fills the container with scrollbars
+  - `autoHeight`: Grid expands to fit all rows (no vertical scroll)
+  - `print`: All rows rendered for printing
+</ParamField>
+
+<ParamField path="rowHeight" type="number">
+  Height of rows in pixels. If not specified, uses theme default.
+  
+  ```typescript
+  rowHeight: 50
+  ```
+</ParamField>
+
+<ParamField path="headerHeight" type="number">
+  Height in pixels for the column header row.
+  
+  ```typescript
+  headerHeight: 40
+  ```
+</ParamField>
+
+</Accordion>
+
+<Accordion title="Pagination">
+
+<ParamField path="pagination" type="boolean" default="false" module="PaginationModule">
+  Enable pagination for the grid.
+  
+  ```typescript
+  pagination: true,
+  paginationPageSize: 20
+  ```
+</ParamField>
+
+<ParamField path="paginationPageSize" type="number" default="100" module="PaginationModule">
+  Number of rows per page when pagination is enabled.
+</ParamField>
+
+<ParamField path="paginationPageSizeSelector" type="number[] | boolean" default="true" module="PaginationModule">
+  Page size options for the pagination dropdown.
+  
+  ```typescript
+  paginationPageSizeSelector: [10, 20, 50, 100]
+  ```
+</ParamField>
+
+</Accordion>
+
+## Editing
+
+<ParamField path="editType" type="'fullRow'" module="EditingModule">
+  Set to `'fullRow'` to enable full row editing (all cells editable simultaneously).
+  
+  ```typescript
+  editType: 'fullRow'
+  ```
+</ParamField>
+
+<ParamField path="singleClickEdit" type="boolean" default="false">
+  Enable single-click editing for editable cells.
+  
+  ```typescript
+  singleClickEdit: true
+  ```
+</ParamField>
+
+<ParamField path="stopEditingWhenCellsLoseFocus" type="boolean" default="false">
+  Stop editing when cells lose focus.
+  
+  ```typescript
+  stopEditingWhenCellsLoseFocus: true
+  ```
+</ParamField>
+
+## Selection
+
+<Note>
+As of v32.2, row selection uses a new API. See the migration guide for details.
+</Note>
+
+<ParamField path="rowSelection" type="RowSelectionOptions | 'single' | 'multiple'" module="RowSelectionModule">
+  Configure row selection behavior.
+  
+  ```typescript
+  // Simple configuration
+  rowSelection: 'multiple'
+  
+  // Advanced configuration
+  rowSelection: {
+    mode: 'multiRow',
+    checkboxes: true,
+    headerCheckbox: true,
+    enableClickSelection: true
+  }
+  ```
+</ParamField>
+
+## Theming
+
+<ParamField path="theme" type="Theme | string">
+  Apply a theme to the grid. Can be a theme object or theme name.
+  
+  ```typescript
+  import { themeQuartz } from 'ag-grid-community';
+  
+  theme: themeQuartz
+  ```
+</ParamField>
+
+## API Access
+
+### Getting Grid Options
+
+Access individual grid options at runtime:
+
+```typescript
+const pageSize = api.getGridOption('paginationPageSize');
+const columnDefs = api.getGridOption('columnDefs');
+```
+
+### Updating Grid Options
+
+<CodeGroup>
+
+```typescript Single Option
+// Update a single option
+api.setGridOption('paginationPageSize', 50);
+```
+
+```typescript Multiple Options
+// Update multiple options (recommended)
+api.updateGridOptions({
+  paginationPageSize: 50,
+  pagination: true,
+  rowHeight: 60
+});
+```
+
+</CodeGroup>
+
+<Note>
+Some properties marked as `@initial` can only be set during grid creation and cannot be updated later.
+</Note>
+
+## Common Patterns
+
+### Basic Grid Setup
+
+```typescript
+const gridOptions: GridOptions = {
+  // Column definitions
+  columnDefs: [
+    { field: 'make' },
+    { field: 'model' },
+    { field: 'price', type: 'number' }
+  ],
+  
+  // Default column properties
+  defaultColDef: {
+    flex: 1,
+    minWidth: 100,
+    filter: true,
+    sortable: true
+  },
+  
+  // Data
+  rowData: fetchData(),
+  
+  // Enable features
+  pagination: true,
+  paginationPageSize: 20
+};
+```
+
+### Enterprise Features
+
+```typescript
+const gridOptions: GridOptions = {
+  columnDefs: [...],
+  rowData: [...],
+  
+  // Row grouping
+  rowGroupPanelShow: 'always',
+  groupDefaultExpanded: 1,
+  
+  // Aggregation
+  aggFuncs: {
+    avg: (params) => {
+      const sum = params.values.reduce((a, b) => a + b, 0);
+      return sum / params.values.length;
+    }
+  },
+  
+  // Side bar with columns and filters
+  sideBar: {
+    toolPanels: ['columns', 'filters']
+  }
+};
+```
+
+### Server-Side Operations
+
+```typescript
+const gridOptions: GridOptions = {
+  columnDefs: [...],
+  
+  // Server-side row model
+  rowModelType: 'serverSide',
+  
+  // Provide datasource
+  serverSideDatasource: {
+    getRows: (params) => {
+      // Fetch data from server
+      fetch('/api/data', {
+        method: 'POST',
+        body: JSON.stringify(params.request)
+      })
+        .then(response => response.json())
+        .then(data => {
+          params.success({
+            rowData: data.rows,
+            rowCount: data.lastRow
+          });
+        })
+        .catch(error => params.fail());
+    }
+  },
+  
+  // Server-side features
+  serverSideEnableClientSideSort: false,
+  serverSideInfiniteScroll: true
+};
+```
+
+## Type Safety
+
+Provide type information for your row data:
+
+```typescript
+interface Athlete {
+  athlete: string;
+  age: number;
+  country: string;
+  year: number;
+  sport: string;
+}
+
+const gridOptions: GridOptions<Athlete> = {
+  columnDefs: [
+    { field: 'athlete' },  // TypeScript knows these fields
+    { field: 'age' },
+    { field: 'country' }
+  ],
+  rowData: athletes,  // Must be Athlete[]
+  
+  // Callbacks are type-safe
+  getRowId: (params) => params.data.athlete,  // params.data is Athlete
+};
+```
+
+## Best Practices
+
+1. **Use defaultColDef** - Avoid repetition by setting common column properties once
+2. **Provide getRowId** - Essential for efficient data updates and transactions
+3. **Batch updates** - Use `updateGridOptions()` instead of multiple `setGridOption()` calls
+4. **Type your data** - Use TypeScript generics for better IDE support and type safety
+5. **Module awareness** - Check `@agModule` tags to ensure required modules are registered
+
+## Related
+
+- [Column Definitions](/concepts/column-definitions) - Configure individual columns
+- [Grid API](/concepts/grid-api) - Interact with the grid programmatically
+- [Row Data](/concepts/row-data) - Manage and update row data

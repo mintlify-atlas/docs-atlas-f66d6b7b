@@ -1,0 +1,786 @@
+---
+title: 'Custom Filters'
+description: 'Create custom filter components with advanced filtering logic'
+icon: 'filter'
+---
+
+## Overview
+
+Custom filters allow you to implement sophisticated filtering logic beyond the built-in filters. Use custom filters to:
+
+- Create specialized filter UIs (sliders, multi-select, date ranges)
+- Implement complex filtering algorithms
+- Build filters with server-side integration
+- Add custom validation and preprocessing
+- Create reusable filter components
+
+<Note>
+AG Grid provides two filter APIs: the traditional `IFilterComp` interface and the newer `FilterHandler` + `FilterDisplay` pattern (when `enableFilterHandlers = true`). This guide covers both approaches.
+</Note>
+
+## IFilterParams Interface
+
+The grid provides filters with comprehensive parameters:
+
+```typescript
+interface IFilterParams<TData = any, TContext = any> 
+  extends BaseFilterParams<TData, TContext> {
+  /** The column this filter is for */
+  column: Column;
+  
+  /** The column definition */
+  colDef: ColDef<TData>;
+  
+  /** Get cell value for a row node and column */
+  getValue: <TValue = any>(
+    node: IRowNode<TData>,
+    column?: ColKey<TData, TValue>
+  ) => TValue | null | undefined;
+  
+  /** Check if a row passes all other filters */
+  doesRowPassOtherFilter: (rowNode: IRowNode<TData>) => boolean;
+  
+  /** Callback when filter changes */
+  filterChangedCallback: (additionalEventAttributes?: any) => void;
+  
+  /** Callback when filter UI is modified (before apply) */
+  filterModifiedCallback: (additionalEventAttributes?: any) => void;
+}
+```
+
+## IFilter Interface
+
+Implement this interface for traditional custom filters:
+
+```typescript
+interface IFilter extends BaseFilter {
+  /**
+   * Returns true if the filter is currently active.
+   */
+  isFilterActive(): boolean;
+
+  /**
+   * Returns the current filter model, or null if not active.
+   */
+  getModel(): any;
+
+  /**
+   * Sets the filter model. Provide null to deactivate.
+   */
+  setModel(model: any): void | AgPromise<void>;
+
+  /**
+   * Called when filter parameters change.
+   * Return true to refresh and reuse, false to destroy and recreate.
+   */
+  refresh?(newParams: IFilterParams): boolean;
+}
+```
+
+### BaseFilter Interface
+
+```typescript
+interface BaseFilter extends SharedFilterUi {
+  /**
+   * The grid asks each active filter if the row should pass.
+   * Return true to include the row, false to exclude it.
+   */
+  doesFilterPass(params: IDoesFilterPassParams): boolean;
+
+  /**
+   * Optional: Called when new rows are loaded.
+   */
+  onNewRowsLoaded?(): void;
+
+  /**
+   * Optional: Called when any filter changes.
+   */
+  onAnyFilterChanged?(): void;
+
+  /**
+   * Optional: Called after GUI is attached to DOM.
+   */
+  afterGuiAttached?(params?: IAfterGuiAttachedParams): void;
+
+  /**
+   * Optional: Called after GUI is removed from DOM.
+   */
+  afterGuiDetached?(): void;
+
+  /**
+   * Optional: Return string representation of the model.
+   */
+  getModelAsString?(model: any): string;
+}
+```
+
+## Basic Filter Example
+
+<Tabs>
+  <Tab title="Vanilla JS">
+    ```javascript
+    class SimpleTextFilter {
+      init(params) {
+        this.params = params;
+        this.filterText = '';
+        
+        // Create GUI
+        this.eGui = document.createElement('div');
+        this.eGui.innerHTML = `
+          <div style="padding: 10px;">
+            <input
+              type="text"
+              placeholder="Filter..."
+              class="filter-input"
+              style="width: 100%; padding: 5px;"
+            />
+          </div>
+        `;
+        
+        this.eInput = this.eGui.querySelector('.filter-input');
+        this.eInput.addEventListener('input', (event) => {
+          this.filterText = event.target.value;
+          params.filterChangedCallback();
+        });
+      }
+
+      getGui() {
+        return this.eGui;
+      }
+
+      doesFilterPass(params) {
+        const value = this.params.getValue(params.node);
+        if (!value) return false;
+        
+        return String(value)
+          .toLowerCase()
+          .includes(this.filterText.toLowerCase());
+      }
+
+      isFilterActive() {
+        return this.filterText !== '';
+      }
+
+      getModel() {
+        if (!this.isFilterActive()) return null;
+        return { filterText: this.filterText };
+      }
+
+      setModel(model) {
+        this.filterText = model ? model.filterText : '';
+        this.eInput.value = this.filterText;
+      }
+    }
+
+    // Column definition
+    const columnDefs = [
+      {
+        field: 'athlete',
+        filter: SimpleTextFilter
+      }
+    ];
+    ```
+  </Tab>
+
+  <Tab title="React">
+    ```jsx
+    import { forwardRef, useState, useImperativeHandle } from 'react';
+
+    const SimpleTextFilter = forwardRef((props, ref) => {
+      const [filterText, setFilterText] = useState('');
+
+      useImperativeHandle(ref, () => ({
+        doesFilterPass(params) {
+          const value = props.getValue(params.node);
+          if (!value) return false;
+          
+          return String(value)
+            .toLowerCase()
+            .includes(filterText.toLowerCase());
+        },
+
+        isFilterActive() {
+          return filterText !== '';
+        },
+
+        getModel() {
+          if (filterText === '') return null;
+          return { filterText };
+        },
+
+        setModel(model) {
+          setFilterText(model ? model.filterText : '');
+        }
+      }));
+
+      const handleChange = (event) => {
+        setFilterText(event.target.value);
+        props.filterChangedCallback();
+      };
+
+      return (
+        <div style={{ padding: '10px' }}>
+          <input
+            type="text"
+            placeholder="Filter..."
+            value={filterText}
+            onChange={handleChange}
+            style={{ width: '100%', padding: '5px' }}
+          />
+        </div>
+      );
+    });
+
+    export default SimpleTextFilter;
+    ```
+  </Tab>
+
+  <Tab title="Angular">
+    ```typescript
+    import { Component } from '@angular/core';
+    import { IFilterAngularComp } from 'ag-grid-angular';
+    import { IFilterParams, IDoesFilterPassParams } from 'ag-grid-community';
+
+    @Component({
+      selector: 'simple-text-filter',
+      template: `
+        <div style="padding: 10px;">
+          <input
+            type="text"
+            placeholder="Filter..."
+            [(ngModel)]="filterText"
+            (input)="onFilterChanged()"
+            style="width: 100%; padding: 5px;"
+          />
+        </div>
+      `
+    })
+    export class SimpleTextFilter implements IFilterAngularComp {
+      public params: IFilterParams;
+      public filterText: string = '';
+
+      agInit(params: IFilterParams): void {
+        this.params = params;
+      }
+
+      doesFilterPass(params: IDoesFilterPassParams): boolean {
+        const value = this.params.getValue(params.node);
+        if (!value) return false;
+        
+        return String(value)
+          .toLowerCase()
+          .includes(this.filterText.toLowerCase());
+      }
+
+      isFilterActive(): boolean {
+        return this.filterText !== '';
+      }
+
+      getModel(): any {
+        if (!this.isFilterActive()) return null;
+        return { filterText: this.filterText };
+      }
+
+      setModel(model: any): void {
+        this.filterText = model ? model.filterText : '';
+      }
+
+      onFilterChanged(): void {
+        this.params.filterChangedCallback();
+      }
+    }
+    ```
+  </Tab>
+
+  <Tab title="Vue">
+    ```vue
+    <template>
+      <div style="padding: 10px;">
+        <input
+          type="text"
+          placeholder="Filter..."
+          v-model="filterText"
+          @input="onFilterChanged"
+          style="width: 100%; padding: 5px;"
+        />
+      </div>
+    </template>
+
+    <script>
+    export default {
+      data() {
+        return {
+          params: null,
+          filterText: ''
+        };
+      },
+      methods: {
+        doesFilterPass(params) {
+          const value = this.params.getValue(params.node);
+          if (!value) return false;
+          
+          return String(value)
+            .toLowerCase()
+            .includes(this.filterText.toLowerCase());
+        },
+
+        isFilterActive() {
+          return this.filterText !== '';
+        },
+
+        getModel() {
+          if (this.filterText === '') return null;
+          return { filterText: this.filterText };
+        },
+
+        setModel(model) {
+          this.filterText = model ? model.filterText : '';
+        },
+
+        onFilterChanged() {
+          this.params.filterChangedCallback();
+        }
+      }
+    };
+    </script>
+    ```
+  </Tab>
+</Tabs>
+
+## Advanced Filter Examples
+
+### Range Filter with Min/Max
+
+```javascript
+class RangeFilter {
+  init(params) {
+    this.params = params;
+    this.min = null;
+    this.max = null;
+    
+    this.eGui = document.createElement('div');
+    this.eGui.innerHTML = `
+      <div style="padding: 10px;">
+        <label>Min: <input type="number" class="min-input" /></label>
+        <br />
+        <label>Max: <input type="number" class="max-input" /></label>
+      </div>
+    `;
+    
+    this.eMinInput = this.eGui.querySelector('.min-input');
+    this.eMaxInput = this.eGui.querySelector('.max-input');
+    
+    this.eMinInput.addEventListener('input', () => this.onInputChanged());
+    this.eMaxInput.addEventListener('input', () => this.onInputChanged());
+  }
+
+  getGui() {
+    return this.eGui;
+  }
+
+  onInputChanged() {
+    this.min = this.eMinInput.value === '' ? null : Number(this.eMinInput.value);
+    this.max = this.eMaxInput.value === '' ? null : Number(this.eMaxInput.value);
+    this.params.filterChangedCallback();
+  }
+
+  doesFilterPass(params) {
+    const value = this.params.getValue(params.node);
+    if (value == null) return false;
+    
+    const numValue = Number(value);
+    if (this.min != null && numValue < this.min) return false;
+    if (this.max != null && numValue > this.max) return false;
+    
+    return true;
+  }
+
+  isFilterActive() {
+    return this.min != null || this.max != null;
+  }
+
+  getModel() {
+    if (!this.isFilterActive()) return null;
+    return { min: this.min, max: this.max };
+  }
+
+  setModel(model) {
+    this.min = model ? model.min : null;
+    this.max = model ? model.max : null;
+    this.eMinInput.value = this.min ?? '';
+    this.eMaxInput.value = this.max ?? '';
+  }
+}
+```
+
+### Multi-Select Filter
+
+```javascript
+class MultiSelectFilter {
+  init(params) {
+    this.params = params;
+    this.selectedValues = new Set();
+    this.availableValues = [];
+    
+    // Get unique values from the column
+    const values = new Set();
+    params.api.forEachNode(node => {
+      const value = params.getValue(node);
+      if (value != null) values.add(value);
+    });
+    this.availableValues = Array.from(values).sort();
+    
+    // Create GUI
+    this.eGui = document.createElement('div');
+    this.eGui.style.padding = '10px';
+    this.eGui.style.maxHeight = '200px';
+    this.eGui.style.overflowY = 'auto';
+    
+    this.availableValues.forEach(value => {
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.id = `filter-${value}`;
+      checkbox.addEventListener('change', (event) => {
+        if (event.target.checked) {
+          this.selectedValues.add(value);
+        } else {
+          this.selectedValues.delete(value);
+        }
+        params.filterChangedCallback();
+      });
+      
+      const label = document.createElement('label');
+      label.htmlFor = `filter-${value}`;
+      label.textContent = value;
+      label.style.display = 'block';
+      label.prepend(checkbox);
+      
+      this.eGui.appendChild(label);
+    });
+  }
+
+  getGui() {
+    return this.eGui;
+  }
+
+  doesFilterPass(params) {
+    if (this.selectedValues.size === 0) return true;
+    const value = this.params.getValue(params.node);
+    return this.selectedValues.has(value);
+  }
+
+  isFilterActive() {
+    return this.selectedValues.size > 0;
+  }
+
+  getModel() {
+    if (!this.isFilterActive()) return null;
+    return { values: Array.from(this.selectedValues) };
+  }
+
+  setModel(model) {
+    this.selectedValues.clear();
+    if (model && model.values) {
+      model.values.forEach(value => this.selectedValues.add(value));
+    }
+    
+    // Update checkboxes
+    this.eGui.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+      const value = this.availableValues.find(
+        v => `filter-${v}` === checkbox.id
+      );
+      checkbox.checked = this.selectedValues.has(value);
+    });
+  }
+
+  onNewRowsLoaded() {
+    // Refresh available values when data changes
+    const values = new Set();
+    this.params.api.forEachNode(node => {
+      const value = this.params.getValue(node);
+      if (value != null) values.add(value);
+    });
+    // Update UI if needed...
+  }
+}
+```
+
+## Filter Handlers (New API)
+
+With `enableFilterHandlers = true`, you can separate filtering logic from UI:
+
+### FilterHandler Interface
+
+```typescript
+interface FilterHandler<TData = any, TContext = any, TModel = any, TCustomParams = any> {
+  /** Initialize the handler */
+  init?(params: FilterHandlerParams<TData, TContext, TModel, TCustomParams>): void;
+  
+  /** Refresh when model changes */
+  refresh?(params: FilterHandlerParams<TData, TContext, TModel, TCustomParams>): void;
+  
+  /** Test if a row passes the filter */
+  doesFilterPass(params: DoesFilterPassParams<TData, TContext, TModel, TCustomParams>): boolean;
+  
+  /** Get string representation for floating filter */
+  getModelAsString?(model: TModel | null, source?: 'floating' | 'filterToolPanel'): string;
+  
+  /** Process model before applying */
+  processModelToApply?(model: TModel | null): TModel | null;
+  
+  /** Cleanup */
+  destroy?(): void;
+}
+```
+
+### Simple ColumnFilter Example
+
+```javascript
+const columnDefs = [
+  {
+    field: 'price',
+    filter: {
+      component: PriceFilterDisplay,
+      doesFilterPass: (params) => {
+        const value = params.handlerParams.getValue(params.node);
+        if (value == null) return false;
+        
+        const { min, max } = params.model;
+        if (min != null && value < min) return false;
+        if (max != null && value > max) return false;
+        
+        return true;
+      }
+    }
+  }
+];
+```
+
+## Filter Model
+
+Define a consistent model structure for your filter:
+
+```typescript
+interface CustomFilterModel {
+  filterType: 'custom';
+  condition1?: {
+    type: 'contains' | 'equals' | 'startsWith';
+    value: string;
+  };
+  condition2?: {
+    type: 'contains' | 'equals' | 'startsWith';
+    value: string;
+  };
+  operator?: 'AND' | 'OR';
+}
+```
+
+## Floating Filters
+
+Provide a string representation for the floating filter:
+
+```javascript
+class CustomFilter {
+  // ... other methods ...
+
+  getModelAsString(model) {
+    if (!model) return '';
+    
+    if (model.min != null && model.max != null) {
+      return `${model.min} - ${model.max}`;
+    }
+    if (model.min != null) {
+      return `>= ${model.min}`;
+    }
+    if (model.max != null) {
+      return `<= ${model.max}`;
+    }
+    
+    return '';
+  }
+}
+```
+
+## Filter Buttons
+
+Add Apply, Clear, Reset, and Cancel buttons:
+
+```javascript
+const columnDefs = [
+  {
+    field: 'athlete',
+    filter: CustomFilter,
+    filterParams: {
+      buttons: ['apply', 'clear', 'reset', 'cancel'],
+      closeOnApply: true
+    }
+  }
+];
+```
+
+## Server-Side Filtering
+
+Implement filters that work with server-side row models:
+
+```javascript
+class ServerSideFilter {
+  init(params) {
+    this.params = params;
+    this.filterValue = '';
+    
+    // Create GUI
+    this.eGui = document.createElement('div');
+    this.eGui.innerHTML = '<input type="text" class="filter-input" />';
+    
+    this.eInput = this.eGui.querySelector('.filter-input');
+    this.eInput.addEventListener('input', () => {
+      this.filterValue = this.eInput.value;
+      // Notify grid - will trigger server-side refresh
+      params.filterChangedCallback();
+    });
+  }
+
+  getGui() {
+    return this.eGui;
+  }
+
+  // For server-side, just return true
+  // Filtering happens on the server
+  doesFilterPass() {
+    return true;
+  }
+
+  isFilterActive() {
+    return this.filterValue !== '';
+  }
+
+  getModel() {
+    if (!this.isFilterActive()) return null;
+    // This model is sent to the server
+    return {
+      filterType: 'text',
+      type: 'contains',
+      filter: this.filterValue
+    };
+  }
+
+  setModel(model) {
+    this.filterValue = model ? model.filter : '';
+    this.eInput.value = this.filterValue;
+  }
+}
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Optimize doesFilterPass">
+    The `doesFilterPass()` method is called for every row. Keep it fast:
+
+    ```javascript
+    doesFilterPass(params) {
+      // Cache getValue result
+      const value = this.params.getValue(params.node);
+      
+      // Early return for null/undefined
+      if (value == null) return false;
+      
+      // Avoid expensive operations
+      return this.quickCheck(value);
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Update Filter on Data Changes">
+    Implement `onNewRowsLoaded()` to refresh available values:
+
+    ```javascript
+    onNewRowsLoaded() {
+      // Rebuild list of unique values
+      this.refreshAvailableValues();
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Provide Meaningful Models">
+    Return clear, serializable models:
+
+    ```javascript
+    getModel() {
+      return {
+        filterType: 'custom',
+        values: Array.from(this.selectedValues),
+        timestamp: Date.now()
+      };
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Support Floating Filters">
+    Implement `getModelAsString()` for read-only floating filters:
+
+    ```javascript
+    getModelAsString(model) {
+      if (!model || !model.values) return '';
+      return `${model.values.length} selected`;
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## TypeScript Support
+
+```typescript
+interface RangeFilterModel {
+  min: number | null;
+  max: number | null;
+}
+
+class TypedRangeFilter implements IFilterComp<any> {
+  private params: IFilterParams;
+  private eGui: HTMLElement;
+  private model: RangeFilterModel = { min: null, max: null };
+
+  init(params: IFilterParams): void {
+    this.params = params;
+    // ... create GUI
+  }
+
+  getGui(): HTMLElement {
+    return this.eGui;
+  }
+
+  doesFilterPass(params: IDoesFilterPassParams): boolean {
+    const value = this.params.getValue(params.node);
+    if (typeof value !== 'number') return false;
+    
+    if (this.model.min != null && value < this.model.min) return false;
+    if (this.model.max != null && value > this.model.max) return false;
+    
+    return true;
+  }
+
+  isFilterActive(): boolean {
+    return this.model.min != null || this.model.max != null;
+  }
+
+  getModel(): RangeFilterModel | null {
+    return this.isFilterActive() ? this.model : null;
+  }
+
+  setModel(model: RangeFilterModel | null): void {
+    this.model = model || { min: null, max: null };
+  }
+}
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Cell Renderers" icon="eye" href="/customization/cell-renderers">
+    Create custom cell renderers
+  </Card>
+  <Card title="Cell Editors" icon="pen-to-square" href="/customization/cell-editors">
+    Build custom cell editors
+  </Card>
+</CardGroup>

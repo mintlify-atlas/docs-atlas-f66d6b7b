@@ -1,0 +1,231 @@
+---
+title: 'Simple Data Table'
+description: 'Create a feature-rich data table with sorting, filtering, and pagination'
+---
+
+<Note>
+This example builds on the basic grid setup by adding common data table features like sorting, filtering, and column configuration.
+</Note>
+
+## Overview
+
+A simple data table in AG Grid typically includes:
+
+- **Sortable columns** - Click headers to sort data
+- **Resizable columns** - Drag column edges to adjust width
+- **Column flexibility** - Responsive column sizing
+- **Rich data types** - Numbers, strings, booleans
+
+## Enhanced Grid Configuration
+
+<CodeGroup>
+
+```typescript Full Example
+import type { GridApi, GridOptions } from 'ag-grid-community';
+import { AllCommunityModule, ModuleRegistry, createGrid } from 'ag-grid-community';
+
+ModuleRegistry.registerModules([AllCommunityModule]);
+
+interface IRow {
+    make: string;
+    model: string;
+    price: number;
+    electric: boolean;
+}
+
+let gridApi: GridApi;
+
+const gridOptions: GridOptions<IRow> = {
+    rowData: [
+        { make: 'Tesla', model: 'Model Y', price: 64950, electric: true },
+        { make: 'Ford', model: 'F-Series', price: 33850, electric: false },
+        { make: 'Toyota', model: 'Corolla', price: 29600, electric: false },
+        { make: 'Mercedes', model: 'EQA', price: 48890, electric: true },
+        { make: 'Fiat', model: '500', price: 15774, electric: false },
+        { make: 'Nissan', model: 'Juke', price: 20675, electric: false },
+    ],
+    columnDefs: [
+        { 
+            field: 'make',
+            headerName: 'Manufacturer',
+            sortable: true,
+            filter: true
+        },
+        { 
+            field: 'model',
+            sortable: true,
+            filter: true
+        },
+        { 
+            field: 'price',
+            sortable: true,
+            filter: 'agNumberColumnFilter',
+            valueFormatter: params => '$' + params.value.toLocaleString()
+        },
+        { 
+            field: 'electric',
+            headerName: 'Electric Vehicle',
+            sortable: true,
+            filter: true
+        }
+    ],
+    defaultColDef: {
+        flex: 1,
+        minWidth: 100,
+        resizable: true,
+    },
+};
+
+gridApi = createGrid(document.querySelector<HTMLElement>('#myGrid')!, gridOptions);
+```
+
+```typescript Column Definitions Only
+columnDefs: [
+    { 
+        field: 'make',
+        headerName: 'Manufacturer',
+        sortable: true,
+        filter: true
+    },
+    { 
+        field: 'model',
+        sortable: true,
+        filter: true
+    },
+    { 
+        field: 'price',
+        sortable: true,
+        filter: 'agNumberColumnFilter',
+        valueFormatter: params => '$' + params.value.toLocaleString()
+    },
+    { 
+        field: 'electric',
+        headerName: 'Electric Vehicle',
+        sortable: true,
+        filter: true
+    }
+]
+```
+
+</CodeGroup>
+
+## Key Features Explained
+
+### Sortable Columns
+
+Enable sorting by setting `sortable: true` on column definitions:
+
+```typescript
+{ field: 'make', sortable: true }
+```
+
+Users can click the column header to sort ascending/descending/no sort.
+
+### Column Filters
+
+Add filtering capabilities to columns:
+
+```typescript
+// Simple text filter
+{ field: 'make', filter: true }
+
+// Number-specific filter
+{ field: 'price', filter: 'agNumberColumnFilter' }
+```
+
+<Note>
+AG Grid automatically selects the appropriate filter type based on data type, but you can override this with specific filter types.
+</Note>
+
+### Value Formatters
+
+Format cell values for display without changing the underlying data:
+
+```typescript
+{
+    field: 'price',
+    valueFormatter: params => '$' + params.value.toLocaleString()
+}
+```
+
+This displays `64950` as `$64,950` while keeping the numeric value for sorting and filtering.
+
+### Custom Header Names
+
+Provide user-friendly column headers:
+
+```typescript
+{
+    field: 'electric',
+    headerName: 'Electric Vehicle'  // Displays instead of 'electric'
+}
+```
+
+### Resizable Columns
+
+Allow users to adjust column widths:
+
+```typescript
+defaultColDef: {
+    resizable: true,
+    minWidth: 100,  // Prevent columns from becoming too narrow
+}
+```
+
+## Common Enhancements
+
+<Tabs>
+  <Tab title="Pagination">
+    Add pagination to handle large datasets:
+
+    ```typescript
+    const gridOptions: GridOptions = {
+        // ... other options
+        pagination: true,
+        paginationPageSize: 10,
+        paginationPageSizeSelector: [10, 20, 50, 100]
+    };
+    ```
+  </Tab>
+
+  <Tab title="Row Selection">
+    Enable row selection:
+
+    ```typescript
+    const gridOptions: GridOptions = {
+        // ... other options
+        rowSelection: 'multiple',
+        checkboxSelection: true
+    };
+    ```
+  </Tab>
+
+  <Tab title="Column Pinning">
+    Pin important columns to the left:
+
+    ```typescript
+    columnDefs: [
+        { 
+            field: 'make', 
+            pinned: 'left',
+            lockPinned: true 
+        },
+        // ... other columns
+    ]
+    ```
+  </Tab>
+</Tabs>
+
+## Best Practices
+
+1. **Always set a height** - The grid fills its container, which must have a defined height
+2. **Use flex for responsive layouts** - `flex: 1` makes columns responsive
+3. **Set minWidth** - Prevents columns from becoming too narrow when resized
+4. **Type your data** - Use TypeScript interfaces for better development experience
+5. **Enable features per column** - Only enable sorting/filtering where needed
+
+## Next Steps
+
+- Learn about [framework-specific implementations](/examples/react-example)
+- Explore [advanced filtering options](https://ag-grid.com/documentation/filtering/)
+- Add [custom cell renderers](https://ag-grid.com/documentation/cell-rendering/)

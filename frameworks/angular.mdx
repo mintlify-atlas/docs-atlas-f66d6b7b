@@ -1,0 +1,860 @@
+---
+title: "Angular Integration"
+description: "Integrate AG Grid with Angular using components, dependency injection, and TypeScript"
+icon: "angular"
+---
+
+AG Grid provides native Angular support with a standalone component, full TypeScript typing, and Angular-specific optimizations.
+
+## Installation
+
+<Steps>
+<Step title="Install the packages">
+  Install AG Grid Angular along with the core library:
+
+  ```bash
+  npm install ag-grid-angular ag-grid-community
+  ```
+
+  For enterprise features:
+
+  ```bash
+  npm install ag-grid-angular ag-grid-community ag-grid-enterprise
+  ```
+</Step>
+
+<Step title="Import the component">
+  The `AgGridAngular` component is standalone and can be imported directly:
+
+  ```typescript
+  import { AgGridAngular } from 'ag-grid-angular';
+  import { Component } from '@angular/core';
+
+  @Component({
+    selector: 'app-root',
+    standalone: true,
+    imports: [AgGridAngular],
+    template: `...`
+  })
+  export class AppComponent {}
+  ```
+</Step>
+
+<Step title="Import styles">
+  Add styles to your `angular.json` or component:
+
+  ```json
+  "styles": [
+    "node_modules/ag-grid-community/styles/ag-grid.css",
+    "node_modules/ag-grid-community/styles/ag-theme-quartz.css"
+  ]
+  ```
+</Step>
+</Steps>
+
+## Basic Usage
+
+<Tabs>
+<Tab title="Standalone Component">
+  ```typescript
+  import { Component } from '@angular/core';
+  import { AgGridAngular } from 'ag-grid-angular';
+  import { ColDef } from 'ag-grid-community';
+
+  interface IRow {
+    make: string;
+    model: string;
+    price: number;
+  }
+
+  @Component({
+    selector: 'app-root',
+    standalone: true,
+    imports: [AgGridAngular],
+    template: `
+      <ag-grid-angular
+        class="ag-theme-quartz"
+        style="height: 500px"
+        [rowData]="rowData"
+        [columnDefs]="columnDefs"
+      />
+    `
+  })
+  export class AppComponent {
+    rowData: IRow[] = [
+      { make: 'Tesla', model: 'Model Y', price: 64950 },
+      { make: 'Ford', model: 'F-Series', price: 33850 },
+      { make: 'Toyota', model: 'Corolla', price: 29600 },
+    ];
+
+    columnDefs: ColDef<IRow>[] = [
+      { field: 'make' },
+      { field: 'model' },
+      { field: 'price' }
+    ];
+  }
+  ```
+</Tab>
+
+<Tab title="NgModule">
+  ```typescript
+  import { NgModule } from '@angular/core';
+  import { BrowserModule } from '@angular/platform-browser';
+  import { AgGridAngular } from 'ag-grid-angular';
+  import { AppComponent } from './app.component';
+
+  @NgModule({
+    declarations: [AppComponent],
+    imports: [
+      BrowserModule,
+      AgGridAngular
+    ],
+    bootstrap: [AppComponent]
+  })
+  export class AppModule {}
+  ```
+
+  ```typescript
+  // app.component.ts
+  import { Component } from '@angular/core';
+  import { ColDef } from 'ag-grid-community';
+
+  @Component({
+    selector: 'app-root',
+    template: `
+      <ag-grid-angular
+        class="ag-theme-quartz"
+        style="height: 500px"
+        [rowData]="rowData"
+        [columnDefs]="columnDefs"
+      />
+    `
+  })
+  export class AppComponent {
+    rowData = [
+      { make: 'Tesla', model: 'Model Y', price: 64950 },
+      { make: 'Ford', model: 'F-Series', price: 33850 },
+      { make: 'Toyota', model: 'Corolla', price: 29600 },
+    ];
+
+    columnDefs: ColDef[] = [
+      { field: 'make' },
+      { field: 'model' },
+      { field: 'price' }
+    ];
+  }
+  ```
+</Tab>
+</Tabs>
+
+## TypeScript Support
+
+The `ag-grid-angular` component provides full TypeScript support with strongly-typed interfaces.
+
+### Component Inputs
+
+```typescript
+import { Component, Input } from '@angular/core';
+import { ColDef, GridOptions, Module } from 'ag-grid-community';
+
+@Component({
+  selector: 'app-grid',
+  template: `
+    <ag-grid-angular
+      [rowData]="rowData"
+      [columnDefs]="columnDefs"
+      [gridOptions]="gridOptions"
+      [modules]="modules"
+    />
+  `
+})
+export class GridComponent {
+  @Input() rowData: any[];
+  @Input() columnDefs: ColDef[];
+  
+  // Initial grid configuration
+  gridOptions: GridOptions = {
+    defaultColDef: {
+      sortable: true,
+      filter: true
+    }
+  };
+  
+  // Modules for this grid instance
+  modules: Module[] = [];
+}
+```
+
+### Type-Safe Column Definitions
+
+```typescript
+import { ColDef } from 'ag-grid-community';
+
+interface UserData {
+  id: number;
+  name: string;
+  email: string;
+  age: number;
+}
+
+@Component({...})
+export class AppComponent {
+  columnDefs: ColDef<UserData>[] = [
+    { 
+      field: 'name',
+      headerName: 'Full Name',
+      valueGetter: (params) => {
+        // params.data is typed as UserData
+        return params.data?.name.toUpperCase();
+      }
+    },
+    { field: 'email' },
+    { 
+      field: 'age',
+      filter: 'agNumberColumnFilter',
+      cellStyle: (params) => {
+        // Type-safe access to row data
+        return params.data.age < 18 ? { color: 'red' } : {};
+      }
+    }
+  ];
+}
+```
+
+## Accessing the Grid API
+
+Access the Grid API through the component's `api` property after grid initialization.
+
+<Tabs>
+<Tab title="ViewChild">
+  ```typescript
+  import { Component, ViewChild } from '@angular/core';
+  import { AgGridAngular } from 'ag-grid-angular';
+
+  @Component({
+    selector: 'app-root',
+    template: `
+      <button (click)="onExportClick()">Export CSV</button>
+      <button (click)="onSelectAll()">Select All</button>
+      <ag-grid-angular
+        #agGrid
+        class="ag-theme-quartz"
+        style="height: 500px"
+        [rowData]="rowData"
+        [columnDefs]="columnDefs"
+        [rowSelection]="'multiple'"
+      />
+    `
+  })
+  export class AppComponent {
+    @ViewChild('agGrid') agGrid!: AgGridAngular;
+
+    onExportClick() {
+      this.agGrid.api.exportDataAsCsv();
+    }
+
+    onSelectAll() {
+      this.agGrid.api.selectAll();
+    }
+  }
+  ```
+</Tab>
+
+<Tab title="onGridReady Event">
+  ```typescript
+  import { Component } from '@angular/core';
+  import { GridApi, GridReadyEvent } from 'ag-grid-community';
+
+  @Component({
+    selector: 'app-root',
+    template: `
+      <button (click)="onExportClick()">Export CSV</button>
+      <ag-grid-angular
+        class="ag-theme-quartz"
+        style="height: 500px"
+        [rowData]="rowData"
+        [columnDefs]="columnDefs"
+        (gridReady)="onGridReady($event)"
+      />
+    `
+  })
+  export class AppComponent {
+    private gridApi!: GridApi;
+
+    onGridReady(params: GridReadyEvent) {
+      this.gridApi = params.api;
+      this.gridApi.sizeColumnsToFit();
+    }
+
+    onExportClick() {
+      this.gridApi?.exportDataAsCsv();
+    }
+  }
+  ```
+</Tab>
+</Tabs>
+
+<Note>
+  The Grid API is available after the `gridReady` event fires.
+</Note>
+
+## Event Handling
+
+Bind to grid events using Angular event binding syntax.
+
+```typescript
+import { Component } from '@angular/core';
+import { 
+  CellClickedEvent, 
+  RowSelectedEvent,
+  GridReadyEvent 
+} from 'ag-grid-community';
+
+@Component({
+  selector: 'app-root',
+  template: `
+    <ag-grid-angular
+      class="ag-theme-quartz"
+      style="height: 500px"
+      [rowData]="rowData"
+      [columnDefs]="columnDefs"
+      [rowSelection]="'multiple'"
+      (cellClicked)="onCellClicked($event)"
+      (rowSelected)="onRowSelected($event)"
+      (gridReady)="onGridReady($event)"
+    />
+  `
+})
+export class AppComponent {
+  onCellClicked(event: CellClickedEvent) {
+    console.log('Cell clicked:', event.value);
+  }
+
+  onRowSelected(event: RowSelectedEvent) {
+    console.log('Row selected:', event.node.data);
+  }
+
+  onGridReady(event: GridReadyEvent) {
+    console.log('Grid is ready');
+    event.api.sizeColumnsToFit();
+  }
+}
+```
+
+## Custom Angular Components
+
+Use Angular components as cell renderers, editors, and filters.
+
+<CodeGroup>
+```typescript Cell Renderer Component
+import { Component } from '@angular/core';
+import { ICellRendererAngularComp } from 'ag-grid-angular';
+import { ICellRendererParams } from 'ag-grid-community';
+
+@Component({
+  selector: 'app-status-renderer',
+  standalone: true,
+  template: `
+    <span [style.color]="color" [style.font-weight]="'bold'">
+      {{ params.value }}
+    </span>
+  `
+})
+export class StatusRendererComponent implements ICellRendererAngularComp {
+  params!: ICellRendererParams;
+  color!: string;
+
+  agInit(params: ICellRendererParams): void {
+    this.params = params;
+    this.color = params.value === 'active' ? 'green' : 'red';
+  }
+
+  refresh(params: ICellRendererParams): boolean {
+    return false;
+  }
+}
+
+// Usage in column definitions
+columnDefs: ColDef[] = [
+  { 
+    field: 'status',
+    cellRenderer: StatusRendererComponent
+  }
+];
+```
+
+```typescript Cell Editor Component
+import { Component, ViewChild, ViewContainerRef } from '@angular/core';
+import { ICellEditorAngularComp } from 'ag-grid-angular';
+import { ICellEditorParams } from 'ag-grid-community';
+import { FormsModule } from '@angular/forms';
+
+@Component({
+  selector: 'app-rating-editor',
+  standalone: true,
+  imports: [FormsModule],
+  template: `
+    <select [(ngModel)]="value" class="rating-editor">
+      <option [value]="1">1 Star</option>
+      <option [value]="2">2 Stars</option>
+      <option [value]="3">3 Stars</option>
+      <option [value]="4">4 Stars</option>
+      <option [value]="5">5 Stars</option>
+    </select>
+  `
+})
+export class RatingEditorComponent implements ICellEditorAngularComp {
+  params!: ICellEditorParams;
+  value!: number;
+
+  agInit(params: ICellEditorParams): void {
+    this.params = params;
+    this.value = params.value;
+  }
+
+  getValue(): any {
+    return this.value;
+  }
+}
+
+// Usage
+columnDefs: ColDef[] = [
+  { 
+    field: 'rating',
+    cellEditor: RatingEditorComponent,
+    editable: true
+  }
+];
+```
+
+```typescript Custom Filter Component
+import { Component } from '@angular/core';
+import { IFilterAngularComp } from 'ag-grid-angular';
+import { 
+  IDoesFilterPassParams, 
+  IFilterParams 
+} from 'ag-grid-community';
+import { FormsModule } from '@angular/forms';
+
+@Component({
+  selector: 'app-year-filter',
+  standalone: true,
+  imports: [FormsModule],
+  template: `
+    <div style="padding: 10px">
+      <label>
+        Year From:
+        <input
+          type="number"
+          [(ngModel)]="year"
+          (ngModelChange)="onChange()"
+        />
+      </label>
+    </div>
+  `
+})
+export class YearFilterComponent implements IFilterAngularComp {
+  params!: IFilterParams;
+  year: number = 2023;
+
+  agInit(params: IFilterParams): void {
+    this.params = params;
+  }
+
+  doesFilterPass(params: IDoesFilterPassParams): boolean {
+    return params.data.year >= this.year;
+  }
+
+  isFilterActive(): boolean {
+    return this.year !== 2023;
+  }
+
+  getModel(): any {
+    return { year: this.year };
+  }
+
+  setModel(model: any): void {
+    this.year = model?.year || 2023;
+  }
+
+  onChange(): void {
+    this.params.filterChangedCallback();
+  }
+}
+
+// Usage
+columnDefs: ColDef[] = [
+  { 
+    field: 'year',
+    filter: YearFilterComponent,
+    floatingFilter: true
+  }
+];
+```
+</CodeGroup>
+
+## Dependency Injection
+
+Inject Angular services into custom grid components.
+
+```typescript
+import { Component, inject } from '@angular/core';
+import { ICellRendererAngularComp } from 'ag-grid-angular';
+import { HttpClient } from '@angular/common/http';
+import { DataService } from './data.service';
+
+@Component({
+  selector: 'app-custom-renderer',
+  standalone: true,
+  template: `<span>{{ displayValue }}</span>`
+})
+export class CustomRendererComponent implements ICellRendererAngularComp {
+  // Inject Angular services
+  private http = inject(HttpClient);
+  private dataService = inject(DataService);
+  
+  params!: ICellRendererParams;
+  displayValue: string = '';
+
+  agInit(params: ICellRendererParams): void {
+    this.params = params;
+    // Use injected services
+    this.displayValue = this.dataService.formatValue(params.value);
+  }
+
+  refresh(params: ICellRendererParams): boolean {
+    return false;
+  }
+}
+```
+
+## Change Detection
+
+AG Grid Angular integrates with Angular's change detection system.
+
+<Tabs>
+<Tab title="Default Behavior">
+  ```typescript
+  @Component({
+    selector: 'app-root',
+    template: `
+      <button (click)="addRow()">Add Row</button>
+      <ag-grid-angular
+        [rowData]="rowData"
+        [columnDefs]="columnDefs"
+      />
+    `
+  })
+  export class AppComponent {
+    rowData = [...];
+
+    addRow() {
+      // Angular detects the change automatically
+      this.rowData = [...this.rowData, { make: 'New', model: 'Car' }];
+    }
+  }
+  ```
+</Tab>
+
+<Tab title="Suppress Change Detection">
+  ```typescript
+  @Component({
+    selector: 'app-root',
+    template: `
+      <ag-grid-angular
+        [rowData]="rowData"
+        [columnDefs]="columnDefs"
+        [suppressChangeDetection]="true"
+      />
+    `
+  })
+  export class AppComponent {
+    @ViewChild(AgGridAngular) agGrid!: AgGridAngular;
+    
+    updateData() {
+      // Manually update grid via API
+      this.agGrid.api.setGridOption('rowData', newData);
+    }
+  }
+  ```
+</Tab>
+</Tabs>
+
+<Note>
+  Use `suppressChangeDetection` for better performance with large datasets.
+</Note>
+
+## Input Properties Reference
+
+The `ag-grid-angular` component accepts all `GridOptions` as `@Input()` properties:
+
+<ParamField path="rowData" type="any[]">
+  The data to display in grid rows
+</ParamField>
+
+<ParamField path="columnDefs" type="ColDef[]">
+  Column definitions for the grid
+</ParamField>
+
+<ParamField path="gridOptions" type="GridOptions">
+  Initial grid configuration (component inputs take precedence)
+</ParamField>
+
+<ParamField path="modules" type="Module[]">
+  AG Grid modules to register for this instance
+</ParamField>
+
+<ParamField path="suppressChangeDetection" type="boolean" default="false">
+  Disable automatic Angular change detection for better performance
+</ParamField>
+
+<ParamField path="rowSelection" type="'single' | 'multiple'">
+  Enable row selection mode
+</ParamField>
+
+## Output Events Reference
+
+Bind to grid events using Angular's event binding:
+
+<ParamField path="(gridReady)" type="GridReadyEvent">
+  Fired when grid initialization is complete
+</ParamField>
+
+<ParamField path="(cellClicked)" type="CellClickedEvent">
+  Fired when a cell is clicked
+</ParamField>
+
+<ParamField path="(rowSelected)" type="RowSelectedEvent">
+  Fired when a row is selected/deselected
+</ParamField>
+
+<ParamField path="(cellValueChanged)" type="CellValueChangedEvent">
+  Fired when a cell value is changed after editing
+</ParamField>
+
+## Module Registration
+
+<Tabs>
+<Tab title="Global Registration">
+  ```typescript
+  import { APP_INITIALIZER, NgModule } from '@angular/core';
+  import { ModuleRegistry } from 'ag-grid-community';
+  import { ClientSideRowModelModule } from 'ag-grid-community';
+  import { MenuModule } from 'ag-grid-enterprise';
+
+  export function registerModules() {
+    return () => {
+      ModuleRegistry.registerModules([
+        ClientSideRowModelModule,
+        MenuModule
+      ]);
+    };
+  }
+
+  @NgModule({
+    providers: [
+      {
+        provide: APP_INITIALIZER,
+        useFactory: registerModules,
+        multi: true
+      }
+    ]
+  })
+  export class AppModule {}
+  ```
+</Tab>
+
+<Tab title="Per-Component Registration">
+  ```typescript
+  import { ClientSideRowModelModule } from 'ag-grid-community';
+  import { MenuModule } from 'ag-grid-enterprise';
+
+  @Component({
+    template: `
+      <ag-grid-angular
+        [modules]="modules"
+        [rowData]="rowData"
+        [columnDefs]="columnDefs"
+      />
+    `
+  })
+  export class GridComponent {
+    modules = [
+      ClientSideRowModelModule,
+      MenuModule
+    ];
+  }
+  ```
+</Tab>
+</Tabs>
+
+## Server-Side Data
+
+Integrate with Angular's HttpClient for server-side data.
+
+```typescript
+import { Component, OnInit, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { GridReadyEvent } from 'ag-grid-community';
+
+@Component({
+  selector: 'app-root',
+  template: `
+    <ag-grid-angular
+      [rowData]="rowData"
+      [columnDefs]="columnDefs"
+      [loading]="loading"
+      (gridReady)="onGridReady($event)"
+    />
+  `
+})
+export class AppComponent implements OnInit {
+  private http = inject(HttpClient);
+  
+  rowData: any[] = [];
+  loading = true;
+  columnDefs: ColDef[] = [...];
+
+  ngOnInit() {
+    this.loadData();
+  }
+
+  loadData() {
+    this.loading = true;
+    this.http.get<any[]>('/api/data')
+      .subscribe({
+        next: (data) => {
+          this.rowData = data;
+          this.loading = false;
+        },
+        error: (err) => {
+          console.error('Error loading data', err);
+          this.loading = false;
+        }
+      });
+  }
+
+  onGridReady(params: GridReadyEvent) {
+    params.api.sizeColumnsToFit();
+  }
+}
+```
+
+## Common Patterns
+
+### Responsive Grid Height
+
+```typescript
+@Component({
+  selector: 'app-root',
+  template: `
+    <div class="grid-container">
+      <ag-grid-angular
+        class="ag-theme-quartz"
+        [rowData]="rowData"
+        [columnDefs]="columnDefs"
+      />
+    </div>
+  `,
+  styles: [`
+    .grid-container {
+      height: calc(100vh - 100px);
+    }
+    ag-grid-angular {
+      height: 100%;
+    }
+  `]
+})
+export class AppComponent {}
+```
+
+### Dynamic Column Updates
+
+```typescript
+@Component({
+  template: `
+    <label>
+      <input type="checkbox" [(ngModel)]="showPrice" />
+      Show Price
+    </label>
+    <ag-grid-angular
+      [columnDefs]="columnDefs"
+      [rowData]="rowData"
+    />
+  `
+})
+export class AppComponent {
+  showPrice = true;
+  baseColumns: ColDef[] = [
+    { field: 'make' },
+    { field: 'model' }
+  ];
+
+  get columnDefs(): ColDef[] {
+    return [
+      ...this.baseColumns,
+      ...(this.showPrice ? [{ field: 'price' }] : [])
+    ];
+  }
+}
+```
+
+## Troubleshooting
+
+<AccordionGroup>
+<Accordion title="Grid not displaying correctly">
+  Ensure you've imported the CSS in your `angular.json`:
+  
+  ```json
+  "styles": [
+    "node_modules/ag-grid-community/styles/ag-grid.css",
+    "node_modules/ag-grid-community/styles/ag-theme-quartz.css"
+  ]
+  ```
+  
+  Set explicit height on the grid container:
+  
+  ```html
+  <ag-grid-angular
+    class="ag-theme-quartz"
+    style="height: 500px"
+  />
+  ```
+</Accordion>
+
+<Accordion title="Custom components not rendering">
+  Ensure your custom components are:
+  1. Marked as `standalone: true` or properly declared
+  2. Implementing the correct interface (e.g., `ICellRendererAngularComp`)
+  3. Have the required lifecycle methods (`agInit`, `refresh`)
+</Accordion>
+
+<Accordion title="Change detection not working">
+  Create new array references when updating data:
+  
+  ```typescript
+  // Wrong: Mutates existing array
+  this.rowData.push(newRow);
+  
+  // Correct: Creates new array reference
+  this.rowData = [...this.rowData, newRow];
+  ```
+</Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+<Card title="Column Definitions" icon="table-columns" href="/column-definitions">
+  Configure grid columns
+</Card>
+<Card title="Grid API" icon="code" href="/grid-api">
+  Explore API methods
+</Card>
+<Card title="Custom Components" icon="puzzle-piece" href="/custom-components">
+  Build Angular components for cells
+</Card>
+<Card title="Styling" icon="palette" href="/styling">
+  Customize appearance
+</Card>
+</CardGroup>

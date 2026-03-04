@@ -1,0 +1,446 @@
+---
+title: GridOptions
+description: Complete reference for the AG Grid GridOptions interface and configuration properties
+---
+
+The `GridOptions` interface is the primary configuration object for AG Grid. It contains all the properties that control the grid's behavior, appearance, and functionality.
+
+## Overview
+
+GridOptions can be provided when creating the grid:
+
+```javascript
+const gridOptions = {
+  columnDefs: [...],
+  rowData: [...],
+  pagination: true,
+  paginationPageSize: 20,
+  // ... other options
+};
+
+const gridApi = createGrid(gridDiv, gridOptions);
+```
+
+## Core Properties
+
+### Row Data
+
+<ParamField path="rowData" type="TData[]">
+  Data to be displayed in the grid as rows. Each item in the array represents a row.
+  
+  ```javascript
+  const gridOptions = {
+    rowData: [
+      { name: 'Alice', age: 25, country: 'USA' },
+      { name: 'Bob', age: 30, country: 'UK' }
+    ]
+  };
+  ```
+</ParamField>
+
+### Column Definitions
+
+<ParamField path="columnDefs" type="(ColDef<TData> | ColGroupDef<TData>)[] | null">
+  Array of Column / Column Group definitions.
+  
+  ```javascript
+  const gridOptions = {
+    columnDefs: [
+      { field: 'name', headerName: 'Full Name' },
+      { field: 'age', type: 'numericColumn' },
+      { field: 'country' }
+    ]
+  };
+  ```
+  
+  See [Column Definitions](/api/column-definitions) for detailed documentation.
+</ParamField>
+
+<ParamField path="defaultColDef" type="ColDef<TData>">
+  A default column definition. Items defined in the actual column definitions get precedence.
+  
+  ```javascript
+  const gridOptions = {
+    defaultColDef: {
+      sortable: true,
+      filter: true,
+      resizable: true,
+      minWidth: 100
+    }
+  };
+  ```
+</ParamField>
+
+<ParamField path="defaultColGroupDef" type="Partial<ColGroupDef<TData>>">
+  A default column group definition. All column group definitions will use these properties. Items defined in the actual column group definition get precedence.
+  
+  **Initial:** This property cannot be updated after the grid is created.
+  
+  ```javascript
+  const gridOptions = {
+    defaultColGroupDef: {
+      marryChildren: true
+    }
+  };
+  ```
+</ParamField>
+
+## Pagination
+
+<ParamField path="pagination" type="boolean" default="false">
+  Set whether pagination is enabled.
+  
+  **Module:** `PaginationModule`
+  
+  ```javascript
+  const gridOptions = {
+    pagination: true,
+    paginationPageSize: 50
+  };
+  ```
+</ParamField>
+
+<ParamField path="paginationPageSize" type="number" default="100">
+  How many rows to load per page. If `paginationAutoPageSize` is specified, this property is ignored.
+  
+  **Module:** `PaginationModule`
+  
+  ```javascript
+  const gridOptions = {
+    pagination: true,
+    paginationPageSize: 25
+  };
+  ```
+</ParamField>
+
+<ParamField path="paginationPageSizeSelector" type="number[] | boolean" default="true">
+  Determines if the page size selector is shown in the pagination panel or not. Set to an array of values to show the page size selector with custom list of possible page sizes. Set to `true` to show the page size selector with the default page sizes `[20, 50, 100]`. Set to `false` to hide the page size selector.
+  
+  **Module:** `PaginationModule`
+  **Initial:** This property cannot be updated after the grid is created.
+  
+  ```javascript
+  const gridOptions = {
+    pagination: true,
+    paginationPageSizeSelector: [10, 25, 50, 100]
+  };
+  ```
+</ParamField>
+
+<ParamField path="paginationAutoPageSize" type="boolean" default="false">
+  Set to `true` so that the number of rows to load per page is automatically adjusted by the grid so each page shows enough rows to just fill the area designated for the grid. If `false`, `paginationPageSize` is used.
+  
+  **Module:** `PaginationModule`
+  
+  ```javascript
+  const gridOptions = {
+    pagination: true,
+    paginationAutoPageSize: true
+  };
+  ```
+</ParamField>
+
+## Row Selection
+
+<ParamField path="rowSelection" type="RowSelectionOptions" default="undefined">
+  Configure row selection behavior. Replaces the deprecated individual selection properties.
+  
+  **Module:** `RowSelectionModule`
+  
+  ```javascript
+  const gridOptions = {
+    rowSelection: {
+      mode: 'multiRow',
+      checkboxes: true,
+      headerCheckbox: true,
+      enableClickSelection: true
+    }
+  };
+  ```
+</ParamField>
+
+## Sorting
+
+<ParamField path="sortingOrder" type="SortDirection[]">
+  Array defining the order in which sorting occurs (if sorting is enabled). Values can be `'asc'`, `'desc'` or `null`. For example: `sortingOrder: ['asc', 'desc']`.
+  
+  ```javascript
+  const gridOptions = {
+    sortingOrder: ['asc', 'desc', null]
+  };
+  ```
+</ParamField>
+
+<ParamField path="multiSortKey" type="'ctrl' | 'shift'" default="'ctrl'">
+  Set to `'shift'` to use the Shift key for multi-sorting instead of Ctrl.
+  
+  ```javascript
+  const gridOptions = {
+    multiSortKey: 'shift'
+  };
+  ```
+</ParamField>
+
+## Editing
+
+<ParamField path="editType" type="EditStrategyType">
+  Set to `'fullRow'` to enable Full Row Editing. Otherwise leave blank to edit one cell at a time.
+  
+  **Module:** `TextEditorModule` / `LargeTextEditorModule` / `NumberEditorModule` / `DateEditorModule` / `CheckboxEditorModule` / `CustomEditorModule` / `SelectEditorModule` / `RichSelectModule`
+  
+  ```javascript
+  const gridOptions = {
+    editType: 'fullRow'
+  };
+  ```
+</ParamField>
+
+<ParamField path="singleClickEdit" type="boolean" default="false">
+  Set to `true` to enable Single Click Editing for cells, to start editing with a single click.
+  
+  **Module:** `TextEditorModule` / `LargeTextEditorModule` / `NumberEditorModule` / `DateEditorModule` / `CheckboxEditorModule` / `CustomEditorModule` / `SelectEditorModule` / `RichSelectModule`
+  
+  ```javascript
+  const gridOptions = {
+    singleClickEdit: true
+  };
+  ```
+</ParamField>
+
+<ParamField path="stopEditingWhenCellsLoseFocus" type="boolean" default="false">
+  Set this to `true` to stop cell editing when grid loses focus. The default is that the grid stays editing until focus goes onto another cell.
+  
+  **Module:** `TextEditorModule` / `LargeTextEditorModule` / `NumberEditorModule` / `DateEditorModule` / `CheckboxEditorModule` / `CustomEditorModule` / `SelectEditorModule` / `RichSelectModule`
+  **Initial:** This property cannot be updated after the grid is created.
+  
+  ```javascript
+  const gridOptions = {
+    stopEditingWhenCellsLoseFocus: true
+  };
+  ```
+</ParamField>
+
+<ParamField path="undoRedoCellEditing" type="boolean">
+  Set to `true` to enable Undo / Redo while editing.
+  
+  **Module:** `UndoRedoEditModule`
+  **Initial:** This property cannot be updated after the grid is created.
+  
+  ```javascript
+  const gridOptions = {
+    undoRedoCellEditing: true,
+    undoRedoCellEditingLimit: 20
+  };
+  ```
+</ParamField>
+
+## Filtering
+
+<ParamField path="quickFilterText" type="string">
+  Rows are filtered using this text as a Quick Filter. Only supported for Client-Side Row Model.
+  
+  **Module:** `QuickFilterModule`
+  
+  ```javascript
+  const gridOptions = {
+    quickFilterText: 'search term'
+  };
+  ```
+</ParamField>
+
+<ParamField path="enableAdvancedFilter" type="boolean" default="false">
+  Set to true to enable the Advanced Filter.
+  
+  **Module:** `AdvancedFilterModule`
+  
+  ```javascript
+  const gridOptions = {
+    enableAdvancedFilter: true
+  };
+  ```
+</ParamField>
+
+## Row Grouping & Aggregation
+
+<ParamField path="groupDefaultExpanded" type="number" default="0">
+  If grouping, set to the number of levels to expand by default, e.g. `0` for none, `1` for first level only, etc. Set to `-1` to expand everything.
+  
+  **Module:** `RowGroupingModule`
+  
+  ```javascript
+  const gridOptions = {
+    groupDefaultExpanded: 1
+  };
+  ```
+</ParamField>
+
+<ParamField path="aggFuncs" type="IAggFuncs<TData>">
+  A map of 'function name' to 'function' for custom aggregation functions.
+  
+  **Module:** `RowGroupingModule` / `PivotModule` / `TreeDataModule` / `ServerSideRowModelModule`
+  **Initial:** This property cannot be updated after the grid is created.
+  
+  ```javascript
+  const gridOptions = {
+    aggFuncs: {
+      mySum: (params) => {
+        let sum = 0;
+        params.values.forEach(value => sum += value);
+        return sum;
+      }
+    }
+  };
+  ```
+</ParamField>
+
+## Styling & Theming
+
+<ParamField path="theme" type="Theme">
+  The theme to use for the grid. Can be a built-in theme name or a custom theme object.
+  
+  ```javascript
+  const gridOptions = {
+    theme: 'ag-theme-quartz'
+  };
+  ```
+</ParamField>
+
+<ParamField path="rowHeight" type="number">
+  The height in pixels for each row. If not specified, it uses the theme value.
+  
+  ```javascript
+  const gridOptions = {
+    rowHeight: 50
+  };
+  ```
+</ParamField>
+
+<ParamField path="headerHeight" type="number">
+  The height in pixels for the row containing the column label header. If not specified, it uses the theme value of `header-height`.
+  
+  ```javascript
+  const gridOptions = {
+    headerHeight: 60
+  };
+  ```
+</ParamField>
+
+<ParamField path="animateRows" type="boolean" default="true">
+  Set to `false` to disable Row Animation which is enabled by default.
+  
+  ```javascript
+  const gridOptions = {
+    animateRows: false
+  };
+  ```
+</ParamField>
+
+## Performance
+
+<ParamField path="rowBuffer" type="number" default="10">
+  The number of rows rendered outside the viewable area the grid renders. Having a buffer means the grid will have rows ready to show as the user slowly scrolls vertically.
+  
+  ```javascript
+  const gridOptions = {
+    rowBuffer: 20
+  };
+  ```
+</ParamField>
+
+<ParamField path="suppressColumnVirtualisation" type="boolean" default="false">
+  Set to `true` so that the grid doesn't virtualise the columns. For example, if you have 100 columns, but only 10 visible due to scrolling, all 100 will always be rendered. **It is not recommended to set this to `true` as it may cause performance issues.**
+  
+  **Initial:** This property cannot be updated after the grid is created.
+  
+  ```javascript
+  const gridOptions = {
+    suppressColumnVirtualisation: false
+  };
+  ```
+</ParamField>
+
+<ParamField path="suppressRowVirtualisation" type="boolean" default="false">
+  Set to `true` so that the grid doesn't virtualise the rows. For example, if you have 100 rows, but only 10 visible due to scrolling, all 100 will always be rendered. **It is not recommended to set this to `true` as it may cause performance issues.**
+  
+  **Initial:** This property cannot be updated after the grid is created.
+  
+  ```javascript
+  const gridOptions = {
+    suppressRowVirtualisation: false
+  };
+  ```
+</ParamField>
+
+## Callbacks
+
+<ParamField path="onGridReady" type="(event: GridReadyEvent<TData>) => void">
+  Called once when the grid is ready to use. Use this to access the Grid API.
+  
+  ```javascript
+  const gridOptions = {
+    onGridReady: (event) => {
+      console.log('Grid is ready');
+      const gridApi = event.api;
+    }
+  };
+  ```
+</ParamField>
+
+<ParamField path="onRowClicked" type="(event: RowClickedEvent<TData>) => void">
+  Called when a row is clicked.
+  
+  ```javascript
+  const gridOptions = {
+    onRowClicked: (event) => {
+      console.log('Row clicked:', event.data);
+    }
+  };
+  ```
+</ParamField>
+
+<ParamField path="onCellValueChanged" type="(event: CellValueChangedEvent<TData>) => void">
+  Called when a cell value is changed.
+  
+  ```javascript
+  const gridOptions = {
+    onCellValueChanged: (event) => {
+      console.log('Cell changed:', {
+        column: event.column.getId(),
+        oldValue: event.oldValue,
+        newValue: event.newValue
+      });
+    }
+  };
+  ```
+</ParamField>
+
+## Context
+
+<ParamField path="context" type="any">
+  Provides a context object that is provided to different callbacks the grid uses. Used for passing additional information to the callbacks used by your application.
+  
+  **Initial:** This property cannot be updated after the grid is created.
+  
+  ```javascript
+  const gridOptions = {
+    context: {
+      userId: '12345',
+      permissions: ['read', 'write']
+    }
+  };
+  ```
+</ParamField>
+
+## Related APIs
+
+<Card title="GridApi" icon="code" href="/api/grid-api">
+  Interact with the grid programmatically
+</Card>
+
+<Card title="Column Definitions" icon="table-columns" href="/api/column-definitions">
+  Configure individual columns
+</Card>
+
+<Card title="Grid Events" icon="bolt" href="/api/grid-events">
+  Listen to grid lifecycle events
+</Card>

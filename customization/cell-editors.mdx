@@ -1,0 +1,920 @@
+---
+title: 'Cell Editors'
+description: 'Create custom cell editor components for data input and validation'
+icon: 'pen-to-square'
+---
+
+## Overview
+
+Cell Editors provide custom interfaces for editing cell values when users enter edit mode. Use cell editors to:
+
+- Create specialized input controls (dropdowns, date pickers, etc.)
+- Implement custom validation logic
+- Build multi-field editors for complex data types
+- Add rich editing experiences with autocomplete, suggestions, or formatting
+- Control when editing starts and stops
+
+<Note>
+Editing is triggered by double-clicking a cell, pressing F2, or typing a printable character. You can customize this behavior using `editType` and `singleClickEdit` column properties.
+</Note>
+
+## ICellEditorParams Interface
+
+The grid provides cell editors with comprehensive parameters:
+
+```typescript
+interface ICellEditorParams<TData = any, TValue = any, TContext = any>
+  extends ICellEditorParamsShared<TData, TValue, TContext> {
+  /** Current value of the cell */
+  value: TValue | null | undefined;
+  
+  /** Key that started the edit (e.g., 'Enter', 'F2', or printable character) */
+  eventKey: string | null;
+  
+  /** Grid column */
+  column: Column<TValue>;
+  
+  /** Column definition */
+  colDef: ColDef<TData, TValue>;
+  
+  /** Row node for the cell */
+  node: IRowNode<TData>;
+  
+  /** Row data */
+  data: TData;
+  
+  /** Editing row index */
+  rowIndex: number;
+  
+  /** True if this cell started the edit (user double-clicked or pressed key) */
+  cellStartedEdit: boolean;
+  
+  /** Pass key events back to grid (tab, arrows, etc.) */
+  onKeyDown: (event: KeyboardEvent) => void;
+  
+  /** Stop editing and optionally suppress navigation */
+  stopEditing: (suppressNavigateAfterEdit?: boolean) => void;
+  
+  /** Reference to the grid cell DOM element */
+  eGridCell: HTMLElement;
+  
+  /** Parse a string value using the column's valueParser */
+  parseValue: (value: string) => TValue | null | undefined;
+  
+  /** Format a value using the column's valueFormatter */
+  formatValue: (value: TValue | null | undefined) => string;
+  
+  /** Custom validation callback */
+  getValidationErrors?: (
+    params: IErrorValidationParams<TData, TValue, TContext>
+  ) => string[] | null;
+  
+  /** Run editor validation */
+  validate(): void;
+}
+```
+
+## ICellEditor Interface
+
+Implement this interface to create a custom cell editor:
+
+```typescript
+interface ICellEditor<TValue = any> extends BaseCellEditor {
+  /**
+   * Mandatory - Return the final value.
+   * Called by the grid once after editing is complete.
+   */
+  getValue(): TValue | null | undefined;
+
+  /**
+   * Optional: Called when cell editor params update
+   */
+  refresh?(params: ICellEditorParams<any, TValue>): void;
+
+  /**
+   * Optional: Called after the GUI is attached to the DOM.
+   * Use for operations that require attachment (e.g., focus).
+   */
+  afterGuiAttached?(): void;
+
+  /**
+   * Optional: Return true for popup editors.
+   * Default is false (inline editing).
+   */
+  isPopup?(): boolean;
+
+  /**
+   * Optional: Return 'over' or 'under' for popup position.
+   * Only called if isPopup() returns true.
+   */
+  getPopupPosition?(): 'over' | 'under' | undefined;
+}
+```
+
+### BaseCellEditor Interface
+
+```typescript
+interface BaseCellEditor {
+  /**
+   * Optional: Return true to cancel editing before it starts.
+   * Useful for conditional editing based on the key pressed.
+   */
+  isCancelBeforeStart?(): boolean;
+
+  /**
+   * Optional: Return true to cancel editing and discard the value.
+   * Called after editing is complete.
+   */
+  isCancelAfterEnd?(): boolean;
+
+  /**
+   * Optional: Called when focus should be put into the editor
+   * (full row edit mode)
+   */
+  focusIn?(): void;
+
+  /**
+   * Optional: Called when focus is leaving the editor
+   * (full row edit mode)
+   */
+  focusOut?(): void;
+
+  /**
+   * Optional: Return the element for validation feedback.
+   * @param tooltip - True for tooltip anchor, false for CSS styling
+   */
+  getValidationElement?(tooltip: boolean): HTMLElement;
+
+  /**
+   * Optional: Return validation error messages
+   */
+  getValidationErrors?(): string[] | null;
+}
+```
+
+## Basic Examples
+
+<Tabs>
+  <Tab title="Vanilla JS">
+    ```javascript
+    class NumericCellEditor {
+      init(params) {
+        this.params = params;
+        this.eInput = document.createElement('input');
+        this.eInput.type = 'number';
+        this.eInput.value = params.value ?? '';
+        this.eInput.style.width = '100%';
+        
+        // Focus and select on attach
+        this.eInput.addEventListener('focus', () => {
+          this.eInput.select();
+        });
+      }
+
+      getGui() {
+        return this.eInput;
+      }
+
+      afterGuiAttached() {
+        this.eInput.focus();
+      }
+
+      getValue() {
+        const value = this.eInput.value;
+        return value === '' ? null : Number(value);
+      }
+
+      destroy() {
+        // Cleanup if needed
+      }
+    }
+
+    // Column definition
+    const columnDefs = [
+      {
+        field: 'price',
+        editable: true,
+        cellEditor: NumericCellEditor
+      }
+    ];
+    ```
+  </Tab>
+
+  <Tab title="React">
+    ```jsx
+    import { forwardRef, useRef, useEffect, useImperativeHandle } from 'react';
+
+    const NumericCellEditor = forwardRef((props, ref) => {
+      const inputRef = useRef(null);
+
+      useImperativeHandle(ref, () => ({
+        getValue() {
+          const value = inputRef.current.value;
+          return value === '' ? null : Number(value);
+        }
+      }));
+
+      useEffect(() => {
+        // Focus and select on mount
+        inputRef.current.focus();
+        inputRef.current.select();
+      }, []);
+
+      return (
+        <input
+          ref={inputRef}
+          type="number"
+          defaultValue={props.value ?? ''}
+          style={{ width: '100%' }}
+        />
+      );
+    });
+
+    export default NumericCellEditor;
+
+    // Column definition
+    const columnDefs = [
+      {
+        field: 'price',
+        editable: true,
+        cellEditor: NumericCellEditor
+      }
+    ];
+    ```
+  </Tab>
+
+  <Tab title="Angular">
+    ```typescript
+    import { Component, ViewChild, AfterViewInit } from '@angular/core';
+    import { ICellEditorAngularComp } from 'ag-grid-angular';
+    import { ICellEditorParams } from 'ag-grid-community';
+
+    @Component({
+      selector: 'numeric-cell-editor',
+      template: `
+        <input
+          #input
+          type="number"
+          [value]="params.value ?? ''"
+          style="width: 100%;"
+        />
+      `
+    })
+    export class NumericCellEditor implements ICellEditorAngularComp, AfterViewInit {
+      @ViewChild('input', { static: false }) input: any;
+      public params: ICellEditorParams;
+
+      agInit(params: ICellEditorParams): void {
+        this.params = params;
+      }
+
+      ngAfterViewInit(): void {
+        setTimeout(() => {
+          this.input.nativeElement.focus();
+          this.input.nativeElement.select();
+        });
+      }
+
+      getValue(): any {
+        const value = this.input.nativeElement.value;
+        return value === '' ? null : Number(value);
+      }
+    }
+
+    // Column definition
+    columnDefs = [
+      {
+        field: 'price',
+        editable: true,
+        cellEditor: NumericCellEditor
+      }
+    ];
+    ```
+  </Tab>
+
+  <Tab title="Vue">
+    ```vue
+    <template>
+      <input
+        ref="input"
+        type="number"
+        :value="params.value ?? ''"
+        style="width: 100%;"
+      />
+    </template>
+
+    <script>
+    export default {
+      data() {
+        return {
+          params: null
+        };
+      },
+      mounted() {
+        this.$nextTick(() => {
+          this.$refs.input.focus();
+          this.$refs.input.select();
+        });
+      },
+      methods: {
+        getValue() {
+          const value = this.$refs.input.value;
+          return value === '' ? null : Number(value);
+        }
+      }
+    };
+    </script>
+
+    // Column definition
+    const columnDefs = [
+      {
+        field: 'price',
+        editable: true,
+        cellEditor: NumericCellEditor
+      }
+    ];
+    ```
+  </Tab>
+</Tabs>
+
+## Advanced Examples
+
+### Dropdown Editor with Search
+
+<CodeGroup>
+```javascript Vanilla JS
+class SelectCellEditor {
+  init(params) {
+    this.params = params;
+    this.eGui = document.createElement('select');
+    this.eGui.style.width = '100%';
+    this.eGui.style.height = '100%';
+    
+    const options = params.values || [];
+    options.forEach(option => {
+      const optionEl = document.createElement('option');
+      optionEl.value = option;
+      optionEl.text = option;
+      if (option === params.value) {
+        optionEl.selected = true;
+      }
+      this.eGui.appendChild(optionEl);
+    });
+  }
+
+  getGui() {
+    return this.eGui;
+  }
+
+  afterGuiAttached() {
+    this.eGui.focus();
+  }
+
+  getValue() {
+    return this.eGui.value;
+  }
+}
+
+// Usage
+const columnDefs = [
+  {
+    field: 'country',
+    editable: true,
+    cellEditor: SelectCellEditor,
+    cellEditorParams: {
+      values: ['USA', 'UK', 'Canada', 'Australia']
+    }
+  }
+];
+```
+
+```jsx React
+import { forwardRef, useRef, useEffect, useImperativeHandle } from 'react';
+
+const SelectCellEditor = forwardRef((props, ref) => {
+  const selectRef = useRef(null);
+  const options = props.values || [];
+
+  useImperativeHandle(ref, () => ({
+    getValue() {
+      return selectRef.current.value;
+    }
+  }));
+
+  useEffect(() => {
+    selectRef.current.focus();
+  }, []);
+
+  return (
+    <select
+      ref={selectRef}
+      defaultValue={props.value}
+      style={{ width: '100%', height: '100%' }}
+    >
+      {options.map(option => (
+        <option key={option} value={option}>
+          {option}
+        </option>
+      ))}
+    </select>
+  );
+});
+
+export default SelectCellEditor;
+```
+</CodeGroup>
+
+### Date Picker Editor
+
+```javascript
+class DateCellEditor {
+  init(params) {
+    this.params = params;
+    this.eInput = document.createElement('input');
+    this.eInput.type = 'date';
+    this.eInput.style.width = '100%';
+    
+    // Convert value to ISO date string
+    if (params.value) {
+      const date = new Date(params.value);
+      this.eInput.value = date.toISOString().split('T')[0];
+    }
+  }
+
+  getGui() {
+    return this.eInput;
+  }
+
+  afterGuiAttached() {
+    this.eInput.focus();
+  }
+
+  getValue() {
+    if (!this.eInput.value) return null;
+    return new Date(this.eInput.value);
+  }
+}
+```
+
+### Popup Editor
+
+```javascript
+class PopupCellEditor {
+  init(params) {
+    this.params = params;
+    this.eGui = document.createElement('div');
+    this.eGui.style.padding = '20px';
+    this.eGui.style.background = 'white';
+    this.eGui.style.border = '1px solid #ccc';
+    this.eGui.style.borderRadius = '4px';
+    
+    this.eGui.innerHTML = `
+      <div>
+        <label>Enter value:</label>
+        <input type="text" class="editor-input" value="${params.value || ''}" />
+        <div style="margin-top: 10px;">
+          <button class="btn-ok">OK</button>
+          <button class="btn-cancel">Cancel</button>
+        </div>
+      </div>
+    `;
+    
+    this.eInput = this.eGui.querySelector('.editor-input');
+    this.eGui.querySelector('.btn-ok').addEventListener('click', () => {
+      params.stopEditing();
+    });
+    this.eGui.querySelector('.btn-cancel').addEventListener('click', () => {
+      this.cancelled = true;
+      params.stopEditing();
+    });
+  }
+
+  getGui() {
+    return this.eGui;
+  }
+
+  isPopup() {
+    return true;
+  }
+
+  getPopupPosition() {
+    return 'over';
+  }
+
+  afterGuiAttached() {
+    this.eInput.focus();
+    this.eInput.select();
+  }
+
+  getValue() {
+    return this.cancelled ? this.params.value : this.eInput.value;
+  }
+
+  isCancelAfterEnd() {
+    return this.cancelled;
+  }
+}
+```
+
+## Conditional Editing
+
+Control when editing starts using `isCancelBeforeStart()`:
+
+```javascript
+class NumericOnlyCellEditor {
+  init(params) {
+    this.params = params;
+    this.eInput = document.createElement('input');
+    this.eInput.type = 'number';
+    this.eInput.value = params.value ?? '';
+  }
+
+  getGui() {
+    return this.eInput;
+  }
+
+  getValue() {
+    return Number(this.eInput.value);
+  }
+
+  isCancelBeforeStart() {
+    // Only allow editing if a number key was pressed
+    const key = this.params.eventKey;
+    return key && !/^[0-9]$/.test(key);
+  }
+
+  afterGuiAttached() {
+    // If a number was typed, append it
+    if (this.params.eventKey && /^[0-9]$/.test(this.params.eventKey)) {
+      this.eInput.value = this.params.eventKey;
+    }
+    this.eInput.focus();
+  }
+}
+```
+
+## Validation
+
+### Built-in Validation
+
+Implement `getValidationErrors()` to provide validation:
+
+```javascript
+class ValidatedCellEditor {
+  init(params) {
+    this.params = params;
+    this.eInput = document.createElement('input');
+    this.eInput.type = 'number';
+    this.eInput.value = params.value ?? '';
+    
+    // Validate on input
+    this.eInput.addEventListener('input', () => {
+      params.validate();
+    });
+  }
+
+  getGui() {
+    return this.eInput;
+  }
+
+  getValue() {
+    const value = this.eInput.value;
+    return value === '' ? null : Number(value);
+  }
+
+  getValidationErrors() {
+    const value = this.getValue();
+    const errors = [];
+    
+    if (value === null || value === undefined) {
+      errors.push('Value is required');
+    } else if (value < 0) {
+      errors.push('Value must be positive');
+    } else if (value > 1000) {
+      errors.push('Value must be less than 1000');
+    }
+    
+    return errors.length > 0 ? errors : null;
+  }
+
+  getValidationElement(tooltip) {
+    return this.eInput;
+  }
+
+  afterGuiAttached() {
+    this.eInput.focus();
+  }
+}
+```
+
+### Custom Validation Callback
+
+Use `cellEditorParams.getValidationErrors` for validation:
+
+```javascript
+const columnDefs = [
+  {
+    field: 'age',
+    editable: true,
+    cellEditor: 'agNumberCellEditor',
+    cellEditorParams: {
+      getValidationErrors: (params) => {
+        const { value } = params;
+        const errors = [];
+        
+        if (value < 18) {
+          errors.push('Must be 18 or older');
+        }
+        if (value > 100) {
+          errors.push('Invalid age');
+        }
+        
+        return errors.length > 0 ? errors : null;
+      }
+    }
+  }
+];
+```
+
+## Built-in Cell Editors
+
+AG Grid provides several built-in editors:
+
+### Text Editor
+
+```javascript
+columnDefs = [
+  {
+    field: 'name',
+    editable: true,
+    cellEditor: 'agTextCellEditor',
+    cellEditorParams: {
+      maxLength: 50,
+      useFormatter: false
+    }
+  }
+];
+```
+
+### Number Editor
+
+```javascript
+columnDefs = [
+  {
+    field: 'price',
+    editable: true,
+    cellEditor: 'agNumberCellEditor',
+    cellEditorParams: {
+      min: 0,
+      max: 10000,
+      precision: 2
+    }
+  }
+];
+```
+
+### Date Editor
+
+```javascript
+columnDefs = [
+  {
+    field: 'birthDate',
+    editable: true,
+    cellEditor: 'agDateCellEditor',
+    cellEditorParams: {
+      min: '1900-01-01',
+      max: '2100-12-31'
+    }
+  }
+];
+```
+
+### Select Editor
+
+```javascript
+columnDefs = [
+  {
+    field: 'country',
+    editable: true,
+    cellEditor: 'agSelectCellEditor',
+    cellEditorParams: {
+      values: ['USA', 'UK', 'Canada', 'Australia']
+    }
+  }
+];
+```
+
+### Large Text Editor
+
+```javascript
+columnDefs = [
+  {
+    field: 'description',
+    editable: true,
+    cellEditor: 'agLargeTextCellEditor',
+    cellEditorParams: {
+      maxLength: 1000,
+      rows: 10,
+      cols: 50
+    }
+  }
+];
+```
+
+## Keyboard Navigation
+
+Handle keyboard events to improve user experience:
+
+```javascript
+class KeyboardAwareCellEditor {
+  init(params) {
+    this.params = params;
+    this.eInput = document.createElement('input');
+    this.eInput.value = params.value ?? '';
+    
+    this.eInput.addEventListener('keydown', (event) => {
+      // Stop editing on Enter
+      if (event.key === 'Enter') {
+        params.stopEditing();
+      }
+      // Cancel on Escape
+      else if (event.key === 'Escape') {
+        this.cancelled = true;
+        params.stopEditing();
+      }
+      // Pass Tab to grid for navigation
+      else if (event.key === 'Tab') {
+        params.onKeyDown(event);
+      }
+    });
+  }
+
+  getGui() {
+    return this.eInput;
+  }
+
+  getValue() {
+    return this.cancelled ? this.params.value : this.eInput.value;
+  }
+
+  isCancelAfterEnd() {
+    return this.cancelled;
+  }
+
+  afterGuiAttached() {
+    this.eInput.focus();
+    this.eInput.select();
+  }
+}
+```
+
+## Full Row Editing
+
+Implement `focusIn()` and `focusOut()` for full row edit mode:
+
+```javascript
+class FullRowCellEditor {
+  init(params) {
+    this.params = params;
+    this.eInput = document.createElement('input');
+    this.eInput.value = params.value ?? '';
+  }
+
+  getGui() {
+    return this.eInput;
+  }
+
+  getValue() {
+    return this.eInput.value;
+  }
+
+  focusIn() {
+    this.eInput.focus();
+    this.eInput.select();
+  }
+
+  focusOut() {
+    // Optional cleanup when focus leaves
+  }
+}
+
+// Enable full row editing
+const gridOptions = {
+  editType: 'fullRow',
+  columnDefs: [
+    { field: 'name', editable: true, cellEditor: FullRowCellEditor },
+    { field: 'age', editable: true, cellEditor: FullRowCellEditor }
+  ]
+};
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Always Focus the Editor">
+    Implement `afterGuiAttached()` to focus your input element:
+
+    ```javascript
+    afterGuiAttached() {
+      this.eInput.focus();
+      this.eInput.select(); // Select text for easy replacement
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Handle Initial Key Press">
+    If the user starts editing by typing a character, use it as the initial value:
+
+    ```javascript
+    init(params) {
+      this.eInput = document.createElement('input');
+      // If a printable character was typed, use it as initial value
+      if (params.eventKey && params.eventKey.length === 1) {
+        this.eInput.value = params.eventKey;
+      } else {
+        this.eInput.value = params.value ?? '';
+      }
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Use parseValue and formatValue">
+    Leverage the provided utility functions:
+
+    ```javascript
+    init(params) {
+      this.params = params;
+      this.eInput = document.createElement('input');
+      // Use formatValue to display the initial value
+      this.eInput.value = params.formatValue(params.value);
+    }
+
+    getValue() {
+      // Use parseValue to convert back to the correct type
+      return this.params.parseValue(this.eInput.value);
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Implement Validation">
+    Provide immediate feedback with validation:
+
+    ```javascript
+    getValidationErrors() {
+      const value = this.getValue();
+      if (!value) return ['Value is required'];
+      return null;
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## TypeScript Support
+
+Use generics for type-safe cell editors:
+
+```typescript
+interface Product {
+  name: string;
+  price: number;
+  category: string;
+}
+
+class TypedCellEditor implements ICellEditorComp<Product, number> {
+  private eInput: HTMLInputElement;
+  private params: ICellEditorParams<Product, number>;
+
+  init(params: ICellEditorParams<Product, number>): void {
+    this.params = params;
+    this.eInput = document.createElement('input');
+    this.eInput.type = 'number';
+    
+    // TypeScript knows params.data is Product and params.value is number
+    this.eInput.value = String(params.value ?? 0);
+  }
+
+  getGui(): HTMLElement {
+    return this.eInput;
+  }
+
+  getValue(): number | null {
+    const value = this.eInput.value;
+    return value === '' ? null : Number(value);
+  }
+
+  afterGuiAttached(): void {
+    this.eInput.focus();
+  }
+}
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Cell Renderers" icon="eye" href="/customization/cell-renderers">
+    Learn about custom cell renderers for display
+  </Card>
+  <Card title="Filters" icon="filter" href="/customization/filters">
+    Create custom filter components
+  </Card>
+</CardGroup>

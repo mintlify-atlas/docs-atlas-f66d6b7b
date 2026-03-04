@@ -1,0 +1,337 @@
+---
+title: Enterprise Edition Overview
+description: Overview of AG Grid Enterprise features, licensing, and getting started guide
+---
+
+AG Grid Enterprise extends the Community edition with advanced features for complex data operations, visualization, and export capabilities. Enterprise features require a commercial license.
+
+## Enterprise vs Community
+
+<CardGroup cols={2}>
+  <Card title="Community (MIT)" icon="open-source">
+    Core grid functionality including sorting, filtering, cell editing, and basic rendering
+  </Card>
+  <Card title="Enterprise (Commercial)" icon="enterprise">
+    Advanced features: row grouping, pivoting, charts integration, Excel export, master/detail, and more
+  </Card>
+</CardGroup>
+
+## Key Enterprise Features
+
+AG Grid Enterprise provides enterprise-grade functionality for complex data applications:
+
+<CardGroup cols={3}>
+  <Card title="Row Grouping" icon="layer-group" href="/enterprise/row-grouping">
+    Group rows by columns with aggregation and tree data support
+  </Card>
+  <Card title="Pivoting" icon="table-pivot" href="/enterprise/pivoting">
+    Pivot data to create dynamic column structures and cross-tabulations
+  </Card>
+  <Card title="Integrated Charts" icon="chart-line" href="/enterprise/charts">
+    Create interactive charts directly from grid data with AG Charts
+  </Card>
+  <Card title="Excel Export" icon="file-excel" href="/enterprise/excel-export">
+    Export grid data to Excel with full styling and formatting support
+  </Card>
+  <Card title="Master/Detail" icon="sitemap" href="/enterprise/master-detail">
+    Expandable rows with nested grid instances
+  </Card>
+  <Card title="Advanced Filtering" icon="filter">
+    Set filters, multi-filters, and advanced filter expressions
+  </Card>
+  <Card title="Range Selection" icon="select">
+    Excel-like range selection and clipboard operations
+  </Card>
+  <Card title="Server-Side Row Model" icon="server">
+    Handle unlimited rows with server-side data operations
+  </Card>
+  <Card title="Tool Panels" icon="toolbox">
+    Column management and filtering panels in the sidebar
+  </Card>
+</CardGroup>
+
+## Installation
+
+### Package Installation
+
+<CodeGroup>
+```bash npm
+npm install ag-grid-enterprise
+```
+
+```bash yarn
+yarn add ag-grid-enterprise
+```
+
+```bash pnpm
+pnpm add ag-grid-enterprise
+```
+</CodeGroup>
+
+### Module Registration
+
+AG Grid Enterprise uses a modular architecture. You can import all features or cherry-pick specific modules:
+
+<CodeGroup>
+```typescript All Enterprise Features
+import { ModuleRegistry } from 'ag-grid-community';
+import { AllEnterpriseModule } from 'ag-grid-enterprise';
+
+// Register all enterprise and community features
+ModuleRegistry.registerModules([AllEnterpriseModule]);
+```
+
+```typescript Specific Features Only
+import { ModuleRegistry } from 'ag-grid-community';
+import { 
+  RowGroupingModule,
+  PivotModule,
+  ExcelExportModule,
+  MasterDetailModule 
+} from 'ag-grid-enterprise';
+
+// Register only the features you need
+ModuleRegistry.registerModules([
+  RowGroupingModule,
+  PivotModule,
+  ExcelExportModule,
+  MasterDetailModule
+]);
+```
+
+```typescript With Charts Integration
+import { ModuleRegistry } from 'ag-grid-community';
+import { AllEnterpriseModule } from 'ag-grid-enterprise';
+import { AgChartsEnterpriseModule } from 'ag-charts-enterprise';
+
+// Include AG Charts for integrated charting
+ModuleRegistry.registerModules([
+  AllEnterpriseModule.with(AgChartsEnterpriseModule)
+]);
+```
+</CodeGroup>
+
+<Note>
+Source: `/packages/ag-grid-enterprise/src/allEnterpriseModule.ts:87-96`
+</Note>
+
+## Licensing
+
+### Setting Your License Key
+
+Enterprise features require a valid license key. Set it before creating any grid instances:
+
+```typescript
+import { LicenseManager } from 'ag-grid-enterprise';
+
+// Set your license key once at application startup
+LicenseManager.setLicenseKey('YOUR_LICENSE_KEY');
+```
+
+<Warning>
+The license key must be set before any grid instances are created. Place this code at your application's entry point.
+</Warning>
+
+### License Validation
+
+The license manager validates your key at runtime:
+
+<Steps>
+  <Step title="Key Validation">
+    License key is validated when the first grid instance is created
+  </Step>
+  <Step title="Watermark Display">
+    Invalid or missing licenses display a watermark overlay on the grid
+  </Step>
+  <Step title="Feature Access">
+    All enterprise features remain functional but display licensing warnings
+  </Step>
+</Steps>
+
+<Note>
+Source: `/packages/ag-grid-enterprise/src/license/gridLicenseManager.ts:22-34`
+</Note>
+
+### Trial License
+
+Get a free trial license to evaluate AG Grid Enterprise:
+
+1. Visit [ag-grid.com/license](https://www.ag-grid.com/license-pricing.php)
+2. Request a trial license key
+3. Set the trial key using `LicenseManager.setLicenseKey()`
+
+## Framework Integration
+
+AG Grid Enterprise works with all major frameworks:
+
+<CodeGroup>
+```tsx React
+import React, { useMemo } from 'react';
+import { AgGridReact } from 'ag-grid-react';
+import { ModuleRegistry } from 'ag-grid-community';
+import { AllEnterpriseModule } from 'ag-grid-enterprise';
+import { LicenseManager } from 'ag-grid-enterprise';
+import 'ag-grid-community/styles/ag-grid.css';
+import 'ag-grid-community/styles/ag-theme-quartz.css';
+
+LicenseManager.setLicenseKey('YOUR_LICENSE_KEY');
+ModuleRegistry.registerModules([AllEnterpriseModule]);
+
+function MyGrid() {
+  const columnDefs = useMemo(() => [
+    { field: 'country', rowGroup: true },
+    { field: 'year', pivot: true },
+    { field: 'gold', aggFunc: 'sum' }
+  ], []);
+
+  return (
+    <div className="ag-theme-quartz" style={{ height: 500 }}>
+      <AgGridReact
+        columnDefs={columnDefs}
+        rowData={rowData}
+        pivotMode={true}
+      />
+    </div>
+  );
+}
+```
+
+```typescript Angular
+import { Component } from '@angular/core';
+import { ModuleRegistry } from 'ag-grid-community';
+import { AllEnterpriseModule } from 'ag-grid-enterprise';
+import { LicenseManager } from 'ag-grid-enterprise';
+
+LicenseManager.setLicenseKey('YOUR_LICENSE_KEY');
+ModuleRegistry.registerModules([AllEnterpriseModule]);
+
+@Component({
+  selector: 'app-grid',
+  template: `
+    <ag-grid-angular
+      class="ag-theme-quartz"
+      [columnDefs]="columnDefs"
+      [rowData]="rowData"
+      [pivotMode]="true"
+      style="height: 500px">
+    </ag-grid-angular>
+  `
+})
+export class GridComponent {
+  columnDefs = [
+    { field: 'country', rowGroup: true },
+    { field: 'year', pivot: true },
+    { field: 'gold', aggFunc: 'sum' }
+  ];
+}
+```
+
+```typescript Vue
+<template>
+  <ag-grid-vue
+    class="ag-theme-quartz"
+    :columnDefs="columnDefs"
+    :rowData="rowData"
+    :pivotMode="true"
+    style="height: 500px">
+  </ag-grid-vue>
+</template>
+
+<script setup lang="ts">
+import { ref } from 'vue';
+import { AgGridVue } from 'ag-grid-vue3';
+import { ModuleRegistry } from 'ag-grid-community';
+import { AllEnterpriseModule } from 'ag-grid-enterprise';
+import { LicenseManager } from 'ag-grid-enterprise';
+import 'ag-grid-community/styles/ag-grid.css';
+import 'ag-grid-community/styles/ag-theme-quartz.css';
+
+LicenseManager.setLicenseKey('YOUR_LICENSE_KEY');
+ModuleRegistry.registerModules([AllEnterpriseModule]);
+
+const columnDefs = ref([
+  { field: 'country', rowGroup: true },
+  { field: 'year', pivot: true },
+  { field: 'gold', aggFunc: 'sum' }
+]);
+</script>
+```
+</CodeGroup>
+
+## Available Modules
+
+The following enterprise modules are available in `ag-grid-enterprise`:
+
+| Module | Description | Source |
+|--------|-------------|--------|
+| `RowGroupingModule` | Row grouping and aggregation | `/rowGrouping/rowGroupingModule.ts:54-60` |
+| `PivotModule` | Pivot mode and pivot columns | `/pivot/pivotModule.ts:55-61` |
+| `IntegratedChartsModule` | AG Charts integration | `/charts/integratedChartsModule.ts:111-158` |
+| `ExcelExportModule` | Excel export with styling | `/excelExport/excelExportModule.ts` |
+| `MasterDetailModule` | Master/detail expandable rows | `/masterDetail/masterDetailModule.ts:40-44` |
+| `SetFilterModule` | Set filter for columns | `/setFilter/setFilterModule.ts` |
+| `MultiFilterModule` | Combine multiple filters | `/multiFilter/multiFilterModule.ts` |
+| `ServerSideRowModelModule` | Server-side row model | `/serverSideRowModel/serverSideRowModelModule.ts` |
+| `CellSelectionModule` | Range selection | `/rangeSelection/rangeSelectionModule.ts` |
+| `ColumnsToolPanelModule` | Column management panel | `/columnToolPanel/columnsToolPanelModule.ts` |
+| `FiltersToolPanelModule` | Filter management panel | `/filterToolPanel/filtersToolPanelModule.ts` |
+| `StatusBarModule` | Status bar components | `/statusBar/statusBarModule.ts` |
+| `AdvancedFilterModule` | Advanced filter builder | `/advancedFilter/advancedFilterModule.ts` |
+| `ClipboardModule` | Clipboard operations | `/clipboard/clipboardModule.ts` |
+| `ColumnMenuModule` | Column menu | `/menu/menuModule.ts` |
+| `ContextMenuModule` | Context menu | `/menu/menuModule.ts` |
+
+<Note>
+Each module has specific dependencies. Using `AllEnterpriseModule` automatically includes all dependencies.
+</Note>
+
+## Performance Considerations
+
+### Bundle Size Optimization
+
+Import only the modules you need to reduce bundle size:
+
+```typescript
+// Instead of AllEnterpriseModule (~500KB)
+import { AllEnterpriseModule } from 'ag-grid-enterprise';
+
+// Import specific modules (~50-100KB depending on features)
+import { 
+  RowGroupingModule,
+  ExcelExportModule 
+} from 'ag-grid-enterprise';
+```
+
+### Zero Dependencies
+
+<Note>
+AG Grid Enterprise has zero runtime dependencies beyond ag-grid-community, ensuring minimal bundle overhead and no version conflicts.
+</Note>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Row Grouping" icon="layer-group" href="/enterprise/row-grouping">
+    Learn about grouping rows and aggregating data
+  </Card>
+  <Card title="Pivoting" icon="table-pivot" href="/enterprise/pivoting">
+    Create pivot tables and cross-tabulations
+  </Card>
+  <Card title="Integrated Charts" icon="chart-line" href="/enterprise/charts">
+    Visualize grid data with interactive charts
+  </Card>
+  <Card title="Excel Export" icon="file-excel" href="/enterprise/excel-export">
+    Export data to Excel with styling
+  </Card>
+</CardGroup>
+
+## Support
+
+Enterprise license holders receive priority support:
+
+- Technical support via email and forums
+- Bug fixes and security updates
+- Version upgrade assistance
+- Architecture consultation
+
+Visit [ag-grid.com/support](https://www.ag-grid.com/support/) for support options.

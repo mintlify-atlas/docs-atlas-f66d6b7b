@@ -1,0 +1,502 @@
+---
+title: "Row Selection"
+description: "Configure row selection modes with single, multiple, and checkbox selection"
+---
+
+## Overview
+
+AG Grid provides flexible row selection capabilities supporting single row, multiple row, and range selection modes. Selection can be controlled via user interaction, checkbox selection, or programmatically through the API.
+
+## Enabling Selection
+
+Configure row selection using the `rowSelection` property:
+
+<CodeGroup>
+```typescript Single Row Selection
+import { RowSelectionOptions } from 'ag-grid-community';
+
+const gridOptions = {
+  rowSelection: {
+    mode: 'singleRow'
+  } as RowSelectionOptions
+};
+```
+
+```typescript Multiple Row Selection
+import { RowSelectionOptions } from 'ag-grid-community';
+
+const gridOptions = {
+  rowSelection: {
+    mode: 'multiRow',
+    checkboxes: true,        // Show checkboxes
+    headerCheckbox: true,    // Show header checkbox
+    enableClickSelection: true  // Click to select
+  } as RowSelectionOptions
+};
+```
+</CodeGroup>
+
+<Note>
+The new `rowSelection` API replaces the deprecated `rowSelection: 'single' | 'multiple'` syntax. Use `RowSelectionOptions` for full control.
+</Note>
+
+## Selection Modes
+
+### Single Row Selection
+
+Only one row can be selected at a time:
+
+```typescript
+import { RowSelectionOptions } from 'ag-grid-community';
+
+const gridOptions = {
+  rowSelection: {
+    mode: 'singleRow',
+    enableClickSelection: true,  // Click anywhere to select
+    hideDisabledCheckboxes: false  // Show disabled checkboxes
+  } as RowSelectionOptions
+};
+```
+
+### Multiple Row Selection
+
+Multiple rows can be selected simultaneously:
+
+```typescript
+import { RowSelectionOptions } from 'ag-grid-community';
+
+const gridOptions = {
+  rowSelection: {
+    mode: 'multiRow',
+    checkboxes: true,
+    headerCheckbox: true,
+    enableClickSelection: true,
+    enableSelectionWithoutKeys: false,  // Require Ctrl/Cmd for multi-select
+    copySelectedRows: true,  // Include in clipboard operations
+    selectAll: 'filtered'   // 'all' | 'filtered' | 'currentPage'
+  } as RowSelectionOptions
+};
+```
+
+## Checkbox Selection
+
+### Enable Checkboxes
+
+```typescript
+import { RowSelectionOptions } from 'ag-grid-community';
+
+const gridOptions = {
+  rowSelection: {
+    mode: 'multiRow',
+    checkboxes: true,              // Show selection checkboxes
+    headerCheckbox: true,          // Show header checkbox for select all
+    hideDisabledCheckboxes: false  // Show but disable non-selectable rows
+  } as RowSelectionOptions
+};
+```
+
+### Checkbox in Specific Column
+
+```typescript
+import { CheckboxSelectionCallback } from 'ag-grid-community';
+
+const checkboxSelection: CheckboxSelectionCallback = (params) => {
+  // Only show checkbox for certain rows
+  return params.data.selectable === true;
+};
+
+const columnDefs = [
+  {
+    field: 'athlete',
+    checkboxSelection: checkboxSelection,  // Checkbox in this column
+    headerCheckboxSelection: true          // Header checkbox
+  }
+];
+```
+
+<Warning>
+The column-level `checkboxSelection` property is deprecated in v32.2. Use `rowSelection.checkboxes` instead.
+</Warning>
+
+## Selection Control
+
+### Programmatic Selection
+
+```typescript
+import { IRowNode } from 'ag-grid-community';
+
+// Select specific row
+const rowNode: IRowNode = api.getRowNode('1');
+rowNode.setSelected(true);
+
+// Deselect row
+rowNode.setSelected(false);
+
+// Toggle selection
+rowNode.setSelected(!rowNode.isSelected());
+
+// Select with options
+rowNode.setSelected(true, false, 'api');  // clearSelection=false, source='api'
+```
+
+### Select Multiple Rows
+
+```typescript
+// Select all rows
+api.selectAll();
+
+// Deselect all rows
+api.deselectAll();
+
+// Select filtered rows
+api.selectAllFiltered();
+
+// Select specific rows
+const nodesToSelect = [node1, node2, node3];
+nodesToSelect.forEach(node => node.setSelected(true));
+```
+
+### Get Selected Rows
+
+```typescript
+// Get selected row nodes
+const selectedNodes = api.getSelectedNodes();
+
+// Get selected row data
+const selectedData = api.getSelectedRows();
+
+console.log('Selected:', selectedData);
+```
+
+## Selection with Row Grouping
+
+### Group Selection Behavior
+
+```typescript
+import { RowSelectionOptions } from 'ag-grid-community';
+
+const gridOptions = {
+  rowSelection: {
+    mode: 'multiRow',
+    groupSelects: 'descendants'  // Select children when parent selected
+  } as RowSelectionOptions,
+  
+  // Additional grouping options
+  groupSelectsChildren: true,  // Deprecated: use rowSelection.groupSelects
+  groupSelectsFiltered: false  // Only select filtered descendants
+};
+```
+
+### Select All Modes
+
+```typescript
+import { RowSelectionOptions, SelectAllMode } from 'ag-grid-community';
+
+const gridOptions = {
+  rowSelection: {
+    mode: 'multiRow',
+    selectAll: 'all' as SelectAllMode  // 'all' | 'filtered' | 'currentPage'
+  } as RowSelectionOptions
+};
+```
+
+## Selection Callbacks
+
+### Is Row Selectable
+
+```typescript
+import { IsRowSelectable } from 'ag-grid-community';
+
+const isRowSelectable: IsRowSelectable = (params) => {
+  // Only allow selection of rows with age > 18
+  return params.data.age > 18;
+};
+
+const gridOptions = {
+  isRowSelectable: isRowSelectable
+};
+```
+
+### Selection Changed Event
+
+```typescript
+import { SelectionChangedEvent, RowSelectedEvent } from 'ag-grid-community';
+
+const gridOptions = {
+  onSelectionChanged: (event: SelectionChangedEvent) => {
+    const selectedRows = event.api.getSelectedRows();
+    console.log('Selection changed:', selectedRows.length, 'rows selected');
+  },
+  
+  onRowSelected: (event: RowSelectedEvent) => {
+    if (event.node.isSelected()) {
+      console.log('Row selected:', event.data);
+    } else {
+      console.log('Row deselected:', event.data);
+    }
+  }
+};
+```
+
+## Range Selection
+
+Select ranges of cells (Enterprise feature):
+
+```typescript
+import { CellSelectionOptions } from 'ag-grid-enterprise';
+
+const gridOptions = {
+  cellSelection: {
+    mode: 'range',
+    handle: {
+      mode: 'fill',  // Enable fill handle
+      direction: 'xy'  // Fill in both directions
+    }
+  } as CellSelectionOptions
+};
+```
+
+## Selection API
+
+### Set Nodes Selected
+
+```typescript
+import { ISetNodesSelectedParams } from 'ag-grid-community';
+
+const params: ISetNodesSelectedParams = {
+  nodes: [node1, node2],
+  newValue: true,
+  clearSelection: false,
+  suppressFinishActions: false,
+  event: mouseEvent,
+  source: 'api'
+};
+
+// Internal API (from SelectionService)
+selectionService.setNodesSelected(params);
+```
+
+### Handle Selection Event
+
+```typescript
+import { SelectionEventSourceType } from 'ag-grid-community';
+
+// Handle user click for selection
+const rowNode = api.getRowNode('1');
+const source: SelectionEventSourceType = 'uiSelectRow';
+
+// This is internal grid logic
+selectionService.handleSelectionEvent(
+  mouseEvent,
+  rowNode,
+  source
+);
+```
+
+## Master-Detail Selection
+
+Control selection behavior in master-detail grids:
+
+```typescript
+import { RowSelectionOptions } from 'ag-grid-community';
+
+const gridOptions = {
+  masterDetail: true,
+  
+  rowSelection: {
+    mode: 'multiRow',
+    checkboxes: true
+  } as RowSelectionOptions,
+  
+  // Detail grid configuration
+  detailCellRendererParams: {
+    detailGridOptions: {
+      rowSelection: {
+        mode: 'multiRow'
+      } as RowSelectionOptions
+    }
+  }
+};
+```
+
+## Server-Side Selection
+
+Persist selection state with server-side row model:
+
+```typescript
+import { ServerSideRowSelectionState } from 'ag-grid-community';
+
+// Save selection state
+const selectionState: ServerSideRowSelectionState = api.getServerSideSelectionState();
+localStorage.setItem('selection', JSON.stringify(selectionState));
+
+// Restore selection state
+const savedState = localStorage.getItem('selection');
+if (savedState) {
+  const state: ServerSideRowSelectionState = JSON.parse(savedState);
+  api.setServerSideSelectionState(state);
+}
+```
+
+## Events
+
+```typescript
+import { 
+  SelectionChangedEvent,
+  RowSelectedEvent,
+  CellSelectionChangedEvent 
+} from 'ag-grid-community';
+
+const gridOptions = {
+  onSelectionChanged: (event: SelectionChangedEvent) => {
+    console.log('Selection changed');
+  },
+  
+  onRowSelected: (event: RowSelectedEvent) => {
+    console.log('Row', event.node.id, 'selection:', event.node.isSelected());
+  },
+  
+  onCellSelectionChanged: (event: CellSelectionChangedEvent) => {
+    console.log('Cell selection changed');
+  }
+};
+```
+
+## Common Use Cases
+
+<Accordion title="Select All with Exclusions">
+```typescript
+import { IsRowSelectable } from 'ag-grid-community';
+
+const isRowSelectable: IsRowSelectable = (params) => {
+  // Exclude rows marked as system rows
+  return params.data.type !== 'system';
+};
+
+const gridOptions = {
+  isRowSelectable: isRowSelectable,
+  rowSelection: {
+    mode: 'multiRow',
+    checkboxes: true,
+    headerCheckbox: true,
+    selectAll: 'filtered'
+  }
+};
+
+// Select all will skip non-selectable rows
+api.selectAll();
+```
+</Accordion>
+
+<Accordion title="Preserve Selection on Sort/Filter">
+```typescript
+// Selection is preserved automatically
+// To clear on filter:
+const gridOptions = {
+  onFilterChanged: () => {
+    api.deselectAll();
+  }
+};
+```
+</Accordion>
+
+<Accordion title="Checkbox Selection with Custom Logic">
+```typescript
+import { CheckboxSelectionCallback } from 'ag-grid-community';
+
+const checkboxSelection: CheckboxSelectionCallback = (params) => {
+  // Show checkbox only for leaf nodes
+  return !params.node.group;
+};
+
+const columnDefs = [
+  {
+    headerName: '',
+    checkboxSelection: checkboxSelection,
+    headerCheckboxSelection: true,
+    width: 50
+  }
+];
+```
+</Accordion>
+
+<Accordion title="Bulk Actions on Selected Rows">
+```typescript
+function deleteSelectedRows() {
+  const selectedData = api.getSelectedRows();
+  const selectedNodes = api.getSelectedNodes();
+  
+  // Perform bulk operation
+  api.applyTransaction({ remove: selectedData });
+  
+  console.log('Deleted', selectedData.length, 'rows');
+}
+
+function exportSelectedRows() {
+  api.exportDataAsCsv({ onlySelected: true });
+}
+```
+</Accordion>
+
+## TypeScript Interfaces
+
+```typescript
+// From gridOptions.ts
+export type RowSelectionMode = 'singleRow' | 'multiRow';
+export type SelectAllMode = 'all' | 'filtered' | 'currentPage';
+
+export interface RowSelectionOptions {
+  mode: RowSelectionMode;
+  checkboxes?: boolean;
+  headerCheckbox?: boolean;
+  enableClickSelection?: boolean;
+  enableSelectionWithoutKeys?: boolean;
+  hideDisabledCheckboxes?: boolean;
+  selectAll?: SelectAllMode;
+  copySelectedRows?: boolean;
+  groupSelects?: 'descendants' | 'filteredDescendants';
+}
+
+// From iSelectionService.ts
+export interface ISetNodesSelectedParams {
+  nodes: IRowNode[];
+  newValue: boolean;
+  clearSelection?: boolean;
+  suppressFinishActions?: boolean;
+  event?: Event;
+  source?: SelectionEventSourceType;
+}
+
+// Selection API
+interface GridApi {
+  selectAll(): void;
+  deselectAll(): void;
+  selectAllFiltered(): void;
+  getSelectedNodes(): IRowNode[];
+  getSelectedRows(): any[];
+}
+```
+
+## Best Practices
+
+<Steps>
+  <Step title="Use the new rowSelection API">
+    Migrate from deprecated `rowSelection: 'single' | 'multiple'` to `RowSelectionOptions` for better type safety and features.
+  </Step>
+  
+  <Step title="Disable selection for non-data rows">
+    Use `isRowSelectable` to prevent selection of group headers, footers, or other non-data rows.
+  </Step>
+  
+  <Step title="Consider UX for large datasets">
+    With server-side row model, use `selectAll: 'currentPage'` to avoid selecting thousands of rows accidentally.
+  </Step>
+  
+  <Step title="Provide visual feedback">
+    Use `rowClass` or `rowStyle` to highlight selected rows beyond the default styling.
+  </Step>
+  
+  <Step title="Handle selection state properly">
+    Save and restore selection state when using pagination or server-side models to maintain user selections.
+  </Step>
+</Steps>

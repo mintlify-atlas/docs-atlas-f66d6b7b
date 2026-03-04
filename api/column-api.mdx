@@ -1,0 +1,256 @@
+---
+title: Column API (Deprecated)
+description: Reference for deprecated Column API methods, now integrated into GridApi
+---
+
+<Warning>
+  The Column API has been deprecated and all column methods are now available directly on the Grid API. This page is maintained for reference purposes only.
+</Warning>
+
+## Migration Guide
+
+All Column API methods have been moved to the Grid API. Update your code as follows:
+
+```javascript
+// Old (deprecated)
+const columnApi = params.columnApi;
+columnApi.setColumnsVisible(['age'], false);
+
+// New (recommended)
+const gridApi = params.api;
+gridApi.setColumnsVisible(['age'], false);
+```
+
+## Column Visibility
+
+### setColumnsVisible (now on GridApi)
+
+```javascript
+// Deprecated
+columnApi.setColumnsVisible(['age', 'country'], false);
+
+// Use instead
+gridApi.setColumnsVisible(['age', 'country'], false);
+```
+
+Sets the visibility of columns. Key can be the column ID or `Column` object.
+
+**Module:** `ColumnApiModule`
+
+## Column Pinning
+
+### setColumnsPinned (now on GridApi)
+
+```javascript
+// Deprecated
+columnApi.setColumnsPinned(['name'], 'left');
+
+// Use instead
+gridApi.setColumnsPinned(['name'], 'left');
+```
+
+Set a column's pinned / unpinned state.
+
+**Module:** `ColumnApiModule`
+
+## Column State
+
+### getColumnState (now on GridApi)
+
+```javascript
+// Deprecated
+const columnState = columnApi.getColumnState();
+
+// Use instead
+const columnState = gridApi.getColumnState();
+```
+
+Gets the state of the columns. Typically used when saving column state.
+
+**Module:** `ColumnApiModule`
+
+### applyColumnState (now on GridApi)
+
+```javascript
+// Deprecated
+columnApi.applyColumnState({ state: columnState });
+
+// Use instead
+gridApi.applyColumnState({ state: columnState });
+```
+
+Applies the state of the columns from a previous state. Returns `false` if one or more columns could not be found.
+
+**Module:** `ColumnApiModule`
+
+### resetColumnState (now on GridApi)
+
+```javascript
+// Deprecated
+columnApi.resetColumnState();
+
+// Use instead
+gridApi.resetColumnState();
+```
+
+Sets the state back to match the originally provided column definitions.
+
+**Module:** `ColumnApiModule`
+
+## Column Retrieval
+
+### getColumns (now on GridApi)
+
+```javascript
+// Deprecated
+const allColumns = columnApi.getColumns();
+
+// Use instead
+const allColumns = gridApi.getColumns();
+```
+
+Returns all the columns, regardless of visible or not.
+
+**Module:** `ColumnApiModule`
+
+### getColumn (now on GridApi)
+
+```javascript
+// Deprecated
+const column = columnApi.getColumn('age');
+
+// Use instead
+const column = gridApi.getColumn('age');
+```
+
+Returns the column with the given `colKey`.
+
+**Module:** `ColumnApiModule`
+
+### getAllDisplayedColumns (now on GridApi)
+
+```javascript
+// Deprecated
+const displayedColumns = columnApi.getAllDisplayedColumns();
+
+// Use instead
+const displayedColumns = gridApi.getAllDisplayedColumns();
+```
+
+Returns all columns currently displayed (visible and if in a group, the group is showing the columns).
+
+**Module:** `ColumnApiModule`
+
+## Column Sizing
+
+### autoSizeColumns (now on GridApi)
+
+```javascript
+// Deprecated
+columnApi.autoSizeColumns(['name', 'age']);
+
+// Use instead
+gridApi.autoSizeColumns(['name', 'age']);
+```
+
+Auto-sizes columns based on their contents.
+
+**Module:** `ColumnAutoSizeModule`
+
+### autoSizeAllColumns (now on GridApi)
+
+```javascript
+// Deprecated
+columnApi.autoSizeAllColumns();
+
+// Use instead
+gridApi.autoSizeAllColumns();
+```
+
+Calls `autoSizeColumns` on all displayed columns.
+
+**Module:** `ColumnAutoSizeModule`
+
+### sizeColumnsToFit (now on GridApi)
+
+```javascript
+// Deprecated
+columnApi.sizeColumnsToFit();
+
+// Use instead
+gridApi.sizeColumnsToFit();
+```
+
+Adjusts the size of columns to fit the available horizontal space.
+
+**Module:** `ColumnAutoSizeModule`
+
+## Column Moving
+
+### moveColumn (now on GridApi)
+
+```javascript
+// Deprecated
+columnApi.moveColumn('age', 2);
+
+// Use instead
+gridApi.moveColumnByIndex(1, 2); // if 'age' is at index 1
+```
+
+Moves a column to a new position.
+
+**Module:** `ColumnMoveModule`
+
+### moveColumns (now on GridApi)
+
+```javascript
+// Deprecated
+columnApi.moveColumns(['age', 'country'], 2);
+
+// Use instead
+gridApi.moveColumns(['age', 'country'], 2);
+```
+
+Moves columns to `toIndex`.
+
+**Module:** `ColumnMoveModule`
+
+## Column Groups
+
+### setColumnGroupOpened (now on GridApi)
+
+```javascript
+// Deprecated
+columnApi.setColumnGroupOpened('myGroup', true);
+
+// Use instead
+gridApi.setColumnGroupOpened('myGroup', true);
+```
+
+Call this if you want to open or close a column group.
+
+### getColumnGroup (now on GridApi)
+
+```javascript
+// Deprecated
+const group = columnApi.getColumnGroup('myGroup');
+
+// Use instead
+const group = gridApi.getColumnGroup('myGroup');
+```
+
+Returns the column group with the given name.
+
+## Related APIs
+
+<Card title="GridApi" icon="code" href="/api/grid-api">
+  All column methods are now available on GridApi
+</Card>
+
+<Card title="Column Definitions" icon="table-columns" href="/api/column-definitions">
+  Configure column behavior and appearance
+</Card>
+
+<Card title="Column Events" icon="bolt" href="/api/column-events">
+  Listen to column-related events
+</Card>

@@ -1,0 +1,675 @@
+---
+title: Integrated Charts
+description: Create interactive charts directly from grid data with AG Charts integration
+---
+
+<Warning>
+**Enterprise Feature**: Integrated Charts requires `ag-grid-enterprise`, `ag-charts-enterprise` (or `ag-charts-community`), and a valid license key.
+</Warning>
+
+Integrated Charts allows you to create interactive, customizable charts directly from your grid data using AG Charts, seamlessly integrating charting capabilities with your data grid.
+
+## Installation
+
+<Steps>
+  <Step title="Install Packages">
+    <CodeGroup>
+    ```bash npm
+    npm install ag-grid-enterprise ag-charts-enterprise
+    ```
+    
+    ```bash yarn
+    yarn add ag-grid-enterprise ag-charts-enterprise
+    ```
+    </CodeGroup>
+  </Step>
+  <Step title="Import and Register Modules">
+    ```typescript
+    import { ModuleRegistry } from 'ag-grid-community';
+    import { IntegratedChartsModule } from 'ag-grid-enterprise';
+    import { AgChartsEnterpriseModule } from 'ag-charts-enterprise';
+    
+    // Register charts module with AG Charts
+    ModuleRegistry.registerModules([
+      IntegratedChartsModule.with(AgChartsEnterpriseModule)
+    ]);
+    ```
+  </Step>
+  <Step title="Set License Keys">
+    ```typescript
+    import { LicenseManager } from 'ag-grid-enterprise';
+    
+    LicenseManager.setLicenseKey('YOUR_AG_GRID_LICENSE_KEY');
+    // AG Charts license is automatically managed
+    ```
+  </Step>
+</Steps>
+
+<Note>
+The `IntegratedChartsModule.with()` method integrates AG Charts with AG Grid. Source: `/packages/ag-grid-enterprise/src/charts/integratedChartsModule.ts:111-158`
+</Note>
+
+## Basic Chart Creation
+
+Enable charts and create them from selected ranges:
+
+<CodeGroup>
+```typescript TypeScript
+import { GridOptions } from 'ag-grid-community';
+
+const gridOptions: GridOptions = {
+  columnDefs: [
+    { field: 'country' },
+    { field: 'gold', chartDataType: 'series' },
+    { field: 'silver', chartDataType: 'series' },
+    { field: 'bronze', chartDataType: 'series' }
+  ],
+  rowData: olympicData,
+  
+  // Enable charts
+  enableCharts: true,
+  enableRangeSelection: true,
+  
+  // Chart toolbar
+  popupParent: document.body
+};
+```
+
+```jsx React
+import { AgGridReact } from 'ag-grid-react';
+import { useMemo, useCallback, useRef } from 'react';
+
+function ChartGrid() {
+  const gridRef = useRef(null);
+  
+  const columnDefs = useMemo(() => [
+    { field: 'country' },
+    { field: 'gold', chartDataType: 'series' },
+    { field: 'silver', chartDataType: 'series' },
+    { field: 'bronze', chartDataType: 'series' }
+  ], []);
+  
+  const createChart = useCallback(() => {
+    gridRef.current.api.createRangeChart({
+      chartType: 'groupedColumn',
+      cellRange: {
+        columns: ['country', 'gold', 'silver', 'bronze']
+      }
+    });
+  }, []);
+
+  return (
+    <>
+      <button onClick={createChart}>Create Chart</button>
+      <AgGridReact
+        ref={gridRef}
+        columnDefs={columnDefs}
+        rowData={rowData}
+        enableCharts={true}
+        enableRangeSelection={true}
+      />
+    </>
+  );
+}
+```
+
+```vue Vue
+<template>
+  <div>
+    <button @click="createChart">Create Chart</button>
+    <ag-grid-vue
+      ref="gridRef"
+      :columnDefs="columnDefs"
+      :rowData="rowData"
+      :enableCharts="true"
+      :enableRangeSelection="true">
+    </ag-grid-vue>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref } from 'vue';
+import { AgGridVue } from 'ag-grid-vue3';
+
+const gridRef = ref(null);
+
+const columnDefs = ref([
+  { field: 'country' },
+  { field: 'gold', chartDataType: 'series' },
+  { field: 'silver', chartDataType: 'series' },
+  { field: 'bronze', chartDataType: 'series' }
+]);
+
+const createChart = () => {
+  gridRef.value.api.createRangeChart({
+    chartType: 'groupedColumn',
+    cellRange: {
+      columns: ['country', 'gold', 'silver', 'bronze']
+    }
+  });
+};
+</script>
+```
+</CodeGroup>
+
+## Chart API
+
+Programmatically create and manage charts using the Grid API:
+
+### Create Range Chart
+
+Create a chart from a cell range:
+
+```typescript
+import { GridApi, CreateRangeChartParams } from 'ag-grid-community';
+
+const api: GridApi = gridRef.current.api;
+
+// Create a column chart
+const chartRef = api.createRangeChart({
+  chartType: 'groupedColumn',
+  cellRange: {
+    rowStartIndex: 0,
+    rowEndIndex: 10,
+    columns: ['country', 'gold', 'silver', 'bronze']
+  },
+  chartThemeName: 'ag-default',
+  chartContainer: document.querySelector('#myChartContainer'),
+  suppressChartRanges: false,
+  aggFunc: 'sum'
+});
+```
+
+<Note>
+Source: `/packages/ag-grid-enterprise/src/charts/chartsApi.ts:39-41`
+</Note>
+
+### Create Pivot Chart
+
+Create a chart from pivot data:
+
+```typescript
+import { CreatePivotChartParams } from 'ag-grid-community';
+
+const chartRef = api.createPivotChart({
+  chartType: 'pie',
+  chartThemeName: 'ag-vivid',
+  chartContainer: document.querySelector('#pivotChart')
+});
+```
+
+<Note>
+Source: `/packages/ag-grid-enterprise/src/charts/chartsApi.ts:43-45`
+</Note>
+
+### Create Cross-Filter Chart
+
+Create a chart with cross-filtering enabled:
+
+```typescript
+import { CreateCrossFilterChartParams } from 'ag-grid-community';
+
+const chartRef = api.createCrossFilterChart({
+  chartType: 'groupedBar',
+  cellRange: {
+    columns: ['country', 'gold']
+  },
+  suppressChartRanges: true
+});
+```
+
+<Note>
+Cross-filtering allows clicking chart elements to filter grid data. Source: `/packages/ag-grid-enterprise/src/charts/chartsApi.ts:47-52`
+</Note>
+
+### Chart Management
+
+```typescript
+// Get all chart models
+const chartModels = api.getChartModels();
+if (chartModels) {
+  chartModels.forEach(model => {
+    console.log('Chart ID:', model.chartId);
+    console.log('Chart Type:', model.chartType);
+  });
+}
+
+// Get specific chart reference
+const chartRef = api.getChartRef('chartId');
+if (chartRef) {
+  console.log('Chart instance:', chartRef.chart);
+  console.log('Chart container:', chartRef.chartElement);
+}
+
+// Update existing chart
+api.updateChart({
+  chartId: 'chartId',
+  chartType: 'line',  // Change chart type
+  chartThemeName: 'ag-vivid-dark'
+});
+
+// Destroy chart
+api.restoreChart(chartModel, containerElement);
+```
+
+<Note>
+Sources: 
+- `getChartModels`: `/packages/ag-grid-enterprise/src/charts/chartsApi.ts:15-17`
+- `getChartRef`: `/packages/ag-grid-enterprise/src/charts/chartsApi.ts:19-21`
+- `updateChart`: `/packages/ag-grid-enterprise/src/charts/chartsApi.ts:54-56`
+</Note>
+
+## Available Chart Types
+
+AG Grid supports numerous chart types through AG Charts integration:
+
+### Cartesian Charts
+
+<CardGroup cols={3}>
+  <Card title="Column Charts" icon="chart-column">
+    - Grouped Column
+    - Stacked Column
+    - 100% Stacked Column
+  </Card>
+  <Card title="Bar Charts" icon="chart-bar">
+    - Grouped Bar
+    - Stacked Bar
+    - 100% Stacked Bar
+  </Card>
+  <Card title="Line Charts" icon="chart-line">
+    - Line
+    - Stacked Line
+    - 100% Stacked Line
+  </Card>
+  <Card title="Area Charts" icon="chart-area">
+    - Area
+    - Stacked Area
+    - 100% Stacked Area
+  </Card>
+  <Card title="Scatter Charts" icon="circle">
+    - Scatter
+    - Bubble
+  </Card>
+  <Card title="Specialized" icon="chart-mixed">
+    - Histogram
+    - Waterfall
+    - Heatmap
+  </Card>
+</CardGroup>
+
+### Statistical Charts (Enterprise)
+
+- Range Bar
+- Range Area  
+- Box Plot
+
+### Hierarchical Charts (Enterprise)
+
+- Treemap
+- Sunburst
+
+### Polar Charts (Enterprise)
+
+- Pie
+- Donut
+- Radar Line
+- Radar Area
+- Radial Column
+- Radial Bar
+- Nightingale
+
+## Chart Configuration
+
+### Chart Themes
+
+AG Grid provides several built-in chart themes:
+
+```typescript
+const gridOptions: GridOptions = {
+  enableCharts: true,
+  chartThemes: [
+    'ag-default',
+    'ag-default-dark',
+    'ag-vivid',
+    'ag-vivid-dark',
+    'ag-material',
+    'ag-material-dark'
+  ],
+  chartThemeOverrides: {
+    common: {
+      title: {
+        enabled: true,
+        fontSize: 20,
+        fontFamily: 'Arial, sans-serif'
+      },
+      legend: {
+        enabled: true,
+        position: 'bottom'
+      }
+    },
+    column: {
+      series: {
+        strokeWidth: 2,
+        fillOpacity: 0.8
+      }
+    }
+  }
+};
+```
+
+### Custom Chart Settings
+
+```typescript
+const chartRef = api.createRangeChart({
+  chartType: 'groupedColumn',
+  cellRange: {
+    columns: ['country', 'gold', 'silver']
+  },
+  chartThemeName: 'ag-vivid',
+  chartThemeOverrides: {
+    common: {
+      padding: {
+        top: 20,
+        right: 20,
+        bottom: 20,
+        left: 20
+      },
+      background: {
+        fill: '#ffffff'
+      },
+      title: {
+        enabled: true,
+        text: 'Medal Count by Country',
+        fontSize: 18
+      },
+      subtitle: {
+        enabled: true,
+        text: 'Olympic Games Results'
+      }
+    },
+    column: {
+      series: {
+        label: {
+          enabled: true,
+          fontSize: 12
+        },
+        tooltip: {
+          enabled: true
+        }
+      }
+    }
+  }
+});
+```
+
+## Chart Tool Panel
+
+Enable the chart tool panel for interactive customization:
+
+```typescript
+const gridOptions: GridOptions = {
+  enableCharts: true,
+  
+  // Chart tool panel configuration
+  chartToolPanelsDef: {
+    defaultToolPanel: 'settings',
+    panels: [
+      'settings',  // Chart settings
+      'data',      // Data configuration
+      'format'     // Formatting options
+    ]
+  }
+};
+
+// Programmatically open chart tool panel
+api.openChartToolPanel({
+  chartId: 'chartId',
+  panel: 'settings'
+});
+
+// Close chart tool panel
+api.closeChartToolPanel({
+  chartId: 'chartId'
+});
+```
+
+<Note>
+Sources:
+- `openChartToolPanel`: `/packages/ag-grid-enterprise/src/charts/chartsApi.ts:31-33`
+- `closeChartToolPanel`: `/packages/ag-grid-enterprise/src/charts/chartsApi.ts:35-37`
+</Note>
+
+## Chart Download
+
+Download charts as images:
+
+```typescript
+// Download chart as PNG
+api.downloadChart({
+  chartId: 'chartId',
+  fileName: 'my-chart.png',
+  fileFormat: 'png'  // 'png' or 'jpg'
+});
+
+// Get chart as data URL
+const dataUrl = api.getChartImageDataURL({
+  chartId: 'chartId',
+  fileFormat: 'png'
+});
+
+if (dataUrl) {
+  // Use the data URL (e.g., display in img tag)
+  const img = document.createElement('img');
+  img.src = dataUrl;
+  document.body.appendChild(img);
+}
+```
+
+<Note>
+Sources:
+- `downloadChart`: `/packages/ag-grid-enterprise/src/charts/chartsApi.ts:27-29`
+- `getChartImageDataURL`: `/packages/ag-grid-enterprise/src/charts/chartsApi.ts:23-25`
+</Note>
+
+## Chart Context Menu
+
+Customize the chart context menu:
+
+```typescript
+const gridOptions: GridOptions = {
+  enableCharts: true,
+  
+  // Customize chart menu items
+  getChartToolbarItems: (params) => {
+    return [
+      'chartDownload',
+      'chartData',
+      'chartFormat',
+      'chartLink',
+      'chartUnlink',
+      'chartSettings'
+    ];
+  }
+};
+```
+
+## Cross-Filtering
+
+Enable interactive filtering between charts and grid:
+
+```typescript
+const gridOptions: GridOptions = {
+  enableCharts: true,
+  enableRangeSelection: true,
+  
+  onGridReady: (params) => {
+    // Create chart with cross-filtering
+    params.api.createCrossFilterChart({
+      chartType: 'groupedColumn',
+      cellRange: {
+        columns: ['country', 'gold']
+      },
+      suppressChartRanges: false
+    });
+  },
+  
+  // Cross-filter event handling
+  onRangeSelectionChanged: (event) => {
+    console.log('Range selection changed:', event);
+  }
+};
+```
+
+<Note>
+Cross-filtering is managed by `ChartCrossFilterService`. Source: `/packages/ag-grid-enterprise/src/charts/integratedChartsModule.ts:149`
+</Note>
+
+## Advanced Features
+
+### Chart Linking
+
+Link charts to grid ranges for automatic updates:
+
+```typescript
+const chartRef = api.createRangeChart({
+  chartType: 'line',
+  cellRange: {
+    columns: ['date', 'value']
+  },
+  suppressChartRanges: false,  // Show chart ranges in grid
+  unlinkChart: false           // Keep chart linked to data
+});
+
+// Unlink chart programmatically
+if (chartRef) {
+  chartRef.chartProxy.unlinkChart();
+}
+```
+
+### Chart State Persistence
+
+Save and restore chart state:
+
+```typescript
+// Get chart model to save
+const chartModels = api.getChartModels();
+const serializedCharts = JSON.stringify(chartModels);
+localStorage.setItem('charts', serializedCharts);
+
+// Restore charts
+const savedCharts = JSON.parse(localStorage.getItem('charts'));
+savedCharts?.forEach(chartModel => {
+  api.restoreChart(chartModel);
+});
+```
+
+<Note>
+Source: `/packages/ag-grid-enterprise/src/charts/chartsApi.ts:58-64`
+</Note>
+
+### Custom Chart Containers
+
+Render charts in custom containers:
+
+```typescript
+const chartRef = api.createRangeChart({
+  chartType: 'pie',
+  cellRange: {
+    columns: ['country', 'gold']
+  },
+  chartContainer: document.querySelector('#customContainer'),
+  suppressChartRanges: true
+});
+```
+
+## Chart with Pivot Data
+
+Combine pivot mode with charts:
+
+```typescript
+const gridOptions: GridOptions = {
+  pivotMode: true,
+  enableCharts: true,
+  
+  columnDefs: [
+    { field: 'country', rowGroup: true },
+    { field: 'year', pivot: true },
+    { field: 'gold', aggFunc: 'sum' }
+  ],
+  
+  onGridReady: (params) => {
+    // Create chart from pivoted data
+    params.api.createPivotChart({
+      chartType: 'groupedColumn'
+    });
+  }
+};
+```
+
+## Performance Tips
+
+<CardGroup cols={2}>
+  <Card title="Limit Data Points" icon="filter">
+    Filter data before charting to reduce the number of points rendered
+  </Card>
+  <Card title="Use Aggregation" icon="calculator">
+    Aggregate data when working with large datasets
+  </Card>
+  <Card title="Suppress Chart Ranges" icon="eye-slash">
+    Set `suppressChartRanges: true` to hide chart range highlights
+  </Card>
+  <Card title="Custom Containers" icon="window">
+    Render charts in separate containers to improve grid performance
+  </Card>
+</CardGroup>
+
+## Troubleshooting
+
+### Charts Not Appearing
+
+<Steps>
+  <Step title="Check Module Registration">
+    Ensure `IntegratedChartsModule.with()` is called:
+    ```typescript
+    ModuleRegistry.registerModules([
+      IntegratedChartsModule.with(AgChartsEnterpriseModule)
+    ]);
+    ```
+  </Step>
+  <Step title="Enable Charts">
+    Set `enableCharts: true` in grid options
+  </Step>
+  <Step title="Enable Range Selection">
+    Set `enableRangeSelection: true` for manual chart creation
+  </Step>
+  <Step title="Verify License">
+    Check that valid license keys are set for both AG Grid and AG Charts
+  </Step>
+</Steps>
+
+### Chart Menu Not Working
+
+Ensure popup parent is set:
+
+```typescript
+const gridOptions: GridOptions = {
+  popupParent: document.body  // Required for chart menus
+};
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="AG Charts Docs" icon="book" href="https://charts.ag-grid.com/">
+    Explore full AG Charts documentation for advanced customization
+  </Card>
+  <Card title="Pivot Mode" icon="table-pivot" href="/enterprise/pivoting">
+    Create pivot charts from aggregated data
+  </Card>
+  <Card title="Range Selection" icon="select" href="/range-selection">
+    Learn about range selection for chart creation
+  </Card>
+  <Card title="Excel Export" icon="file-excel" href="/enterprise/excel-export">
+    Export charts to Excel files
+  </Card>
+</CardGroup>

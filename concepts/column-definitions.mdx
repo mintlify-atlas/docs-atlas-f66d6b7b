@@ -1,0 +1,640 @@
+---
+title: Column Definitions
+description: Configure columns with the ColDef interface
+---
+
+Column Definitions (`ColDef`) define the structure and behavior of individual columns in your grid. Each column can be extensively customized for display, editing, filtering, and sorting.
+
+## Overview
+
+Columns are defined using the `columnDefs` property in GridOptions:
+
+```typescript
+import { ColDef } from 'ag-grid-community';
+
+interface RowData {
+  athlete: string;
+  age: number;
+  country: string;
+}
+
+const columnDefs: ColDef<RowData>[] = [
+  { field: 'athlete', headerName: 'Athlete Name' },
+  { field: 'age', filter: 'agNumberColumnFilter' },
+  { field: 'country' }
+];
+```
+
+## Basic Column Properties
+
+### Identification
+
+<ParamField path="colId" type="string">
+  Unique ID for the column. If not provided, defaults to `field`. Used in API methods to reference columns.
+  
+  ```typescript
+  { colId: 'athlete_id', field: 'athlete' }
+  ```
+</ParamField>
+
+<ParamField path="field" type="string">
+  The field of the row object to get data from. Supports dot notation for nested properties.
+  
+  ```typescript
+  { field: 'athlete' }
+  { field: 'address.city' }  // Nested field
+  ```
+</ParamField>
+
+### Display
+
+<ParamField path="headerName" type="string">
+  The name to render in the column header. If not specified and field is set, the field name is used.
+  
+  ```typescript
+  { field: 'athlete', headerName: 'Athlete Name' }
+  ```
+</ParamField>
+
+<ParamField path="headerValueGetter" type="string | HeaderValueGetterFunc">
+  Function or expression to get the header value dynamically.
+  
+  ```typescript
+  {
+    headerValueGetter: (params) => {
+      return params.location === 'csv' 
+        ? 'Athlete (Export)' 
+        : 'Athlete (Grid)';
+    }
+  }
+  ```
+</ParamField>
+
+<ParamField path="hide" type="boolean" default="false">
+  Set to true to hide this column initially.
+  
+  ```typescript
+  { field: 'id', hide: true }
+  ```
+</ParamField>
+
+## Width Configuration
+
+<Accordion title="Column Sizing Options">
+
+<ParamField path="width" type="number">
+  Initial width in pixels. Defaults to 200px if not specified.
+  
+  ```typescript
+  { field: 'athlete', width: 150 }
+  ```
+</ParamField>
+
+<ParamField path="minWidth" type="number">
+  Minimum width in pixels.
+  
+  ```typescript
+  { field: 'athlete', minWidth: 100 }
+  ```
+</ParamField>
+
+<ParamField path="maxWidth" type="number">
+  Maximum width in pixels.
+  
+  ```typescript
+  { field: 'description', maxWidth: 500 }
+  ```
+</ParamField>
+
+<ParamField path="flex" type="number">
+  Flex sizing similar to CSS flexbox. Columns with flex share available space proportionally.
+  
+  ```typescript
+  {
+    columnDefs: [
+      { field: 'athlete', flex: 2 },  // Takes 2/3 of space
+      { field: 'country', flex: 1 }   // Takes 1/3 of space
+    ]
+  }
+  ```
+</ParamField>
+
+<ParamField path="resizable" type="boolean" default="true">
+  Enable/disable column resizing.
+  
+  ```typescript
+  { field: 'athlete', resizable: false }
+  ```
+</ParamField>
+
+</Accordion>
+
+## Value Handling
+
+### Getting Values
+
+<ParamField path="valueGetter" type="string | ValueGetterFunc">
+  Function or expression to get the cell value. Use instead of `field` for computed values.
+  
+  ```typescript
+  {
+    headerName: 'Full Name',
+    valueGetter: (params) => {
+      return `${params.data.firstName} ${params.data.lastName}`;
+    }
+  }
+  ```
+</ParamField>
+
+<ParamField path="valueFormatter" type="string | ValueFormatterFunc">
+  Function to format values for display.
+  
+  ```typescript
+  {
+    field: 'price',
+    valueFormatter: (params) => {
+      return params.value != null ? `$${params.value.toFixed(2)}` : '';
+    }
+  }
+  ```
+</ParamField>
+
+### Setting Values
+
+<ParamField path="valueSetter" type="string | ValueSetterFunc">
+  Function to set the cell value back into your data. Return true if data changed.
+  
+  ```typescript
+  {
+    field: 'athlete',
+    valueSetter: (params) => {
+      if (params.newValue !== params.oldValue) {
+        params.data.athlete = params.newValue;
+        return true;  // Data changed
+      }
+      return false;  // No change
+    }
+  }
+  ```
+</ParamField>
+
+<ParamField path="valueParser" type="string | ValueParserFunc">
+  Function to parse user input for saving.
+  
+  ```typescript
+  {
+    field: 'age',
+    valueParser: (params) => {
+      return Number(params.newValue);
+    }
+  }
+  ```
+</ParamField>
+
+## Sorting
+
+<ParamField path="sortable" type="boolean" default="true">
+  Enable/disable sorting for this column.
+  
+  ```typescript
+  { field: 'athlete', sortable: true }
+  ```
+</ParamField>
+
+<ParamField path="sort" type="'asc' | 'desc' | SortDef">
+  Initial sort direction.
+  
+  ```typescript
+  { field: 'age', sort: 'desc' }
+  ```
+</ParamField>
+
+<ParamField path="sortIndex" type="number">
+  When sorting by multiple columns, specifies the order.
+  
+  ```typescript
+  [
+    { field: 'country', sort: 'asc', sortIndex: 0 },
+    { field: 'athlete', sort: 'asc', sortIndex: 1 }
+  ]
+  ```
+</ParamField>
+
+<ParamField path="comparator" type="SortComparatorFn">
+  Custom sort comparator function.
+  
+  ```typescript
+  {
+    field: 'athlete',
+    comparator: (valueA, valueB, nodeA, nodeB, isDescending) => {
+      // Custom sorting logic
+      return valueA.toLowerCase().localeCompare(valueB.toLowerCase());
+    }
+  }
+  ```
+</ParamField>
+
+## Filtering
+
+<ParamField path="filter" type="boolean | string | FilterDef" module="FilterModule">
+  Enable filtering and specify the filter type.
+  
+  ```typescript
+  { field: 'age', filter: 'agNumberColumnFilter' }
+  { field: 'athlete', filter: 'agTextColumnFilter' }
+  { field: 'date', filter: 'agDateColumnFilter' }
+  { field: 'country', filter: 'agSetColumnFilter' }  // Enterprise
+  ```
+</ParamField>
+
+<ParamField path="filterParams" type="object">
+  Parameters for the filter component.
+  
+  ```typescript
+  {
+    field: 'age',
+    filter: 'agNumberColumnFilter',
+    filterParams: {
+      buttons: ['apply', 'reset'],
+      closeOnApply: true
+    }
+  }
+  ```
+</ParamField>
+
+<ParamField path="floatingFilter" type="boolean" default="false">
+  Show a floating filter for this column.
+  
+  ```typescript
+  { field: 'athlete', filter: true, floatingFilter: true }
+  ```
+</ParamField>
+
+## Editing
+
+<ParamField path="editable" type="boolean | EditableCallback" default="false">
+  Enable editing for this column. Can be a function for conditional editing.
+  
+  ```typescript
+  // Always editable
+  { field: 'athlete', editable: true }
+  
+  // Conditionally editable
+  {
+    field: 'age',
+    editable: (params) => params.data.status === 'active'
+  }
+  ```
+</ParamField>
+
+<ParamField path="cellEditor" type="string | Component">
+  Specify the cell editor component.
+  
+  ```typescript
+  { field: 'age', cellEditor: 'agNumberCellEditor' }
+  { field: 'country', cellEditor: 'agSelectCellEditor' }
+  { field: 'notes', cellEditor: 'agLargeTextCellEditor' }
+  ```
+</ParamField>
+
+<ParamField path="cellEditorParams" type="object">
+  Parameters for the cell editor.
+  
+  ```typescript
+  {
+    field: 'country',
+    cellEditor: 'agSelectCellEditor',
+    cellEditorParams: {
+      values: ['USA', 'UK', 'Canada', 'Australia']
+    }
+  }
+  ```
+</ParamField>
+
+<ParamField path="singleClickEdit" type="boolean" default="false">
+  Start editing on single click instead of double click.
+  
+  ```typescript
+  { field: 'notes', editable: true, singleClickEdit: true }
+  ```
+</ParamField>
+
+## Cell Rendering
+
+<ParamField path="cellRenderer" type="string | Component">
+  Custom cell renderer component.
+  
+  ```typescript
+  {
+    field: 'status',
+    cellRenderer: (params) => {
+      const color = params.value === 'active' ? 'green' : 'red';
+      return `<span style="color: ${color}">${params.value}</span>`;
+    }
+  }
+  ```
+</ParamField>
+
+<ParamField path="cellRendererParams" type="object">
+  Parameters passed to the cell renderer.
+  
+  ```typescript
+  {
+    field: 'progress',
+    cellRenderer: 'agSparklineCellRenderer',
+    cellRendererParams: {
+      sparklineOptions: {
+        type: 'bar',
+        fill: '#5470c6'
+      }
+    }
+  }
+  ```
+</ParamField>
+
+## Styling
+
+<ParamField path="cellStyle" type="CellStyle | CellStyleFunc" module="CellStyleModule">
+  CSS styles to apply to cells.
+  
+  ```typescript
+  // Static style
+  { field: 'athlete', cellStyle: { color: 'blue', fontWeight: 'bold' } }
+  
+  // Dynamic style
+  {
+    field: 'age',
+    cellStyle: (params) => {
+      if (params.value < 18) {
+        return { backgroundColor: '#ffcccc' };
+      }
+      return null;
+    }
+  }
+  ```
+</ParamField>
+
+<ParamField path="cellClass" type="string | string[] | CellClassFunc" module="CellStyleModule">
+  CSS classes to apply to cells.
+  
+  ```typescript
+  { field: 'athlete', cellClass: 'athlete-cell' }
+  { field: 'status', cellClass: ['status-cell', 'highlighted'] }
+  {
+    field: 'age',
+    cellClass: (params) => params.value >= 18 ? 'adult' : 'minor'
+  }
+  ```
+</ParamField>
+
+<ParamField path="cellClassRules" type="CellClassRules" module="CellStyleModule">
+  Rules for applying CSS classes based on conditions.
+  
+  ```typescript
+  {
+    field: 'age',
+    cellClassRules: {
+      'age-warning': (params) => params.value < 18,
+      'age-senior': (params) => params.value >= 65,
+      'age-normal': (params) => params.value >= 18 && params.value < 65
+    }
+  }
+  ```
+</ParamField>
+
+## Pinning
+
+<ParamField path="pinned" type="'left' | 'right' | boolean">
+  Pin column to left or right side of the grid.
+  
+  ```typescript
+  { field: 'athlete', pinned: 'left' }
+  { field: 'actions', pinned: 'right' }
+  ```
+</ParamField>
+
+<ParamField path="lockPinned" type="boolean" default="false">
+  Prevent users from pinning/unpinning this column via UI.
+  
+  ```typescript
+  { field: 'athlete', pinned: 'left', lockPinned: true }
+  ```
+</ParamField>
+
+## Column Types
+
+Reuse column configurations with column types:
+
+```typescript
+const gridOptions = {
+  // Define reusable types
+  columnTypes: {
+    numberColumn: {
+      filter: 'agNumberColumnFilter',
+      cellClass: 'number-cell',
+      valueFormatter: (params) => params.value?.toLocaleString()
+    },
+    dateColumn: {
+      filter: 'agDateColumnFilter',
+      valueFormatter: (params) => new Date(params.value).toLocaleDateString()
+    }
+  },
+  
+  // Use types in column definitions
+  columnDefs: [
+    { field: 'athlete' },
+    { field: 'age', type: 'numberColumn' },
+    { field: 'date', type: 'dateColumn' },
+    { field: 'year', type: 'numberColumn' }
+  ]
+};
+```
+
+## Column Groups
+
+Group related columns together:
+
+```typescript
+import { ColGroupDef } from 'ag-grid-community';
+
+const columnDefs: (ColDef | ColGroupDef)[] = [
+  {
+    headerName: 'Athlete Details',
+    children: [
+      { field: 'athlete' },
+      { field: 'age' },
+      { field: 'country' }
+    ]
+  },
+  {
+    headerName: 'Results',
+    children: [
+      { field: 'year' },
+      { field: 'sport' },
+      { field: 'gold' },
+      { field: 'silver' },
+      { field: 'bronze' }
+    ]
+  }
+];
+```
+
+## Common Patterns
+
+### Before/After: Adding Computed Columns
+
+<CodeGroup>
+
+```typescript Before
+const columnDefs = [
+  { field: 'firstName' },
+  { field: 'lastName' },
+  { field: 'age' }
+];
+```
+
+```typescript After
+const columnDefs = [
+  { field: 'firstName' },
+  { field: 'lastName' },
+  {
+    headerName: 'Full Name',
+    valueGetter: (params) => {
+      return `${params.data.firstName} ${params.data.lastName}`;
+    }
+  },
+  { field: 'age' }
+];
+```
+
+</CodeGroup>
+
+### Before/After: Adding Custom Filtering
+
+<CodeGroup>
+
+```typescript Before
+const columnDefs = [
+  { field: 'athlete', filter: true },
+  { field: 'age', filter: true }
+];
+```
+
+```typescript After
+const columnDefs = [
+  {
+    field: 'athlete',
+    filter: 'agTextColumnFilter',
+    filterParams: {
+      buttons: ['reset', 'apply'],
+      debounceMs: 200,
+      caseSensitive: false
+    }
+  },
+  {
+    field: 'age',
+    filter: 'agNumberColumnFilter',
+    filterParams: {
+      buttons: ['reset', 'apply'],
+      allowedCharPattern: '\\d\\-\\,',
+      numberParser: (text) => {
+        return text == null ? null : parseFloat(text);
+      }
+    }
+  }
+];
+```
+
+</CodeGroup>
+
+### Before/After: Adding Custom Cell Rendering
+
+<CodeGroup>
+
+```typescript Before
+const columnDefs = [
+  { field: 'status' },
+  { field: 'progress' }
+];
+```
+
+```typescript After
+const columnDefs = [
+  {
+    field: 'status',
+    cellRenderer: (params) => {
+      const icons = {
+        active: '✓',
+        pending: '⏳',
+        inactive: '✗'
+      };
+      return icons[params.value] || params.value;
+    },
+    cellStyle: (params) => {
+      const colors = {
+        active: { color: 'green' },
+        pending: { color: 'orange' },
+        inactive: { color: 'red' }
+      };
+      return colors[params.value];
+    }
+  },
+  {
+    field: 'progress',
+    cellRenderer: (params) => {
+      const percentage = params.value || 0;
+      return `
+        <div style="width: 100%; height: 100%; display: flex; align-items: center;">
+          <div style="width: ${percentage}%; height: 60%; background: #4caf50;"></div>
+          <span style="margin-left: 5px;">${percentage}%</span>
+        </div>
+      `;
+    }
+  }
+];
+```
+
+</CodeGroup>
+
+## Type Safety
+
+Use TypeScript for type-safe column definitions:
+
+```typescript
+interface Athlete {
+  athlete: string;
+  age: number;
+  country: string;
+  year: number;
+  gold: number;
+  silver: number;
+  bronze: number;
+}
+
+const columnDefs: ColDef<Athlete>[] = [
+  { field: 'athlete' },  // TypeScript validates field names
+  { field: 'age', type: 'number' },
+  {
+    headerName: 'Total Medals',
+    valueGetter: (params) => {
+      // params.data is typed as Athlete
+      return params.data.gold + params.data.silver + params.data.bronze;
+    }
+  }
+];
+```
+
+## Best Practices
+
+1. **Use field names** - Prefer `field` over `valueGetter` when possible for better performance
+2. **Leverage defaultColDef** - Set common properties once in `defaultColDef`
+3. **Use column types** - Create reusable column configurations for consistency
+4. **Provide colId** - Essential for dynamically updating column definitions
+5. **Optimize value getters** - Avoid expensive computations in `valueGetter` functions
+6. **Type your data** - Use TypeScript generics for better IDE support
+
+## Related
+
+- [GridOptions](/concepts/grid-options) - Configure the entire grid
+- [Grid API](/concepts/grid-api) - Column manipulation methods
+- [Row Data](/concepts/row-data) - Understanding row data structure

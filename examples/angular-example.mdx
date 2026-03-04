@@ -1,0 +1,393 @@
+---
+title: 'Angular Data Grid Example'
+description: 'Complete implementation of AG Grid in an Angular application with standalone components'
+---
+
+<Note>
+This example demonstrates AG Grid integration with Angular using standalone components and TypeScript for a modern Angular application.
+</Note>
+
+## Overview
+
+AG Grid provides native Angular support through the `ag-grid-angular` package. This example covers:
+
+- Angular standalone components
+- TypeScript type safety
+- Template-based grid configuration
+- Module registration
+- Property binding
+
+## Installation
+
+<Steps>
+  <Step title="Install packages">
+    ```bash
+    npm install ag-grid-angular
+    ```
+    
+    This automatically installs `ag-grid-community` as a dependency.
+  </Step>
+  
+  <Step title="Register modules">
+    Import and register the AG Grid modules you need.
+  </Step>
+  
+  <Step title="Import the component">
+    Add `AgGridAngular` to your component's imports.
+  </Step>
+</Steps>
+
+## Complete Angular Example
+
+<CodeGroup>
+
+```typescript app.component.ts
+import { Component } from '@angular/core';
+import { AgGridAngular } from 'ag-grid-angular';
+import type { ColDef } from 'ag-grid-community';
+import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community';
+
+ModuleRegistry.registerModules([AllCommunityModule]);
+
+// Row Data Interface
+interface IRow {
+    make: string;
+    model: string;
+    price: number;
+    electric: boolean;
+}
+
+@Component({
+    standalone: true,
+    imports: [AgGridAngular],
+    selector: 'my-app',
+    template: `
+        <div class="content" style="width: 100%; height: 500px;">
+            <!-- The AG Grid component -->
+            <ag-grid-angular
+                class="ag-theme-quartz"
+                style="width: 100%; height: 100%;"
+                [rowData]="rowData"
+                [columnDefs]="colDefs"
+                [defaultColDef]="defaultColDef"
+            />
+        </div>
+    `,
+})
+export class AppComponent {
+    // Row Data: The data to be displayed.
+    rowData: IRow[] = [
+        { make: 'Tesla', model: 'Model Y', price: 64950, electric: true },
+        { make: 'Ford', model: 'F-Series', price: 33850, electric: false },
+        { make: 'Toyota', model: 'Corolla', price: 29600, electric: false },
+        { make: 'Mercedes', model: 'EQA', price: 48890, electric: true },
+        { make: 'Fiat', model: '500', price: 15774, electric: false },
+        { make: 'Nissan', model: 'Juke', price: 20675, electric: false },
+    ];
+
+    // Column Definitions: Defines & controls grid columns.
+    colDefs: ColDef<IRow>[] = [
+        { field: 'make' },
+        { field: 'model' },
+        { field: 'price' },
+        { field: 'electric' }
+    ];
+
+    defaultColDef: ColDef = {
+        flex: 1,
+    };
+}
+```
+
+```typescript main.ts
+import { bootstrapApplication } from '@angular/platform-browser';
+import { AppComponent } from './app/app.component';
+
+bootstrapApplication(AppComponent);
+```
+
+```css styles.css
+@import 'ag-grid-community/styles/ag-grid.css';
+@import 'ag-grid-community/styles/ag-theme-quartz.css';
+```
+
+</CodeGroup>
+
+## Key Angular Concepts
+
+### Module Registration
+
+Register AG Grid modules before using the grid:
+
+```typescript
+import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community';
+
+ModuleRegistry.registerModules([AllCommunityModule]);
+```
+
+<Note>
+Module registration should happen once at application startup. Place it at the top level of your component or in a shared module.
+</Note>
+
+### Standalone Components
+
+Modern Angular applications use standalone components:
+
+```typescript
+@Component({
+    standalone: true,
+    imports: [AgGridAngular],  // Import AG Grid component
+    selector: 'my-app',
+    template: `...`
+})
+```
+
+### Property Binding
+
+Bind data and configuration using Angular's property binding syntax:
+
+```html
+<ag-grid-angular
+    [rowData]="rowData"
+    [columnDefs]="colDefs"
+    [defaultColDef]="defaultColDef"
+/>
+```
+
+### Type Safety
+
+Use TypeScript interfaces for type-safe development:
+
+```typescript
+import type { ColDef } from 'ag-grid-community';
+
+interface IRow {
+    make: string;
+    model: string;
+    price: number;
+    electric: boolean;
+}
+
+colDefs: ColDef<IRow>[] = [...];  // Fully typed
+```
+
+## Advanced Angular Integration
+
+<Tabs>
+  <Tab title="Grid API Access">
+    Access the Grid API for programmatic operations:
+
+    ```typescript
+    import type { GridApi, GridReadyEvent } from 'ag-grid-community';
+
+    export class AppComponent {
+        private gridApi!: GridApi;
+
+        onGridReady(params: GridReadyEvent) {
+            this.gridApi = params.api;
+        }
+
+        exportData() {
+            this.gridApi.exportDataAsCsv();
+        }
+    }
+    ```
+
+    ```html
+    <button (click)="exportData()">Export CSV</button>
+    <ag-grid-angular
+        (gridReady)="onGridReady($event)"
+        ...
+    />
+    ```
+  </Tab>
+
+  <Tab title="HTTP Data Loading">
+    Load data from an API using HttpClient:
+
+    ```typescript
+    import { HttpClient } from '@angular/common/http';
+    import { Component, OnInit } from '@angular/core';
+
+    @Component({ ... })
+    export class AppComponent implements OnInit {
+        rowData: IRow[] = [];
+
+        constructor(private http: HttpClient) {}
+
+        ngOnInit() {
+            this.http.get<IRow[]>('https://api.example.com/data')
+                .subscribe(data => this.rowData = data);
+        }
+    }
+    ```
+  </Tab>
+
+  <Tab title="Custom Cell Renderer">
+    Create Angular components as cell renderers:
+
+    ```typescript
+    import { Component } from '@angular/core';
+    import { ICellRendererAngularComp } from 'ag-grid-angular';
+    import { ICellRendererParams } from 'ag-grid-community';
+
+    @Component({
+        standalone: true,
+        template: `
+            <span [style.color]="textColor">
+                {{ formattedValue }}
+            </span>
+        `
+    })
+    export class PriceCellRenderer implements ICellRendererAngularComp {
+        public textColor!: string;
+        public formattedValue!: string;
+
+        agInit(params: ICellRendererParams): void {
+            this.textColor = params.value > 50000 ? 'red' : 'green';
+            this.formattedValue = '$' + params.value.toLocaleString();
+        }
+
+        refresh(params: ICellRendererParams): boolean {
+            return false;
+        }
+    }
+    ```
+
+    ```typescript
+    // Use in column definition
+    colDefs: ColDef[] = [
+        { field: 'make' },
+        { 
+            field: 'price',
+            cellRenderer: PriceCellRenderer
+        },
+    ];
+    ```
+  </Tab>
+
+  <Tab title="Event Handling">
+    Handle grid events with Angular event binding:
+
+    ```typescript
+    export class AppComponent {
+        onCellClicked(event: CellClickedEvent) {
+            console.log('Cell clicked:', event.value);
+        }
+
+        onRowSelected(event: RowSelectedEvent) {
+            console.log('Row selected:', event.data);
+        }
+    }
+    ```
+
+    ```html
+    <ag-grid-angular
+        (cellClicked)="onCellClicked($event)"
+        (rowSelected)="onRowSelected($event)"
+        ...
+    />
+    ```
+  </Tab>
+</Tabs>
+
+## Grid Configuration Options
+
+### Enhanced Column Definitions
+
+```typescript
+colDefs: ColDef<IRow>[] = [
+    { 
+        field: 'make',
+        headerName: 'Manufacturer',
+        sortable: true,
+        filter: true,
+        resizable: true
+    },
+    { 
+        field: 'model',
+        sortable: true,
+        filter: true
+    },
+    { 
+        field: 'price',
+        sortable: true,
+        filter: 'agNumberColumnFilter',
+        valueFormatter: params => '$' + params.value.toLocaleString()
+    },
+    { 
+        field: 'electric',
+        headerName: 'Electric Vehicle'
+    }
+];
+```
+
+### Default Column Definition
+
+```typescript
+defaultColDef: ColDef = {
+    flex: 1,
+    minWidth: 100,
+    resizable: true,
+    sortable: true,
+    filter: true,
+};
+```
+
+## NgZone Considerations
+
+AG Grid can run outside Angular's NgZone for better performance:
+
+```typescript
+import { Component, NgZone } from '@angular/core';
+
+@Component({ ... })
+export class AppComponent {
+    constructor(private ngZone: NgZone) {}
+
+    // For operations that don't need change detection
+    updateGrid() {
+        this.ngZone.runOutsideAngular(() => {
+            // Grid operations here
+        });
+    }
+}
+```
+
+<Note>
+For most applications, you don't need to worry about NgZone. AG Grid handles this automatically.
+</Note>
+
+## Module Selection
+
+Register only the modules you need for smaller bundle sizes:
+
+```typescript
+import { 
+    ClientSideRowModelModule,
+    ModuleRegistry 
+} from 'ag-grid-community';
+import { 
+    ColumnsToolPanelModule 
+} from 'ag-grid-enterprise';
+
+ModuleRegistry.registerModules([
+    ClientSideRowModelModule,
+    ColumnsToolPanelModule,
+]);
+```
+
+## Best Practices
+
+1. **Register modules once** - Do module registration at the application level
+2. **Use standalone components** - Modern Angular pattern for better tree-shaking
+3. **Type your data** - Define interfaces for row data
+4. **Set container height** - Grid needs a defined height to display properly
+5. **Handle events properly** - Use Angular's event binding syntax
+6. **Leverage dependency injection** - Inject services for data loading
+
+## Next Steps
+
+- Explore [React implementation](/examples/react-example)
+- Learn about [Vue integration](/examples/vue-example)
+- Implement [master-detail grids](/examples/master-detail)

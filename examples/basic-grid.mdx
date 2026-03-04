@@ -1,0 +1,150 @@
+---
+title: 'Basic Grid Setup'
+description: 'Learn how to set up a basic AG Grid with essential configuration'
+---
+
+<Note>
+This example demonstrates the simplest way to create an AG Grid with minimal configuration.
+</Note>
+
+## Overview
+
+A basic AG Grid requires just three key elements:
+
+1. **Container element** - A div with a defined height
+2. **Row data** - The data to display
+3. **Column definitions** - Which columns to show
+
+## Basic Implementation
+
+<Steps>
+  <Step title="Include AG Grid">
+    Import the necessary AG Grid modules and create a grid container.
+  </Step>
+  
+  <Step title="Define your data structure">
+    Create an interface for type safety and define your row data.
+  </Step>
+  
+  <Step title="Configure column definitions">
+    Specify which fields from your data should appear as columns.
+  </Step>
+  
+  <Step title="Initialize the grid">
+    Use `createGrid` to instantiate the grid with your configuration.
+  </Step>
+</Steps>
+
+## Complete Example
+
+<CodeGroup>
+
+```typescript JavaScript/TypeScript
+import type { GridApi, GridOptions } from 'ag-grid-community';
+import { AllCommunityModule, ModuleRegistry, createGrid } from 'ag-grid-community';
+
+ModuleRegistry.registerModules([AllCommunityModule]);
+
+// Row Data Interface
+interface IRow {
+    make: string;
+    model: string;
+    price: number;
+    electric: boolean;
+}
+
+// Grid API: Access to Grid API methods
+let gridApi: GridApi;
+
+// Grid Options: Contains all of the grid configurations
+const gridOptions: GridOptions<IRow> = {
+    // Data to be displayed
+    rowData: [
+        { make: 'Tesla', model: 'Model Y', price: 64950, electric: true },
+        { make: 'Ford', model: 'F-Series', price: 33850, electric: false },
+        { make: 'Toyota', model: 'Corolla', price: 29600, electric: false },
+        { make: 'Mercedes', model: 'EQA', price: 48890, electric: true },
+        { make: 'Fiat', model: '500', price: 15774, electric: false },
+        { make: 'Nissan', model: 'Juke', price: 20675, electric: false },
+    ],
+    // Columns to be displayed (Should match rowData properties)
+    columnDefs: [
+        { field: 'make' },
+        { field: 'model' },
+        { field: 'price' },
+        { field: 'electric' }
+    ],
+    defaultColDef: {
+        flex: 1,
+    },
+};
+
+// Create Grid: Create new grid within the #myGrid div, using the Grid Options object
+gridApi = createGrid(document.querySelector<HTMLElement>('#myGrid')!, gridOptions);
+```
+
+```html HTML Container
+<html lang="en">
+    <head>
+        <script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.js"></script>
+    </head>
+    <body>
+        <!-- Your Data Grid container -->
+        <div id="myGrid" style="height: 500px; width: 100%;"></div>
+    </body>
+</html>
+```
+
+</CodeGroup>
+
+## Key Concepts
+
+### Grid Options
+
+The `gridOptions` object is the central configuration for your grid. It contains:
+
+- `rowData`: Array of objects representing your table rows
+- `columnDefs`: Array defining which columns to display
+- `defaultColDef`: Default properties applied to all columns
+
+### Column Definitions
+
+Each column definition specifies how to display a field from your data:
+
+```typescript
+{ field: 'make' }  // Simplest form - displays the 'make' property
+```
+
+### Default Column Definition
+
+The `defaultColDef` applies common properties to all columns:
+
+```typescript
+defaultColDef: {
+    flex: 1,  // Columns distribute available width equally
+}
+```
+
+<Note>
+The `flex: 1` property makes columns responsive by distributing available space equally among all columns.
+</Note>
+
+## Module Registration
+
+AG Grid uses a modular architecture. The `AllCommunityModule` provides all Community features:
+
+```typescript
+import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community';
+
+ModuleRegistry.registerModules([AllCommunityModule]);
+```
+
+<Note>
+For production applications, consider importing only the specific modules you need to reduce bundle size.
+</Note>
+
+## Next Steps
+
+- Add [sorting and filtering](/examples/simple-example) to your grid
+- Explore [framework-specific implementations](/examples/react-example)
+- Learn about [column configuration options](https://ag-grid.com/documentation/column-properties/)

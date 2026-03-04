@@ -1,0 +1,42 @@
+---
+title: Material Theme
+description: Google Material Design inspired theme
+---
+
+The Material theme follows Google's Material Design guidelines with elevation-based shadows and bold colors.
+
+## Installation
+
+Import the Material theme stylesheet:
+
+```javascript
+import 'ag-grid-community/styles/ag-grid.css';
+import 'ag-grid-community/styles/ag-theme-material.css';
+```
+
+## Usage
+
+Apply the `ag-theme-material` class to your grid container:
+
+```html
+<div id="myGrid" class="ag-theme-material" style="height: 500px;"></div>
+```
+
+## Dark Mode
+
+Use the dark variant with the `ag-theme-material-dark` class:
+
+```html
+<div id="myGrid" class="ag-theme-material-dark" style="height: 500px;"></div>
+```
+
+## Customization
+
+```css
+.ag-theme-material {
+  --ag-foreground-color: rgba(0, 0, 0, 0.87);
+  --ag-background-color: #fff;
+  --ag-header-background-color: #fff;
+  --ag-border-color: rgba(0, 0, 0, 0.12);
+}
+```

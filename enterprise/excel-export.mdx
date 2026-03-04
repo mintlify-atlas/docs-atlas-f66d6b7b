@@ -1,0 +1,700 @@
+---
+title: Excel Export
+description: Export grid data to Excel (.xlsx) with styling, formulas, and multi-sheet support
+---
+
+<Warning>
+**Enterprise Feature**: Excel Export requires `ag-grid-enterprise` and a valid license key.
+</Warning>
+
+Excel Export allows you to export grid data to Excel format (.xlsx) with full support for styling, formulas, images, and multiple sheets.
+
+## Installation
+
+<Steps>
+  <Step title="Install Package">
+    ```bash
+    npm install ag-grid-enterprise
+    ```
+  </Step>
+  <Step title="Import Module">
+    ```typescript
+    import { ModuleRegistry } from 'ag-grid-community';
+    import { ExcelExportModule } from 'ag-grid-enterprise';
+    
+    ModuleRegistry.registerModules([ExcelExportModule]);
+    ```
+  </Step>
+  <Step title="Set License Key">
+    ```typescript
+    import { LicenseManager } from 'ag-grid-enterprise';
+    
+    LicenseManager.setLicenseKey('YOUR_LICENSE_KEY');
+    ```
+  </Step>
+</Steps>
+
+<Note>
+Source: `/packages/ag-grid-enterprise/src/excelExport/excelExportModule.ts`
+</Note>
+
+## Basic Excel Export
+
+Export grid data to Excel with a single API call:
+
+<CodeGroup>
+```typescript TypeScript
+import { GridApi, GridOptions } from 'ag-grid-community';
+
+const gridOptions: GridOptions = {
+  columnDefs: [
+    { field: 'athlete' },
+    { field: 'country' },
+    { field: 'sport' },
+    { field: 'gold' },
+    { field: 'silver' },
+    { field: 'bronze' }
+  ],
+  rowData: olympicData,
+  
+  // Default Excel export settings
+  defaultExcelExportParams: {
+    fileName: 'olympic-data.xlsx'
+  }
+};
+
+// Export to Excel
+function exportToExcel() {
+  const api: GridApi = gridRef.current.api;
+  api.exportDataAsExcel();
+}
+```
+
+```jsx React
+import { AgGridReact } from 'ag-grid-react';
+import { useRef, useCallback } from 'react';
+
+function ExportGrid() {
+  const gridRef = useRef(null);
+  
+  const exportToExcel = useCallback(() => {
+    gridRef.current.api.exportDataAsExcel({
+      fileName: 'olympic-data.xlsx'
+    });
+  }, []);
+
+  return (
+    <>
+      <button onClick={exportToExcel}>Export to Excel</button>
+      <AgGridReact
+        ref={gridRef}
+        columnDefs={columnDefs}
+        rowData={rowData}
+      />
+    </>
+  );
+}
+```
+
+```vue Vue
+<template>
+  <div>
+    <button @click="exportToExcel">Export to Excel</button>
+    <ag-grid-vue
+      ref="gridRef"
+      :columnDefs="columnDefs"
+      :rowData="rowData">
+    </ag-grid-vue>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref } from 'vue';
+
+const gridRef = ref(null);
+
+const exportToExcel = () => {
+  gridRef.value.api.exportDataAsExcel({
+    fileName: 'olympic-data.xlsx'
+  });
+};
+</script>
+```
+</CodeGroup>
+
+## Export API
+
+The Excel Export API provides several methods for exporting data:
+
+### Export Data as Excel
+
+Export and download the Excel file:
+
+```typescript
+import { GridApi } from 'ag-grid-community';
+
+const api: GridApi = gridRef.current.api;
+
+// Basic export
+api.exportDataAsExcel();
+
+// Export with options
+api.exportDataAsExcel({
+  fileName: 'my-export.xlsx',
+  sheetName: 'Data Sheet',
+  columnKeys: ['athlete', 'gold', 'silver'],  // Specific columns
+  onlySelected: true,                          // Only selected rows
+  skipColumnGroupHeaders: false,               // Include column groups
+  skipColumnHeaders: false,                    // Include headers
+  allColumns: false                            // Export all or visible columns
+});
+```
+
+<Note>
+Source: `/packages/ag-grid-enterprise/src/excelExport/excelExportApi.ts:19-23`
+</Note>
+
+### Get Data as Excel
+
+Get Excel data as Blob or string without triggering download:
+
+```typescript
+// Get as Blob
+const excelBlob = api.getDataAsExcel({
+  fileName: 'data.xlsx'
+});
+
+if (excelBlob) {
+  // Upload to server or process further
+  const formData = new FormData();
+  formData.append('file', excelBlob);
+  
+  fetch('/api/upload', {
+    method: 'POST',
+    body: formData
+  });
+}
+```
+
+<Note>
+Source: `/packages/ag-grid-enterprise/src/excelExport/excelExportApi.ts:12-17`
+</Note>
+
+### Multi-Sheet Export
+
+Export multiple sheets in a single Excel file:
+
+```typescript
+import { ExcelExportMultipleSheetParams } from 'ag-grid-community';
+
+// Get data for each sheet
+const sheet1Data = api.getSheetDataForExcel({
+  sheetName: 'Gold Medals',
+  onlySelected: false
+});
+
+const sheet2Data = api.getSheetDataForExcel({
+  sheetName: 'Silver Medals',
+  columnKeys: ['athlete', 'country', 'silver']
+});
+
+// Combine and export
+api.exportMultipleSheetsAsExcel({
+  data: [sheet1Data, sheet2Data],
+  fileName: 'multi-sheet-export.xlsx'
+});
+```
+
+<Note>
+Sources:
+- `getSheetDataForExcel`: `/packages/ag-grid-enterprise/src/excelExport/excelExportApi.ts:24-28`
+- `exportMultipleSheetsAsExcel`: `/packages/ag-grid-enterprise/src/excelExport/excelExportApi.ts:37-40`
+</Note>
+
+## Export Parameters
+
+### Basic Parameters
+
+```typescript
+import { ExcelExportParams } from 'ag-grid-community';
+
+const exportParams: ExcelExportParams = {
+  // File configuration
+  fileName: 'export.xlsx',
+  sheetName: 'Sheet1',
+  
+  // Column selection
+  columnKeys: ['athlete', 'gold', 'silver'],  // Specific columns
+  allColumns: false,                          // Export all columns
+  skipColumnGroupHeaders: false,              // Include column groups
+  skipColumnHeaders: false,                   // Include column headers
+  
+  // Row selection
+  onlySelected: false,                        // Export only selected rows
+  onlySelectedAllPages: false,                // Include selected from all pages
+  skipRowGroups: false,                       // Skip group rows
+  skipPinnedTop: false,                       // Skip pinned top rows
+  skipPinnedBottom: false,                    // Skip pinned bottom rows
+  
+  // Row range
+  rowPositions: undefined,                    // Specific row positions
+  
+  // Styling
+  author: 'AG Grid',
+  fontSize: 11,
+  fontFamily: 'Calibri',
+  
+  // Advanced
+  suppressTextAsCDATA: false,
+  prependContent: undefined,                  // Content before data
+  appendContent: undefined                    // Content after data
+};
+
+api.exportDataAsExcel(exportParams);
+```
+
+### Column Configuration
+
+Configure column-specific export behavior:
+
+```typescript
+import { ColDef } from 'ag-grid-community';
+
+const columnDefs: ColDef[] = [
+  {
+    field: 'athlete',
+    headerName: 'Athlete Name'
+  },
+  {
+    field: 'gold',
+    // Custom Excel export value
+    excelExportValue: (params) => {
+      return params.value != null ? params.value : 0;
+    }
+  },
+  {
+    field: 'total',
+    // Value getter for export
+    valueGetter: (params) => {
+      return (params.data.gold || 0) + 
+             (params.data.silver || 0) + 
+             (params.data.bronze || 0);
+    }
+  }
+];
+```
+
+## Styling Excel Exports
+
+### Cell Styling
+
+Apply custom styles to exported cells:
+
+```typescript
+import { ExcelStyle } from 'ag-grid-community';
+
+const gridOptions: GridOptions = {
+  // Define Excel styles
+  excelStyles: [
+    {
+      id: 'header',
+      font: {
+        bold: true,
+        size: 14,
+        color: '#FFFFFF'
+      },
+      interior: {
+        color: '#366092',
+        pattern: 'Solid'
+      },
+      alignment: {
+        horizontal: 'Center',
+        vertical: 'Center'
+      }
+    },
+    {
+      id: 'goldMedal',
+      font: {
+        bold: true,
+        color: '#FFD700'
+      },
+      interior: {
+        color: '#FFF8DC',
+        pattern: 'Solid'
+      }
+    },
+    {
+      id: 'currency',
+      numberFormat: {
+        format: '$#,##0.00'
+      }
+    },
+    {
+      id: 'percentage',
+      numberFormat: {
+        format: '0.00%'
+      }
+    },
+    {
+      id: 'date',
+      dataType: 'DateTime',
+      numberFormat: {
+        format: 'mm/dd/yyyy'
+      }
+    }
+  ],
+  
+  // Apply styles to columns
+  columnDefs: [
+    {
+      field: 'athlete',
+      cellClass: 'header'
+    },
+    {
+      field: 'gold',
+      cellClassRules: {
+        'goldMedal': (params) => params.value >= 3
+      }
+    },
+    {
+      field: 'revenue',
+      cellClass: 'currency'
+    },
+    {
+      field: 'percentage',
+      cellClass: 'percentage'
+    },
+    {
+      field: 'date',
+      cellClass: 'date'
+    }
+  ],
+  
+  // Default Excel export parameters
+  defaultExcelExportParams: {
+    author: 'Your Company',
+    fontSize: 11,
+    fontFamily: 'Arial'
+  }
+};
+```
+
+### Custom Cell Styling Callback
+
+```typescript
+const exportParams: ExcelExportParams = {
+  processCellCallback: (params) => {
+    const value = params.value;
+    
+    // Apply custom formatting
+    if (params.column.getColId() === 'gold' && value > 5) {
+      return {
+        ...params,
+        value: value,
+        styleId: 'goldMedal'
+      };
+    }
+    
+    return params.value;
+  },
+  
+  processHeaderCallback: (params) => {
+    return params.column.getColDef().headerName?.toUpperCase();
+  }
+};
+
+api.exportDataAsExcel(exportParams);
+```
+
+## Advanced Features
+
+### Export with Formulas
+
+Include Excel formulas in exports:
+
+```typescript
+const columnDefs: ColDef[] = [
+  { field: 'gold', headerName: 'Gold' },
+  { field: 'silver', headerName: 'Silver' },
+  { field: 'bronze', headerName: 'Bronze' },
+  {
+    headerName: 'Total',
+    // Export as Excel formula
+    valueGetter: (params) => {
+      return `=SUM(D${params.node.rowIndex + 2}:F${params.node.rowIndex + 2})`;
+    }
+  }
+];
+```
+
+### Custom Headers and Footers
+
+Add custom content before and after data:
+
+```typescript
+import { ExcelCell } from 'ag-grid-community';
+
+const exportParams: ExcelExportParams = {
+  // Header rows
+  prependContent: [
+    [
+      {
+        data: {
+          value: 'Olympic Medal Report',
+          type: 'String'
+        },
+        mergeAcross: 5,
+        styleId: 'header'
+      }
+    ],
+    [
+      {
+        data: {
+          value: `Generated: ${new Date().toLocaleDateString()}`,
+          type: 'String'
+        }
+      }
+    ],
+    []  // Empty row
+  ],
+  
+  // Footer rows
+  appendContent: [
+    [],  // Empty row
+    [
+      {
+        data: {
+          value: 'Total Medals:',
+          type: 'String'
+        },
+        styleId: 'header'
+      },
+      {
+        data: {
+          value: '=SUM(D:D)',  // Formula for total
+          type: 'Formula'
+        }
+      }
+    ]
+  ]
+};
+
+api.exportDataAsExcel(exportParams);
+```
+
+### Column Width and Row Height
+
+```typescript
+const exportParams: ExcelExportParams = {
+  // Column widths in characters
+  columnWidth: (params) => {
+    const colId = params.column.getColId();
+    
+    switch(colId) {
+      case 'athlete': return 200;
+      case 'country': return 150;
+      default: return 100;
+    }
+  },
+  
+  // Row height in points
+  rowHeight: (params) => {
+    return params.node.group ? 30 : 20;
+  }
+};
+```
+
+### Export with Images
+
+```typescript
+import { ExcelImage } from 'ag-grid-community';
+
+const exportParams: ExcelExportParams = {
+  addImageToCell: (rowIndex, col, value) => {
+    if (col.getColId() === 'flag') {
+      return {
+        image: {
+          id: `flag_${rowIndex}`,
+          base64: value,  // Base64 encoded image
+          imageType: 'png',
+          width: 100,
+          height: 50,
+          position: {
+            row: rowIndex,
+            column: col.getColIndex()
+          }
+        },
+        value: undefined  // Don't show text value
+      };
+    }
+  }
+};
+```
+
+## Export with Row Grouping
+
+Export grouped data with aggregations:
+
+```typescript
+const gridOptions: GridOptions = {
+  columnDefs: [
+    { field: 'country', rowGroup: true },
+    { field: 'sport', rowGroup: true },
+    { field: 'athlete' },
+    { field: 'gold', aggFunc: 'sum' },
+    { field: 'silver', aggFunc: 'sum' }
+  ],
+  autoGroupColumnDef: {
+    headerName: 'Group',
+    minWidth: 200
+  }
+};
+
+const exportParams: ExcelExportParams = {
+  skipRowGroups: false,           // Include group rows
+  processRowGroupCallback: (params) => {
+    // Custom group row formatting
+    return `${params.node.key} (${params.node.allChildrenCount} items)`;
+  }
+};
+
+api.exportDataAsExcel(exportParams);
+```
+
+## Export with Pivot Mode
+
+Export pivot tables to Excel:
+
+```typescript
+const gridOptions: GridOptions = {
+  pivotMode: true,
+  columnDefs: [
+    { field: 'country', rowGroup: true },
+    { field: 'year', pivot: true },
+    { field: 'gold', aggFunc: 'sum' }
+  ]
+};
+
+const exportParams: ExcelExportParams = {
+  fileName: 'pivot-export.xlsx',
+  skipColumnGroupHeaders: false  // Include pivot column groups
+};
+
+api.exportDataAsExcel(exportParams);
+```
+
+## Performance Optimization
+
+<CardGroup cols={2}>
+  <Card title="Export Specific Columns" icon="columns">
+    Use `columnKeys` to export only required columns
+  </Card>
+  <Card title="Filter Before Export" icon="filter">
+    Apply filters to reduce data volume before exporting
+  </Card>
+  <Card title="Limit Rows" icon="list">
+    Use pagination or `rowPositions` for large datasets
+  </Card>
+  <Card title="Simplify Styling" icon="paint-brush">
+    Minimize custom styles for faster export processing
+  </Card>
+</CardGroup>
+
+### Large Dataset Export
+
+```typescript
+// Export in chunks for very large datasets
+function exportLargeDataset() {
+  const pageSize = 10000;
+  const totalRows = api.getDisplayedRowCount();
+  const sheets = [];
+  
+  for (let i = 0; i < totalRows; i += pageSize) {
+    const sheetData = api.getSheetDataForExcel({
+      sheetName: `Data_${i / pageSize + 1}`,
+      rowPositions: Array.from(
+        { length: Math.min(pageSize, totalRows - i) },
+        (_, idx) => i + idx
+      )
+    });
+    
+    if (sheetData) {
+      sheets.push(sheetData);
+    }
+  }
+  
+  api.exportMultipleSheetsAsExcel({
+    data: sheets,
+    fileName: 'large-export.xlsx'
+  });
+}
+```
+
+## Common Issues
+
+### Export Not Working
+
+<Steps>
+  <Step title="Check Module Registration">
+    Ensure `ExcelExportModule` is registered:
+    ```typescript
+    ModuleRegistry.registerModules([ExcelExportModule]);
+    ```
+  </Step>
+  <Step title="Verify License Key">
+    Set a valid enterprise license key
+  </Step>
+  <Step title="Check Browser Compatibility">
+    Excel export requires modern browser with Blob support
+  </Step>
+</Steps>
+
+### Styling Not Applied
+
+Ensure styles are defined in `excelStyles` and referenced correctly:
+
+```typescript
+const gridOptions: GridOptions = {
+  excelStyles: [
+    { id: 'myStyle', font: { bold: true } }
+  ],
+  columnDefs: [
+    { field: 'name', cellClass: 'myStyle' }  // Must match style id
+  ]
+};
+```
+
+### Multi-Sheet Export Issues
+
+Ensure you call `getSheetDataForExcel` for each sheet before exporting:
+
+```typescript
+// Correct: Get sheet data first
+const sheet1 = api.getSheetDataForExcel({ sheetName: 'Sheet1' });
+const sheet2 = api.getSheetDataForExcel({ sheetName: 'Sheet2' });
+api.exportMultipleSheetsAsExcel({ data: [sheet1, sheet2] });
+
+// Incorrect: Missing getSheetDataForExcel calls
+// api.exportMultipleSheetsAsExcel({ data: [] }); // Won't work
+```
+
+<Note>
+Multi-sheet mode requires calling `getSheetDataForExcel` before export. Source: `/packages/ag-grid-enterprise/src/excelExport/excelExportApi.ts:24-28`
+</Note>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="CSV Export" icon="file-csv" href="/csv-export">
+    Export to CSV format (Community feature)
+  </Card>
+  <Card title="Row Grouping" icon="layer-group" href="/enterprise/row-grouping">
+    Export grouped data with aggregations
+  </Card>
+  <Card title="Pivoting" icon="table-pivot" href="/enterprise/pivoting">
+    Export pivot tables to Excel
+  </Card>
+  <Card title="Styling" icon="paint-brush" href="/cell-styles">
+    Learn about cell styling options
+  </Card>
+</CardGroup>

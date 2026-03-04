@@ -1,0 +1,509 @@
+---
+title: Row Grouping
+description: Group rows by column values with aggregation, tree data, and hierarchical display
+---
+
+<Warning>
+**Enterprise Feature**: Row grouping requires `ag-grid-enterprise` and a valid license key.
+</Warning>
+
+Row Grouping allows you to organize rows into hierarchical groups based on column values, with automatic aggregation of grouped data.
+
+## Installation
+
+<Steps>
+  <Step title="Install Package">
+    ```bash
+    npm install ag-grid-enterprise
+    ```
+  </Step>
+  <Step title="Import Module">
+    ```typescript
+    import { ModuleRegistry } from 'ag-grid-community';
+    import { RowGroupingModule } from 'ag-grid-enterprise';
+    
+    ModuleRegistry.registerModules([RowGroupingModule]);
+    ```
+  </Step>
+  <Step title="Set License Key">
+    ```typescript
+    import { LicenseManager } from 'ag-grid-enterprise';
+    
+    LicenseManager.setLicenseKey('YOUR_LICENSE_KEY');
+    ```
+  </Step>
+</Steps>
+
+<Note>
+Source: `/packages/ag-grid-enterprise/src/rowGrouping/rowGroupingModule.ts:54-60`
+</Note>
+
+## Basic Row Grouping
+
+Enable row grouping by setting `rowGroup: true` on column definitions:
+
+<CodeGroup>
+```typescript TypeScript
+import { ColDef } from 'ag-grid-community';
+
+const columnDefs: ColDef[] = [
+  { 
+    field: 'country',
+    rowGroup: true,  // Group by this column
+    hide: true       // Hide the original column
+  },
+  { 
+    field: 'sport',
+    rowGroup: true   // Secondary grouping level
+  },
+  { 
+    field: 'athlete' 
+  },
+  { 
+    field: 'gold',
+    aggFunc: 'sum'   // Aggregate gold medals
+  },
+  { 
+    field: 'silver',
+    aggFunc: 'sum'
+  }
+];
+
+const gridOptions = {
+  columnDefs,
+  rowData: olympicData,
+  groupDefaultExpanded: 1  // Expand first level by default
+};
+```
+
+```jsx React
+import { AgGridReact } from 'ag-grid-react';
+import { useMemo } from 'react';
+
+function GroupingGrid() {
+  const columnDefs = useMemo(() => [
+    { field: 'country', rowGroup: true, hide: true },
+    { field: 'sport', rowGroup: true },
+    { field: 'athlete' },
+    { field: 'gold', aggFunc: 'sum' },
+    { field: 'silver', aggFunc: 'sum' }
+  ], []);
+
+  return (
+    <AgGridReact
+      columnDefs={columnDefs}
+      rowData={rowData}
+      groupDefaultExpanded={1}
+    />
+  );
+}
+```
+
+```vue Vue
+<template>
+  <ag-grid-vue
+    :columnDefs="columnDefs"
+    :rowData="rowData"
+    :groupDefaultExpanded="1">
+  </ag-grid-vue>
+</template>
+
+<script setup lang="ts">
+import { ref } from 'vue';
+
+const columnDefs = ref([
+  { field: 'country', rowGroup: true, hide: true },
+  { field: 'sport', rowGroup: true },
+  { field: 'athlete' },
+  { field: 'gold', aggFunc: 'sum' },
+  { field: 'silver', aggFunc: 'sum' }
+]);
+</script>
+```
+</CodeGroup>
+
+## Column Configuration
+
+### Enable Row Grouping
+
+Configure columns to support grouping:
+
+```typescript
+const columnDefs: ColDef[] = [
+  {
+    field: 'country',
+    enableRowGroup: true,  // Allow user to drag to row group panel
+    rowGroup: false        // Not grouped by default
+  },
+  {
+    field: 'sport',
+    rowGroup: true,        // Grouped by default
+    rowGroupIndex: 0,      // First grouping level
+    hide: true             // Hide original column when grouped
+  }
+];
+```
+
+<Note>
+Column configuration options from ColDef interface. See `/packages/ag-grid-community/src/entities/colDef.ts:245+`
+</Note>
+
+### Row Group Index
+
+Control the order of grouped columns:
+
+```typescript
+const columnDefs: ColDef[] = [
+  { field: 'country', rowGroup: true, rowGroupIndex: 0 },  // First level
+  { field: 'year', rowGroup: true, rowGroupIndex: 1 },     // Second level
+  { field: 'sport', rowGroup: true, rowGroupIndex: 2 }     // Third level
+];
+```
+
+## Aggregation Functions
+
+### Built-in Aggregation Functions
+
+AG Grid provides several built-in aggregation functions:
+
+```typescript
+const columnDefs: ColDef[] = [
+  { field: 'gold', aggFunc: 'sum' },      // Sum all values
+  { field: 'silver', aggFunc: 'avg' },    // Average
+  { field: 'bronze', aggFunc: 'min' },    // Minimum value
+  { field: 'total', aggFunc: 'max' },     // Maximum value
+  { field: 'athlete', aggFunc: 'count' }, // Count rows
+  { field: 'age', aggFunc: 'first' },     // First value
+  { field: 'date', aggFunc: 'last' }      // Last value
+];
+```
+
+### Custom Aggregation Functions
+
+Define custom aggregation logic:
+
+```typescript
+import { IAggFunc, IAggFuncParams } from 'ag-grid-community';
+
+// Custom weighted average aggregation
+const weightedAvgAggFunc: IAggFunc = (params: IAggFuncParams) => {
+  let sum = 0;
+  let count = 0;
+  
+  params.values.forEach(value => {
+    if (typeof value === 'number') {
+      sum += value;
+      count++;
+    }
+  });
+  
+  return count > 0 ? sum / count : null;
+};
+
+const columnDefs: ColDef[] = [
+  {
+    field: 'score',
+    aggFunc: weightedAvgAggFunc,
+    headerName: 'Avg Score'
+  }
+];
+```
+
+### Multiple Aggregations
+
+Allow users to choose aggregation functions:
+
+```typescript
+const columnDefs: ColDef[] = [
+  {
+    field: 'gold',
+    allowedAggFuncs: ['sum', 'avg', 'min', 'max'],
+    aggFunc: 'sum'  // Default
+  }
+];
+```
+
+## Programmatic API
+
+Control row grouping programmatically using the Grid API:
+
+### Set Row Group Columns
+
+```typescript
+import { GridApi } from 'ag-grid-community';
+
+const api: GridApi = gridRef.current.api;
+
+// Set columns to group by
+api.setRowGroupColumns(['country', 'sport']);
+
+// Add a column to grouping
+api.addRowGroupColumns(['year']);
+
+// Remove a column from grouping
+api.removeRowGroupColumns(['sport']);
+
+// Get current grouped columns
+const groupedCols = api.getRowGroupColumns();
+console.log(groupedCols.map(col => col.getColId()));
+```
+
+<Note>
+Source: `/packages/ag-grid-enterprise/src/rowGrouping/rowGroupingApi.ts:5-23`
+</Note>
+
+### Reorder Group Columns
+
+```typescript
+// Move row group column from index 0 to index 2
+api.moveRowGroupColumn(0, 2);
+```
+
+### Expand/Collapse Groups
+
+```typescript
+// Expand all groups
+api.expandAll();
+
+// Collapse all groups
+api.collapseAll();
+
+// Expand specific group
+const rowNode = api.getRowNode('group-id');
+rowNode.setExpanded(true);
+```
+
+## Grid Options
+
+### Group Display Options
+
+```typescript
+const gridOptions: GridOptions = {
+  // Expand groups by default
+  groupDefaultExpanded: 1,           // Expand first level only
+  // groupDefaultExpanded: -1,       // Expand all levels
+  // groupDefaultExpanded: 0,        // Collapse all (default)
+  
+  // Show group row count
+  groupIncludeFooter: true,          // Footer row per group
+  groupIncludeTotalFooter: true,     // Grand total footer
+  
+  // Group display type
+  groupDisplayType: 'singleColumn',  // Single auto column (default)
+  // groupDisplayType: 'multipleColumns',  // Column per group
+  // groupDisplayType: 'groupRows',        // Full width group rows
+  // groupDisplayType: 'custom',           // Custom renderer
+  
+  // Auto column configuration
+  autoGroupColumnDef: {
+    headerName: 'Group',
+    minWidth: 200,
+    cellRendererParams: {
+      suppressCount: false,           // Show row count
+      checkbox: true                  // Show checkbox for selection
+    }
+  },
+  
+  // Suppress auto column
+  groupSuppressAutoColumn: false,
+  
+  // Group row rendering
+  groupRowRenderer: 'agGroupCellRenderer',
+  groupRowRendererParams: {
+    innerRenderer: CustomInnerRenderer,
+    suppressCount: false,
+    checkbox: true
+  }
+};
+```
+
+### Group Selection
+
+```typescript
+const gridOptions: GridOptions = {
+  // Enable group selection
+  groupSelectsChildren: true,        // Selecting group selects children
+  groupSelectsFiltered: true,        // Only select filtered children
+  
+  // Row selection
+  rowSelection: 'multiple',
+  suppressRowClickSelection: false
+};
+```
+
+## Row Group Panel
+
+Enable the Row Group Panel to allow users to drag and drop columns:
+
+```typescript
+import { RowGroupingPanelModule } from 'ag-grid-enterprise';
+
+ModuleRegistry.registerModules([RowGroupingPanelModule]);
+
+const gridOptions: GridOptions = {
+  rowGroupPanelShow: 'always',  // 'always', 'onlyWhenGrouping', 'never'
+  suppressDragLeaveHidesColumns: true,  // Keep columns visible when dragged
+  
+  columnDefs: [
+    { field: 'country', enableRowGroup: true },
+    { field: 'sport', enableRowGroup: true },
+    { field: 'year', enableRowGroup: true }
+  ]
+};
+```
+
+<Note>
+Row Group Panel requires the `RowGroupingPanelModule`. Source: `/packages/ag-grid-enterprise/src/rowGrouping/rowGroupingModule.ts:65-80`
+</Note>
+
+## Group Filtering
+
+Filter on group columns using the Group Filter:
+
+```typescript
+import { GroupFilterModule } from 'ag-grid-enterprise';
+
+ModuleRegistry.registerModules([GroupFilterModule]);
+
+const columnDefs: ColDef[] = [
+  {
+    field: 'country',
+    rowGroup: true,
+    filter: 'agGroupColumnFilter',  // Use group filter
+    filterParams: {
+      buttons: ['apply', 'reset'],
+      closeOnApply: true
+    }
+  }
+];
+```
+
+<Note>
+Source: `/packages/ag-grid-enterprise/src/rowGrouping/rowGroupingModule.ts:85-100`
+</Note>
+
+## Advanced Features
+
+### Group Footers
+
+Show aggregated values in group footers:
+
+```typescript
+const gridOptions: GridOptions = {
+  groupIncludeFooter: true,        // Footer per group
+  groupIncludeTotalFooter: true,   // Grand total footer
+  
+  columnDefs: [
+    { field: 'country', rowGroup: true },
+    { 
+      field: 'gold',
+      aggFunc: 'sum',
+      footerValueGetter: params => {
+        return `Total: ${params.value}`;
+      }
+    }
+  ]
+};
+```
+
+### Multiple Group Columns
+
+Display each grouping level in a separate column:
+
+```typescript
+const gridOptions: GridOptions = {
+  groupDisplayType: 'multipleColumns',
+  
+  columnDefs: [
+    { field: 'country', rowGroup: true },
+    { field: 'sport', rowGroup: true },
+    { field: 'athlete' },
+    { field: 'gold', aggFunc: 'sum' }
+  ]
+};
+```
+
+### Custom Group Rendering
+
+```typescript
+import { ICellRendererParams } from 'ag-grid-community';
+
+const CustomGroupRenderer = (params: ICellRendererParams) => {
+  if (params.node.group) {
+    return `${params.value} (${params.node.allChildrenCount} items)`;
+  }
+  return params.value;
+};
+
+const gridOptions: GridOptions = {
+  autoGroupColumnDef: {
+    cellRenderer: CustomGroupRenderer
+  }
+};
+```
+
+## Performance Tips
+
+<CardGroup cols={2}>
+  <Card title="Limit Initial Expansion" icon="compress">
+    Use `groupDefaultExpanded: 1` to expand only the first level, reducing initial render time
+  </Card>
+  <Card title="Hide Grouped Columns" icon="eye-slash">
+    Set `hide: true` on grouped columns to reduce column count and improve performance
+  </Card>
+  <Card title="Debounce Filtering" icon="clock">
+    Use `debounceMs: 300` on filters to reduce recalculation frequency
+  </Card>
+  <Card title="Aggregation on Demand" icon="calculator">
+    Calculate aggregations only when groups are expanded using custom logic
+  </Card>
+</CardGroup>
+
+## Common Issues
+
+### Groups Not Showing
+
+<Steps>
+  <Step title="Check Module Registration">
+    Ensure `RowGroupingModule` is registered:
+    ```typescript
+    ModuleRegistry.registerModules([RowGroupingModule]);
+    ```
+  </Step>
+  <Step title="Verify License Key">
+    Set a valid enterprise license key:
+    ```typescript
+    LicenseManager.setLicenseKey('YOUR_LICENSE_KEY');
+    ```
+  </Step>
+  <Step title="Check Row Model">
+    Row grouping requires Client-Side Row Model (default)
+  </Step>
+</Steps>
+
+### Aggregation Not Working
+
+Ensure columns have `aggFunc` defined:
+
+```typescript
+const columnDefs: ColDef[] = [
+  { field: 'gold', aggFunc: 'sum' }  // Must specify aggFunc
+];
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Pivoting" icon="table-pivot" href="/enterprise/pivoting">
+    Combine row grouping with pivoting for cross-tabulations
+  </Card>
+  <Card title="Aggregation" icon="calculator" href="/aggregation">
+    Learn more about aggregation functions
+  </Card>
+  <Card title="Tree Data" icon="tree" href="/tree-data">
+    Display hierarchical tree data structures
+  </Card>
+  <Card title="Server-Side Grouping" icon="server" href="/server-side-row-model">
+    Handle grouping with server-side row model
+  </Card>
+</CardGroup>

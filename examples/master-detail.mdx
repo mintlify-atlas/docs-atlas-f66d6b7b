@@ -1,0 +1,412 @@
+---
+title: 'Master-Detail Example'
+description: 'Implement expandable master-detail grids with nested data relationships'
+---
+
+<Note>
+Master-detail grids allow you to display hierarchical data where each row can expand to show a detailed view with a nested grid. This is an Enterprise feature.
+</Note>
+
+## Overview
+
+The master-detail feature enables:
+
+- **Expandable rows** - Click to expand and show detailed information
+- **Nested grids** - Each detail view contains a fully functional grid
+- **Independent configuration** - Detail grids can have different column definitions
+- **Data relationships** - Display related data in a hierarchical structure
+
+## Use Cases
+
+- Order details within a customer list
+- Call records for phone accounts
+- Transaction history for accounts
+- Product variants within product listings
+
+## Basic Master-Detail Implementation
+
+<CodeGroup>
+
+```typescript main.ts
+import type { 
+    FirstDataRenderedEvent, 
+    GridApi, 
+    GridOptions, 
+    IDetailCellRendererParams 
+} from 'ag-grid-community';
+import {
+    ClientSideRowModelModule,
+    ModuleRegistry,
+    RowApiModule,
+    ValidationModule,
+    createGrid,
+} from 'ag-grid-community';
+import { 
+    ColumnMenuModule, 
+    ColumnsToolPanelModule, 
+    ContextMenuModule, 
+    MasterDetailModule 
+} from 'ag-grid-enterprise';
+
+ModuleRegistry.registerModules([
+    RowApiModule,
+    ClientSideRowModelModule,
+    ColumnsToolPanelModule,
+    MasterDetailModule,
+    ColumnMenuModule,
+    ContextMenuModule,
+    ValidationModule,
+]);
+
+interface IAccount {
+    name: string;
+    account: string;
+    calls: number;
+    minutes: number;
+    callRecords: ICallRecord[];
+}
+
+interface ICallRecord {
+    callId: string;
+    direction: string;
+    number: string;
+    duration: number;
+    switchCode: string;
+}
+
+let gridApi: GridApi<IAccount>;
+
+const gridOptions: GridOptions<IAccount> = {
+    columnDefs: [
+        // group cell renderer needed for expand / collapse icons
+        { field: 'name', cellRenderer: 'agGroupCellRenderer' },
+        { field: 'account' },
+        { field: 'calls' },
+        { field: 'minutes', valueFormatter: "x.toLocaleString() + 'm'" },
+    ],
+    defaultColDef: {
+        flex: 1,
+    },
+    masterDetail: true,
+    detailCellRendererParams: {
+        detailGridOptions: {
+            columnDefs: [
+                { field: 'callId' },
+                { field: 'direction' },
+                { field: 'number', minWidth: 150 },
+                { field: 'duration', valueFormatter: "x.toLocaleString() + 's'" },
+                { field: 'switchCode', minWidth: 150 },
+            ],
+            defaultColDef: {
+                flex: 1,
+            },
+        },
+        getDetailRowData: (params) => {
+            params.successCallback(params.data.callRecords);
+        },
+    } as IDetailCellRendererParams<IAccount, ICallRecord>,
+    onFirstDataRendered: onFirstDataRendered,
+};
+
+function onFirstDataRendered(params: FirstDataRenderedEvent) {
+    // Arbitrarily expand a row for presentational purposes
+    setTimeout(() => {
+        params.api.getDisplayedRowAtIndex(1)!.setExpanded(true);
+    }, 0);
+}
+
+// Setup the grid after the page has finished loading
+document.addEventListener('DOMContentLoaded', function () {
+    const gridDiv = document.querySelector<HTMLElement>('#myGrid')!;
+    gridApi = createGrid(gridDiv, gridOptions);
+
+    fetch('https://www.ag-grid.com/example-assets/master-detail-data.json')
+        .then((response) => response.json())
+        .then((data: IAccount[]) => {
+            gridApi!.setGridOption('rowData', data);
+        });
+});
+```
+
+```html index.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AG Grid Master-Detail Example</title>
+    <script src="main.ts" type="module"></script>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        #myGrid {
+            height: 100%;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div id="myGrid" class="ag-theme-quartz"></div>
+</body>
+</html>
+```
+
+</CodeGroup>
+
+## Key Configuration Options
+
+### Enable Master-Detail
+
+Set the `masterDetail` property to `true`:
+
+```typescript
+const gridOptions: GridOptions = {
+    masterDetail: true,
+    // ... other options
+};
+```
+
+### Group Cell Renderer
+
+The first column needs the group cell renderer to show expand/collapse icons:
+
+```typescript
+columnDefs: [
+    { 
+        field: 'name', 
+        cellRenderer: 'agGroupCellRenderer'  // Required for expand/collapse
+    },
+    { field: 'account' },
+    // ... other columns
+]
+```
+
+### Detail Grid Configuration
+
+Configure the detail grid through `detailCellRendererParams`:
+
+```typescript
+detailCellRendererParams: {
+    // Configuration for the detail grid
+    detailGridOptions: {
+        columnDefs: [
+            { field: 'callId' },
+            { field: 'direction' },
+            { field: 'number' },
+            { field: 'duration' },
+        ],
+        defaultColDef: {
+            flex: 1,
+        },
+    },
+    // Function to provide detail data
+    getDetailRowData: (params) => {
+        params.successCallback(params.data.callRecords);
+    },
+} as IDetailCellRendererParams<IAccount, ICallRecord>
+```
+
+## Data Structure
+
+Master-detail requires properly structured hierarchical data:
+
+```typescript
+interface IAccount {
+    name: string;
+    account: string;
+    calls: number;
+    minutes: number;
+    callRecords: ICallRecord[];  // Nested detail data
+}
+
+interface ICallRecord {
+    callId: string;
+    direction: string;
+    number: string;
+    duration: number;
+    switchCode: string;
+}
+```
+
+## Advanced Features
+
+<Tabs>
+  <Tab title="Programmatic Expansion">
+    Control row expansion programmatically:
+
+    ```typescript
+    // Expand a specific row
+    const rowNode = gridApi.getDisplayedRowAtIndex(1);
+    rowNode?.setExpanded(true);
+
+    // Expand all rows
+    gridApi.forEachNode((node) => {
+        node.setExpanded(true);
+    });
+
+    // Collapse all rows
+    gridApi.forEachNode((node) => {
+        node.setExpanded(false);
+    });
+    ```
+  </Tab>
+
+  <Tab title="Dynamic Detail Height">
+    Set detail panel height dynamically:
+
+    ```typescript
+    detailCellRendererParams: {
+        detailGridOptions: { ... },
+        getDetailRowData: (params) => {
+            params.successCallback(params.data.callRecords);
+        },
+        // Calculate height based on number of detail rows
+        getDetailRowHeight: (params) => {
+            const detailRowCount = params.data.callRecords.length;
+            const headerHeight = 56;
+            const rowHeight = 28;
+            return headerHeight + (detailRowCount * rowHeight);
+        },
+    }
+    ```
+  </Tab>
+
+  <Tab title="Conditional Detail Display">
+    Show details only for certain rows:
+
+    ```typescript
+    const gridOptions: GridOptions = {
+        masterDetail: true,
+        // Only show detail for rows with call records
+        isRowMaster: (dataItem) => {
+            return dataItem.callRecords && dataItem.callRecords.length > 0;
+        },
+        detailCellRendererParams: { ... },
+    };
+    ```
+  </Tab>
+
+  <Tab title="Refresh Detail Data">
+    Refresh detail grids when data changes:
+
+    ```typescript
+    function refreshDetailGrid(accountId: string) {
+        gridApi.forEachDetailGridInfo((detailGridInfo) => {
+            if (detailGridInfo.id === accountId) {
+                // Fetch new detail data
+                fetch(`/api/call-records/${accountId}`)
+                    .then(res => res.json())
+                    .then(newData => {
+                        detailGridInfo.api?.setGridOption('rowData', newData);
+                    });
+            }
+        });
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Master-Detail with Different Features
+
+Detail grids can have completely different configurations:
+
+```typescript
+detailCellRendererParams: {
+    detailGridOptions: {
+        columnDefs: [...],
+        // Enable different features in detail grid
+        pagination: true,
+        paginationPageSize: 10,
+        enableCharts: true,
+        rowSelection: 'multiple',
+        defaultColDef: {
+            sortable: true,
+            filter: true,
+            resizable: true,
+        },
+    },
+    getDetailRowData: (params) => {
+        params.successCallback(params.data.callRecords);
+    },
+}
+```
+
+## Required Modules
+
+Master-detail requires specific Enterprise modules:
+
+```typescript
+import { MasterDetailModule } from 'ag-grid-enterprise';
+
+ModuleRegistry.registerModules([
+    ClientSideRowModelModule,  // Community
+    MasterDetailModule,         // Enterprise - Required
+    // ... other modules
+]);
+```
+
+<Note>
+Master-Detail is an Enterprise feature and requires an AG Grid Enterprise license.
+</Note>
+
+## Best Practices
+
+1. **Use type safety** - Define interfaces for both master and detail data
+2. **Set appropriate heights** - Use `getDetailRowHeight` for dynamic sizing
+3. **Limit initial expansion** - Don't expand all rows by default for large datasets
+4. **Configure independently** - Detail grids can have different column definitions and features
+5. **Handle loading states** - Show loading indicators when fetching detail data
+6. **Memory management** - Consider limiting the number of simultaneously expanded rows
+
+## Common Patterns
+
+### Fetching Detail Data on Demand
+
+```typescript
+detailCellRendererParams: {
+    detailGridOptions: { ... },
+    getDetailRowData: (params) => {
+        // Fetch data when row expands
+        fetch(`/api/details/${params.data.id}`)
+            .then(response => response.json())
+            .then(data => params.successCallback(data))
+            .catch(error => {
+                console.error('Failed to load details:', error);
+                params.successCallback([]);
+            });
+    },
+}
+```
+
+### Nested Master-Detail
+
+You can nest master-detail grids multiple levels deep:
+
+```typescript
+detailCellRendererParams: {
+    detailGridOptions: {
+        columnDefs: [...],
+        // Enable master-detail in the detail grid
+        masterDetail: true,
+        detailCellRendererParams: {
+            // Configure nested detail grid
+            detailGridOptions: { ... },
+            getDetailRowData: (params) => {
+                params.successCallback(params.data.subDetails);
+            },
+        },
+    },
+    getDetailRowData: (params) => {
+        params.successCallback(params.data.details);
+    },
+}
+```
+
+## Next Steps
+
+- Explore [row grouping](/examples/row-grouping) for alternative hierarchical views
+- Learn about [integrated charts](/examples/integrated-charts)
+- Add [custom detail renderers](https://ag-grid.com/documentation/master-detail-custom-detail/)

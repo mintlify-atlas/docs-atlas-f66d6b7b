@@ -1,0 +1,679 @@
+---
+title: "Cell Editing"
+description: "Enable cell editing with built-in editors and custom editor components"
+---
+
+## Overview
+
+AG Grid provides comprehensive cell editing capabilities with built-in editors for common data types and support for custom editor components. Editing can be configured at the column level and controlled through various modes and APIs.
+
+## Enabling Editing
+
+Enable editing on columns using the `editable` property:
+
+<CodeGroup>
+```typescript Basic Editing
+const columnDefs = [
+  {
+    field: 'athlete',
+    editable: true  // Enable editing
+  },
+  {
+    field: 'year',
+    editable: false  // Disable editing (default)
+  }
+];
+```
+
+```typescript Conditional Editing
+import { EditableCallback } from 'ag-grid-community';
+
+const isEditable: EditableCallback = (params) => {
+  // Only allow editing for rows where age > 18
+  return params.data.age > 18;
+};
+
+const columnDefs = [
+  {
+    field: 'athlete',
+    editable: isEditable
+  }
+];
+```
+</CodeGroup>
+
+## Edit Modes
+
+### Cell Editing (Default)
+
+Edit one cell at a time:
+
+```typescript
+const gridOptions = {
+  // Cell editing is the default (no editType specified)
+  columnDefs: [
+    { field: 'athlete', editable: true },
+    { field: 'age', editable: true }
+  ]
+};
+```
+
+### Full Row Editing
+
+Edit all cells in a row simultaneously:
+
+```typescript
+import { EditStrategyType, FullRowEditValidationParams } from 'ag-grid-community';
+
+const gridOptions = {
+  editType: 'fullRow' as EditStrategyType,
+  
+  // Validate the entire row
+  getFullRowEditValidationErrors: (params: FullRowEditValidationParams) => {
+    const { data } = params;
+    const errors: Record<string, string> = {};
+    
+    if (!data.athlete) {
+      errors.athlete = 'Athlete name is required';
+    }
+    if (data.age < 0) {
+      errors.age = 'Age must be positive';
+    }
+    
+    return errors;
+  }
+};
+```
+
+## Edit Triggers
+
+### Single Click Editing
+
+```typescript
+const gridOptions = {
+  singleClickEdit: true  // Start editing with single click
+};
+
+// Or per column
+const columnDefs = [
+  {
+    field: 'athlete',
+    singleClickEdit: true
+  }
+];
+```
+
+### Suppress Click Edit
+
+```typescript
+const gridOptions = {
+  suppressClickEdit: true  // Require keyboard to start editing
+};
+```
+
+### Keyboard Triggers
+
+```typescript
+const gridOptions = {
+  enableCellEditingOnBackspace: true,  // MacOS: backspace starts editing
+  suppressStartEditOnTab: false        // Tab navigates and starts editing
+};
+```
+
+## Built-in Editors
+
+### Text Editor
+
+```typescript
+const columnDefs = [
+  {
+    field: 'athlete',
+    cellEditor: 'agTextCellEditor',
+    cellEditorParams: {
+      maxLength: 100,
+      useFormatter: true
+    }
+  }
+];
+```
+
+### Large Text Editor
+
+```typescript
+const columnDefs = [
+  {
+    field: 'description',
+    cellEditor: 'agLargeTextCellEditor',
+    cellEditorPopup: true,
+    cellEditorParams: {
+      maxLength: 500,
+      rows: 10,
+      cols: 50
+    }
+  }
+];
+```
+
+### Number Editor
+
+```typescript
+const columnDefs = [
+  {
+    field: 'age',
+    cellEditor: 'agNumberCellEditor',
+    cellEditorParams: {
+      min: 0,
+      max: 120,
+      precision: 0,
+      step: 1,
+      showStepperButtons: true
+    }
+  }
+];
+```
+
+### Date Editor
+
+```typescript
+const columnDefs = [
+  {
+    field: 'date',
+    cellEditor: 'agDateCellEditor',
+    cellEditorParams: {
+      min: '2020-01-01',
+      max: '2025-12-31'
+    },
+    dateComponent: 'CustomDatePicker'  // Optional custom date component
+  }
+];
+```
+
+### Select Editor
+
+```typescript
+const columnDefs = [
+  {
+    field: 'country',
+    cellEditor: 'agSelectCellEditor',
+    cellEditorParams: {
+      values: ['USA', 'UK', 'France', 'Germany']
+    }
+  }
+];
+```
+
+### Checkbox Editor
+
+```typescript
+const columnDefs = [
+  {
+    field: 'active',
+    cellEditor: 'agCheckboxCellEditor'
+  }
+];
+```
+
+## Custom Cell Editors
+
+### Basic Custom Editor
+
+```typescript
+import { ICellEditor, ICellEditorParams } from 'ag-grid-community';
+
+class CustomEditor implements ICellEditor {
+  private eInput: HTMLInputElement;
+  private value: any;
+  
+  init(params: ICellEditorParams): void {
+    this.eInput = document.createElement('input');
+    this.eInput.type = 'text';
+    this.eInput.value = params.value || '';
+    this.value = params.value;
+    
+    // Focus and select
+    setTimeout(() => {
+      this.eInput.focus();
+      this.eInput.select();
+    });
+  }
+  
+  getGui(): HTMLElement {
+    return this.eInput;
+  }
+  
+  getValue(): any {
+    return this.eInput.value;
+  }
+  
+  destroy(): void {
+    // Cleanup if needed
+  }
+  
+  // Optional: Cancel editing if condition not met
+  isCancelBeforeStart(): boolean {
+    return false;
+  }
+  
+  // Optional: Cancel after editing
+  isCancelAfterEnd(): boolean {
+    return false;
+  }
+}
+
+const columnDefs = [
+  {
+    field: 'athlete',
+    cellEditor: CustomEditor
+  }
+];
+```
+
+### Popup Editor
+
+```typescript
+class PopupEditor implements ICellEditor {
+  private eGui: HTMLDivElement;
+  
+  init(params: ICellEditorParams): void {
+    this.eGui = document.createElement('div');
+    this.eGui.innerHTML = `
+      <div style="padding: 20px; background: white; border: 1px solid #ccc;">
+        <input type="text" id="editor-input" />
+        <button id="save-btn">Save</button>
+      </div>
+    `;
+  }
+  
+  getGui(): HTMLElement {
+    return this.eGui;
+  }
+  
+  getValue(): any {
+    const input = this.eGui.querySelector('#editor-input') as HTMLInputElement;
+    return input.value;
+  }
+  
+  // Editor appears in popup
+  isPopup(): boolean {
+    return true;
+  }
+  
+  // Position popup under the cell
+  getPopupPosition(): 'over' | 'under' {
+    return 'under';
+  }
+}
+
+const columnDefs = [
+  {
+    field: 'athlete',
+    cellEditor: PopupEditor,
+    cellEditorPopup: true,
+    cellEditorPopupPosition: 'under'
+  }
+];
+```
+
+### Editor with Validation
+
+```typescript
+import { ICellEditorValidationError } from 'ag-grid-community';
+
+class ValidatingEditor implements ICellEditor {
+  private eInput: HTMLInputElement;
+  private errors: string[] = [];
+  
+  init(params: ICellEditorParams): void {
+    this.eInput = document.createElement('input');
+    this.eInput.value = params.value || '';
+    
+    this.eInput.addEventListener('input', () => {
+      this.validate();
+    });
+  }
+  
+  getGui(): HTMLElement {
+    return this.eInput;
+  }
+  
+  getValue(): any {
+    return this.eInput.value;
+  }
+  
+  validate(): void {
+    this.errors = [];
+    const value = this.eInput.value;
+    
+    if (!value) {
+      this.errors.push('Value is required');
+    }
+    if (value.length < 3) {
+      this.errors.push('Must be at least 3 characters');
+    }
+  }
+  
+  getValidationErrors(): string[] | null {
+    return this.errors.length > 0 ? this.errors : null;
+  }
+  
+  getValidationElement(tooltip: boolean): HTMLElement {
+    return this.eInput;
+  }
+}
+```
+
+## Value Handling
+
+### Value Getter and Setter
+
+```typescript
+import { ValueGetterFunc, ValueSetterFunc } from 'ag-grid-community';
+
+const valueGetter: ValueGetterFunc = (params) => {
+  return params.data.firstName + ' ' + params.data.lastName;
+};
+
+const valueSetter: ValueSetterFunc = (params) => {
+  const [firstName, lastName] = params.newValue.split(' ');
+  params.data.firstName = firstName;
+  params.data.lastName = lastName;
+  return true;  // Return true if data changed
+};
+
+const columnDefs = [
+  {
+    headerName: 'Full Name',
+    valueGetter: valueGetter,
+    valueSetter: valueSetter,
+    editable: true
+  }
+];
+```
+
+### Value Parser
+
+```typescript
+import { ValueParserFunc } from 'ag-grid-community';
+
+const numberParser: ValueParserFunc = (params) => {
+  return Number(params.newValue);
+};
+
+const columnDefs = [
+  {
+    field: 'age',
+    valueParser: numberParser,
+    editable: true
+  }
+];
+```
+
+## Edit Validation
+
+### Invalid Edit Mode
+
+```typescript
+import { EditValidationCommitType } from 'ag-grid-community';
+
+const gridOptions = {
+  invalidEditValueMode: 'block' as EditValidationCommitType  // Block invalid edits
+};
+```
+
+### Validate Edit API
+
+```typescript
+import { validateEdit, ICellEditorValidationError } from 'ag-grid-community';
+
+// Get validation errors for current edit
+const errors: ICellEditorValidationError[] | null = validateEdit(beans);
+
+if (errors && errors.length > 0) {
+  console.log('Validation errors:', errors);
+}
+```
+
+## Edit API Methods
+
+### Start and Stop Editing
+
+```typescript
+import { 
+  startEditingCell, 
+  stopEditing,
+  isEditing,
+  StartEditingCellParams 
+} from 'ag-grid-community';
+
+// Start editing a cell
+startEditingCell(beans, {
+  rowIndex: 0,
+  colKey: 'athlete',
+  key: 'Enter'  // Optional: simulate key press
+} as StartEditingCellParams);
+
+// Check if cell is being edited
+const editing = isEditing(beans, { 
+  rowIndex: 0, 
+  column: api.getColumn('athlete')! 
+});
+
+// Stop editing
+stopEditing(beans, false);  // false = save changes
+stopEditing(beans, true);   // true = cancel changes
+```
+
+### Get Editing Cells
+
+```typescript
+import { getEditingCells, EditingCellPosition } from 'ag-grid-community';
+
+// Get all cells currently being edited
+const editingCells: EditingCellPosition[] = getEditingCells(beans);
+
+editingCells.forEach(cell => {
+  console.log('Editing:', {
+    column: cell.colId,
+    rowIndex: cell.rowIndex,
+    oldValue: cell.oldValue,
+    newValue: cell.newValue,
+    state: cell.state  // 'editing' | 'changed'
+  });
+});
+```
+
+### Get Edit Row Values
+
+```typescript
+import { getEditRowValues } from 'ag-grid-community';
+
+const rowNode = api.getRowNode('1');
+const editValues = getEditRowValues(beans, rowNode);
+
+console.log('Current edit values:', editValues);
+```
+
+## Read-Only Edit Mode
+
+Prevent grid from updating data automatically:
+
+```typescript
+const gridOptions = {
+  readOnlyEdit: true,  // Grid doesn't update data
+  
+  onCellEditRequest: (event) => {
+    // Handle edit in external state management
+    const { data, column, newValue } = event;
+    
+    // Update your external store
+    updateExternalStore(data.id, column.getColId(), newValue);
+  }
+};
+```
+
+## Undo/Redo
+
+Enable undo/redo for cell edits:
+
+```typescript
+import { 
+  undoCellEditing, 
+  redoCellEditing,
+  getCurrentUndoSize,
+  getCurrentRedoSize 
+} from 'ag-grid-community';
+
+const gridOptions = {
+  undoRedoCellEditing: true,
+  undoRedoCellEditingLimit: 10  // Max undo stack size
+};
+
+// Undo last edit
+undoCellEditing(beans);
+
+// Redo last undone edit
+redoCellEditing(beans);
+
+// Check stack sizes
+const undoSize = getCurrentUndoSize(beans);
+const redoSize = getCurrentRedoSize(beans);
+```
+
+## Navigation During Editing
+
+```typescript
+const gridOptions = {
+  enterNavigatesVertically: true,          // Enter moves down
+  enterNavigatesVerticallyAfterEdit: true, // Enter moves down after edit
+  stopEditingWhenCellsLoseFocus: true     // Stop editing on focus loss
+};
+```
+
+## Events
+
+```typescript
+import {
+  CellEditingStartedEvent,
+  CellEditingStoppedEvent,
+  CellValueChangedEvent,
+  CellEditRequestEvent
+} from 'ag-grid-community';
+
+const gridOptions = {
+  onCellEditingStarted: (event: CellEditingStartedEvent) => {
+    console.log('Started editing:', event.colDef.field);
+  },
+  
+  onCellEditingStopped: (event: CellEditingStoppedEvent) => {
+    console.log('Stopped editing:', event.colDef.field);
+  },
+  
+  onCellValueChanged: (event: CellValueChangedEvent) => {
+    console.log('Value changed:', {
+      column: event.colDef.field,
+      oldValue: event.oldValue,
+      newValue: event.newValue
+    });
+  },
+  
+  // Only fires when readOnlyEdit: true
+  onCellEditRequest: (event: CellEditRequestEvent) => {
+    console.log('Edit request:', event);
+  }
+};
+```
+
+## Common Use Cases
+
+<Accordion title="Dependent Field Updates">
+```typescript
+import { NewValueParams } from 'ag-grid-community';
+
+const columnDefs = [
+  {
+    field: 'price',
+    editable: true,
+    onCellValueChanged: (event: NewValueParams) => {
+      // Update total when price changes
+      event.data.total = event.data.price * event.data.quantity;
+      event.api.refreshCells({ rowNodes: [event.node], force: true });
+    }
+  }
+];
+```
+</Accordion>
+
+<Accordion title="Async Validation">
+```typescript
+class AsyncValidatingEditor implements ICellEditor {
+  async init(params: ICellEditorParams): Promise<void> {
+    // Setup editor
+  }
+  
+  async getValue(): Promise<any> {
+    const value = this.eInput.value;
+    
+    // Validate asynchronously
+    const isValid = await validateOnServer(value);
+    
+    if (!isValid) {
+      throw new Error('Validation failed');
+    }
+    
+    return value;
+  }
+}
+```
+</Accordion>
+
+## TypeScript Interfaces
+
+```typescript
+// From iCellEditor.ts
+export interface ICellEditor<TValue = any> {
+  getValue(): TValue | null | undefined;
+  init(params: ICellEditorParams): void;
+  getGui(): HTMLElement;
+  
+  // Optional methods
+  destroy?(): void;
+  isPopup?(): boolean;
+  getPopupPosition?(): 'over' | 'under';
+  isCancelBeforeStart?(): boolean;
+  isCancelAfterEnd?(): boolean;
+  refresh?(params: ICellEditorParams): void;
+  afterGuiAttached?(): void;
+  getValidationErrors?(): string[] | null;
+  getValidationElement?(tooltip: boolean): HTMLElement;
+}
+
+// Edit API
+export function startEditingCell(beans: BeanCollection, params: StartEditingCellParams): void;
+export function stopEditing(beans: BeanCollection, cancel?: boolean): void;
+export function isEditing(beans: BeanCollection, cellPosition: CellPosition): boolean;
+export function getEditingCells(beans: BeanCollection): EditingCellPosition[];
+```
+
+## Best Practices
+
+<Steps>
+  <Step title="Choose the right edit mode">
+    Use full row editing for forms where all fields must be valid together. Use cell editing for independent field updates.
+  </Step>
+  
+  <Step title="Provide immediate validation feedback">
+    Implement `getValidationErrors()` to show validation errors as users type.
+  </Step>
+  
+  <Step title="Handle null values gracefully">
+    Always check for null/undefined in value getters, setters, and parsers.
+  </Step>
+  
+  <Step title="Use appropriate editors for data types">
+    Use number editor for numbers, date editor for dates, etc. This provides better UX and validation.
+  </Step>
+  
+  <Step title="Consider read-only mode for complex state">
+    Use `readOnlyEdit: true` with `onCellEditRequest` when integrating with external state management like Redux.
+  </Step>
+</Steps>

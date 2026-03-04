@@ -1,0 +1,508 @@
+---
+title: Row Data
+description: Manage and update row data in AG Grid
+---
+
+Row data is the information displayed in your grid. AG Grid provides flexible APIs for loading, updating, and managing row data efficiently.
+
+## Overview
+
+Row data is provided via the `rowData` property in GridOptions. Each item in the array represents one row:
+
+```typescript
+const gridOptions: GridOptions = {
+  rowData: [
+    { athlete: 'Michael Phelps', age: 23, country: 'United States' },
+    { athlete: 'Usain Bolt', age: 22, country: 'Jamaica' },
+    { athlete: 'Katie Ledecky', age: 19, country: 'United States' }
+  ]
+};
+```
+
+## Setting Row Data
+
+### Initial Load
+
+<CodeGroup>
+
+```typescript Via GridOptions
+const gridOptions: GridOptions = {
+  columnDefs: [...],
+  rowData: myData
+};
+```
+
+```typescript Via API
+// After grid is created
+api.setGridOption('rowData', myData);
+```
+
+</CodeGroup>
+
+### Async Data Loading
+
+```typescript
+const gridOptions: GridOptions = {
+  columnDefs: [...],
+  rowData: []  // Start with empty array
+};
+
+// Load data asynchronously
+fetch('/api/athletes')
+  .then(response => response.json())
+  .then(data => {
+    api.setGridOption('rowData', data);
+  });
+```
+
+## Row IDs
+
+### Providing Row IDs
+
+Provide unique IDs for efficient updates and transactions:
+
+```typescript
+const gridOptions: GridOptions = {
+  getRowId: (params) => params.data.id
+};
+```
+
+<Note>
+Without `getRowId`, AG Grid auto-generates IDs based on row index, which can cause issues when data changes.
+</Note>
+
+### Why Row IDs Matter
+
+<CodeGroup>
+
+```typescript Without Row IDs
+// Problem: Grid can't track which rows changed
+const newData = [...oldData];
+newData[5] = updatedRow;
+api.setGridOption('rowData', newData);
+// Grid re-renders everything!
+```
+
+```typescript With Row IDs
+// Solution: Grid tracks rows by ID
+const gridOptions = {
+  getRowId: (params) => params.data.id
+};
+
+const newData = [...oldData];
+newData[5] = updatedRow;
+api.setGridOption('rowData', newData);
+// Grid only updates the changed row!
+```
+
+</CodeGroup>
+
+## Updating Row Data
+
+### Full Replacement
+
+Replace all data at once:
+
+```typescript
+// Replace entire dataset
+api.setGridOption('rowData', newData);
+```
+
+### Transactions (Recommended)
+
+For better performance, use transactions to update specific rows:
+
+```typescript
+interface RowDataTransaction {
+  add?: any[];        // Rows to add
+  remove?: any[];     // Rows to remove
+  update?: any[];     // Rows to update
+  addIndex?: number;  // Index to add rows at
+}
+```
+
+#### Adding Rows
+
+```typescript
+// Add rows to the end
+api.applyTransaction({
+  add: [
+    { id: 101, athlete: 'New Athlete 1', age: 25 },
+    { id: 102, athlete: 'New Athlete 2', age: 27 }
+  ]
+});
+
+// Add rows at specific index
+api.applyTransaction({
+  add: [{ id: 103, athlete: 'Inserted Athlete', age: 24 }],
+  addIndex: 0  // Add at the beginning
+});
+```
+
+#### Updating Rows
+
+```typescript
+// Update existing rows (matches by row ID)
+api.applyTransaction({
+  update: [
+    { id: 1, athlete: 'Updated Name', age: 24 }
+  ]
+});
+```
+
+<Note>
+For updates to work, you must provide `getRowId` so the grid can match rows by ID.
+</Note>
+
+#### Removing Rows
+
+```typescript
+// Remove rows (matches by row ID)
+const rowsToRemove = [rowData[0], rowData[5]];
+api.applyTransaction({
+  remove: rowsToRemove
+});
+```
+
+#### Combined Transactions
+
+```typescript
+// Perform multiple operations in one transaction
+api.applyTransaction({
+  add: [newRow1, newRow2],
+  update: [updatedRow1],
+  remove: [oldRow1, oldRow2]
+});
+```
+
+### Async Transactions
+
+For high-frequency updates, use async transactions:
+
+```typescript
+// Queue multiple transactions
+api.applyTransactionAsync({ add: [row1] });
+api.applyTransactionAsync({ add: [row2] });
+api.applyTransactionAsync({ update: [row3] });
+
+// Grid batches these for efficiency
+
+// Force execution of queued transactions
+api.flushAsyncTransactions();
+```
+
+## Accessing Row Data
+
+### Get All Row Data
+
+```typescript
+// Not recommended for large datasets
+const allRows: any[] = [];
+api.forEachNode(node => allRows.push(node.data));
+```
+
+### Get Displayed Rows
+
+```typescript
+// Get rows after filtering/sorting
+const displayedRows: any[] = [];
+api.forEachNodeAfterFilterAndSort(node => {
+  displayedRows.push(node.data);
+});
+```
+
+### Get Specific Row
+
+```typescript
+// Get row by ID
+const rowNode = api.getRowNode('123');
+if (rowNode) {
+  console.log(rowNode.data);
+}
+```
+
+### Get Selected Rows
+
+```typescript
+const selectedRows = api.getSelectedRows();
+console.log('Selected:', selectedRows);
+```
+
+## Row Nodes
+
+Each row is represented internally by a `RowNode` object:
+
+```typescript
+interface IRowNode<TData = any> {
+  /** The user-provided data */
+  data: TData;
+  
+  /** Unique ID for this row */
+  id: string;
+  
+  /** The row index (position in grid) */
+  rowIndex: number | null;
+  
+  /** Whether this row is selected */
+  selected: boolean;
+  
+  /** For tree data, the child rows */
+  childrenAfterGroup: IRowNode<TData>[] | null;
+  
+  /** For grouping, whether this is a group node */
+  group: boolean;
+  
+  /** Set data value for a column */
+  setDataValue(colKey: string | Column, newValue: any): void;
+  
+  // ... many more properties and methods
+}
+```
+
+### Updating via Row Nodes
+
+```typescript
+// Get the row node
+const rowNode = api.getRowNode('123');
+
+// Update a single cell value
+rowNode.setDataValue('age', 25);
+
+// Update entire row data
+rowNode.setData({ ...rowNode.data, age: 25, country: 'USA' });
+
+// Trigger refresh
+api.refreshCells({ rowNodes: [rowNode] });
+```
+
+## Immutable Data
+
+For React and other frameworks using immutable data:
+
+```typescript
+const gridOptions: GridOptions = {
+  getRowId: (params) => params.data.id,
+  // Immutable data is default behavior
+};
+
+// Update immutably
+const newData = rowData.map(row => 
+  row.id === targetId 
+    ? { ...row, age: 25 }  // Create new object
+    : row
+);
+
+api.setGridOption('rowData', newData);
+// Grid efficiently detects which rows changed
+```
+
+## Common Patterns
+
+### Before/After: Simple Data Update
+
+<CodeGroup>
+
+```typescript Before - Full Replacement
+// Inefficient: Replaces all data
+const updatedData = [...rowData];
+const index = updatedData.findIndex(r => r.id === targetId);
+updatedData[index] = { ...updatedData[index], age: 25 };
+
+api.setGridOption('rowData', updatedData);
+```
+
+```typescript After - Transaction
+// Efficient: Updates only what changed
+const updatedRow = rowData.find(r => r.id === targetId);
+api.applyTransaction({
+  update: [{ ...updatedRow, age: 25 }]
+});
+```
+
+</CodeGroup>
+
+### Before/After: Adding Multiple Rows
+
+<CodeGroup>
+
+```typescript Before - Multiple Operations
+// Multiple re-renders
+api.applyTransaction({ add: [row1] });
+api.applyTransaction({ add: [row2] });
+api.applyTransaction({ add: [row3] });
+```
+
+```typescript After - Batched Transaction
+// Single re-render
+api.applyTransaction({
+  add: [row1, row2, row3]
+});
+```
+
+</CodeGroup>
+
+### Real-Time Data Updates
+
+```typescript
+// WebSocket example
+const ws = new WebSocket('wss://api.example.com/data');
+
+ws.onmessage = (event) => {
+  const update = JSON.parse(event.data);
+  
+  switch (update.type) {
+    case 'add':
+      api.applyTransaction({ add: [update.data] });
+      break;
+      
+    case 'update':
+      api.applyTransaction({ update: [update.data] });
+      break;
+      
+    case 'remove':
+      api.applyTransaction({ remove: [update.data] });
+      break;
+  }
+};
+```
+
+### Optimistic Updates
+
+```typescript
+async function updateRow(rowId: string, changes: Partial<RowData>) {
+  const rowNode = api.getRowNode(rowId);
+  const oldData = { ...rowNode.data };
+  
+  // Optimistically update UI
+  api.applyTransaction({
+    update: [{ ...rowNode.data, ...changes }]
+  });
+  
+  try {
+    // Send to server
+    await fetch(`/api/rows/${rowId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(changes)
+    });
+  } catch (error) {
+    // Revert on error
+    api.applyTransaction({
+      update: [oldData]
+    });
+    console.error('Update failed:', error);
+  }
+}
+```
+
+### Infinite Scrolling
+
+```typescript
+let nextPage = 0;
+const pageSize = 100;
+
+const gridOptions: GridOptions = {
+  rowData: [],
+  onBodyScrollEnd: () => {
+    const rowCount = api.getDisplayedRowCount();
+    const lastIndex = api.getLastDisplayedRowIndex();
+    
+    // Load more when near the end
+    if (lastIndex >= rowCount - 10) {
+      loadNextPage();
+    }
+  }
+};
+
+function loadNextPage() {
+  fetch(`/api/data?page=${nextPage}&size=${pageSize}`)
+    .then(response => response.json())
+    .then(data => {
+      api.applyTransaction({ add: data });
+      nextPage++;
+    });
+}
+```
+
+## Performance Considerations
+
+### Use Transactions
+
+```typescript
+// ❌ Bad: Full replacement on every change
+setInterval(() => {
+  const newData = fetchLatestData();
+  api.setGridOption('rowData', newData);
+}, 1000);
+
+// ✅ Good: Update only what changed
+setInterval(() => {
+  const changes = fetchChanges();
+  api.applyTransaction({
+    update: changes.updated,
+    add: changes.added,
+    remove: changes.removed
+  });
+}, 1000);
+```
+
+### Provide Row IDs
+
+```typescript
+// ❌ Bad: No row IDs
+const gridOptions = {
+  rowData: data
+  // Grid can't efficiently track changes
+};
+
+// ✅ Good: Provide stable IDs
+const gridOptions = {
+  rowData: data,
+  getRowId: (params) => params.data.id
+};
+```
+
+### Async Transactions for High Frequency
+
+```typescript
+// High-frequency updates (100+ per second)
+function handleDataStream(updates: any[]) {
+  updates.forEach(update => {
+    api.applyTransactionAsync({ update: [update] });
+  });
+  
+  // Batch is automatically flushed
+}
+```
+
+## Transaction Result
+
+Transactions return information about what was affected:
+
+```typescript
+const result = api.applyTransaction({
+  add: [newRow],
+  update: [updatedRow],
+  remove: [oldRow]
+});
+
+if (result) {
+  console.log('Added:', result.add);      // Array of added RowNodes
+  console.log('Updated:', result.update);  // Array of updated RowNodes
+  console.log('Removed:', result.remove);  // Array of removed RowNodes
+}
+```
+
+## Best Practices
+
+1. **Always provide getRowId** - Essential for efficient updates and transactions
+2. **Use transactions** - More efficient than replacing entire datasets
+3. **Batch updates** - Combine multiple changes into a single transaction
+4. **Consider async transactions** - For high-frequency updates (100+ per second)
+5. **Keep data immutable** - Create new objects when updating, don't mutate
+6. **Type your data** - Use TypeScript generics for type safety
+
+## Related
+
+- [GridOptions](/concepts/grid-options) - Configure data-related options
+- [Column Definitions](/concepts/column-definitions) - Define how data is displayed
+- [Grid API](/concepts/grid-api) - Methods for manipulating row data

@@ -1,0 +1,819 @@
+---
+title: "Vue 3 Integration"
+description: "Integrate AG Grid with Vue 3 using Composition API, TypeScript, and reactive patterns"
+icon: "vuejs"
+---
+
+AG Grid provides native Vue 3 support with Composition API, full TypeScript typing, and reactive data binding.
+
+## Installation
+
+<Steps>
+<Step title="Install the packages">
+  Install AG Grid Vue along with the core library:
+
+  ```bash
+  npm install ag-grid-vue3 ag-grid-community
+  ```
+
+  For enterprise features:
+
+  ```bash
+  npm install ag-grid-vue3 ag-grid-community ag-grid-enterprise
+  ```
+</Step>
+
+<Step title="Import the component">
+  ```vue
+  <script setup lang="ts">
+  import { AgGridVue } from 'ag-grid-vue3';
+  import 'ag-grid-community/styles/ag-grid.css';
+  import 'ag-grid-community/styles/ag-theme-quartz.css';
+  </script>
+  ```
+</Step>
+</Steps>
+
+## Basic Usage
+
+<Tabs>
+<Tab title="Composition API">
+  ```vue
+  <script setup lang="ts">
+  import { ref } from 'vue';
+  import { AgGridVue } from 'ag-grid-vue3';
+  import { ColDef } from 'ag-grid-community';
+  import 'ag-grid-community/styles/ag-grid.css';
+  import 'ag-grid-community/styles/ag-theme-quartz.css';
+
+  interface IRow {
+    make: string;
+    model: string;
+    price: number;
+  }
+
+  const rowData = ref<IRow[]>([
+    { make: 'Tesla', model: 'Model Y', price: 64950 },
+    { make: 'Ford', model: 'F-Series', price: 33850 },
+    { make: 'Toyota', model: 'Corolla', price: 29600 },
+  ]);
+
+  const columnDefs = ref<ColDef<IRow>[]>([
+    { field: 'make' },
+    { field: 'model' },
+    { field: 'price' }
+  ]);
+  </script>
+
+  <template>
+    <ag-grid-vue
+      class="ag-theme-quartz"
+      style="height: 500px"
+      :rowData="rowData"
+      :columnDefs="columnDefs"
+    />
+  </template>
+  ```
+</Tab>
+
+<Tab title="Options API">
+  ```vue
+  <script lang="ts">
+  import { defineComponent } from 'vue';
+  import { AgGridVue } from 'ag-grid-vue3';
+  import { ColDef } from 'ag-grid-community';
+  import 'ag-grid-community/styles/ag-grid.css';
+  import 'ag-grid-community/styles/ag-theme-quartz.css';
+
+  interface IRow {
+    make: string;
+    model: string;
+    price: number;
+  }
+
+  export default defineComponent({
+    components: {
+      AgGridVue,
+    },
+    data() {
+      return {
+        rowData: [
+          { make: 'Tesla', model: 'Model Y', price: 64950 },
+          { make: 'Ford', model: 'F-Series', price: 33850 },
+          { make: 'Toyota', model: 'Corolla', price: 29600 },
+        ] as IRow[],
+        columnDefs: [
+          { field: 'make' },
+          { field: 'model' },
+          { field: 'price' }
+        ] as ColDef<IRow>[],
+      };
+    },
+  });
+  </script>
+
+  <template>
+    <ag-grid-vue
+      class="ag-theme-quartz"
+      style="height: 500px"
+      :rowData="rowData"
+      :columnDefs="columnDefs"
+    />
+  </template>
+  ```
+</Tab>
+</Tabs>
+
+## TypeScript Support
+
+The `AgGridVue` component provides full TypeScript support with generic types.
+
+### Component Props Interface
+
+```typescript
+import { GridOptions, Module } from 'ag-grid-community';
+
+interface Props<TData> {
+  /** Initial grid configuration */
+  gridOptions?: GridOptions<TData>;
+  
+  /** Register AG Grid modules for this instance */
+  modules?: Module[];
+  
+  /** All GridOptions properties as individual props */
+  // Plus all grid options like:
+  rowData?: TData[];
+  columnDefs?: ColDef<TData>[];
+  // ... and 200+ more options
+}
+```
+
+### Type-Safe Column Definitions
+
+```vue
+<script setup lang="ts">
+import { ref } from 'vue';
+import { ColDef } from 'ag-grid-community';
+
+interface UserData {
+  id: number;
+  name: string;
+  email: string;
+  age: number;
+}
+
+const columnDefs = ref<ColDef<UserData>[]>([
+  { 
+    field: 'name',
+    headerName: 'Full Name',
+    valueGetter: (params) => {
+      // params.data is typed as UserData
+      return params.data?.name.toUpperCase();
+    }
+  },
+  { field: 'email' },
+  { 
+    field: 'age',
+    filter: 'agNumberColumnFilter',
+    cellStyle: (params) => {
+      // Type-safe access to row data
+      return params.data.age < 18 ? { color: 'red' } : {};
+    }
+  }
+]);
+</script>
+```
+
+## Accessing the Grid API
+
+Access the Grid API using template refs.
+
+<Tabs>
+<Tab title="Composition API">
+  ```vue
+  <script setup lang="ts">
+  import { ref } from 'vue';
+  import { AgGridVue } from 'ag-grid-vue3';
+
+  const gridRef = ref<InstanceType<typeof AgGridVue>>();
+
+  const onExportClick = () => {
+    gridRef.value?.api.exportDataAsCsv();
+  };
+
+  const onSelectAll = () => {
+    gridRef.value?.api.selectAll();
+  };
+  </script>
+
+  <template>
+    <button @click="onExportClick">Export CSV</button>
+    <button @click="onSelectAll">Select All</button>
+    <ag-grid-vue
+      ref="gridRef"
+      class="ag-theme-quartz"
+      style="height: 500px"
+      :rowData="rowData"
+      :columnDefs="columnDefs"
+    />
+  </template>
+  ```
+</Tab>
+
+<Tab title="Options API">
+  ```vue
+  <script lang="ts">
+  import { defineComponent } from 'vue';
+  import { AgGridVue } from 'ag-grid-vue3';
+
+  export default defineComponent({
+    methods: {
+      onExportClick() {
+        const gridRef = this.$refs.gridRef as InstanceType<typeof AgGridVue>;
+        gridRef.api.exportDataAsCsv();
+      },
+      onSelectAll() {
+        const gridRef = this.$refs.gridRef as InstanceType<typeof AgGridVue>;
+        gridRef.api.selectAll();
+      }
+    }
+  });
+  </script>
+
+  <template>
+    <button @click="onExportClick">Export CSV</button>
+    <button @click="onSelectAll">Select All</button>
+    <ag-grid-vue
+      ref="gridRef"
+      :rowData="rowData"
+      :columnDefs="columnDefs"
+    />
+  </template>
+  ```
+</Tab>
+
+<Tab title="onGridReady Event">
+  ```vue
+  <script setup lang="ts">
+  import { ref } from 'vue';
+  import { GridApi, GridReadyEvent } from 'ag-grid-community';
+
+  const gridApi = ref<GridApi>();
+
+  const onGridReady = (params: GridReadyEvent) => {
+    gridApi.value = params.api;
+    gridApi.value.sizeColumnsToFit();
+  };
+
+  const onExportClick = () => {
+    gridApi.value?.exportDataAsCsv();
+  };
+  </script>
+
+  <template>
+    <button @click="onExportClick">Export CSV</button>
+    <ag-grid-vue
+      :rowData="rowData"
+      :columnDefs="columnDefs"
+      @grid-ready="onGridReady"
+    />
+  </template>
+  ```
+</Tab>
+</Tabs>
+
+<Note>
+  The Grid API is available after the `grid-ready` event fires.
+</Note>
+
+## Event Handling
+
+Bind to grid events using Vue's event binding syntax with kebab-case.
+
+```vue
+<script setup lang="ts">
+import { 
+  CellClickedEvent, 
+  RowSelectedEvent,
+  GridReadyEvent 
+} from 'ag-grid-community';
+
+const onCellClicked = (event: CellClickedEvent) => {
+  console.log('Cell clicked:', event.value);
+};
+
+const onRowSelected = (event: RowSelectedEvent) => {
+  console.log('Row selected:', event.node.data);
+};
+
+const onGridReady = (event: GridReadyEvent) => {
+  console.log('Grid is ready');
+  event.api.sizeColumnsToFit();
+};
+</script>
+
+<template>
+  <ag-grid-vue
+    :rowData="rowData"
+    :columnDefs="columnDefs"
+    rowSelection="multiple"
+    @cell-clicked="onCellClicked"
+    @row-selected="onRowSelected"
+    @grid-ready="onGridReady"
+  />
+</template>
+```
+
+<Note>
+  Event names use kebab-case in templates: `@grid-ready`, `@cell-clicked`, `@row-selected`
+</Note>
+
+## Custom Vue Components
+
+Use Vue components as cell renderers, editors, and filters.
+
+<CodeGroup>
+```vue Cell Renderer
+<!-- StatusRenderer.vue -->
+<script setup lang="ts">
+import { computed } from 'vue';
+
+interface Props {
+  value: string;
+}
+
+const props = defineProps<Props>();
+
+const color = computed(() => {
+  return props.value === 'active' ? 'green' : 'red';
+});
+</script>
+
+<template>
+  <span :style="{ color, fontWeight: 'bold' }">
+    {{ value }}
+  </span>
+</template>
+```
+
+```vue Cell Editor
+<!-- RatingEditor.vue -->
+<script setup lang="ts">
+import { ref } from 'vue';
+
+interface Props {
+  value: number;
+}
+
+const props = defineProps<Props>();
+const value = ref(props.value);
+
+// AG Grid calls getValue() to get the edited value
+defineExpose({
+  getValue: () => value.value
+});
+</script>
+
+<template>
+  <select v-model="value" class="rating-editor">
+    <option :value="1">1 Star</option>
+    <option :value="2">2 Stars</option>
+    <option :value="3">3 Stars</option>
+    <option :value="4">4 Stars</option>
+    <option :value="5">5 Stars</option>
+  </select>
+</template>
+```
+
+```vue Custom Filter
+<!-- YearFilter.vue -->
+<script setup lang="ts">
+import { ref } from 'vue';
+import { IDoesFilterPassParams } from 'ag-grid-community';
+
+interface Props {
+  filterChangedCallback: () => void;
+}
+
+const props = defineProps<Props>();
+const year = ref<number>(2023);
+
+const onChange = () => {
+  props.filterChangedCallback();
+};
+
+// AG Grid lifecycle methods
+defineExpose({
+  doesFilterPass: (params: IDoesFilterPassParams) => {
+    return params.data.year >= year.value;
+  },
+  isFilterActive: () => year.value !== 2023,
+  getModel: () => ({ year: year.value }),
+  setModel: (model: any) => {
+    year.value = model?.year || 2023;
+  }
+});
+</script>
+
+<template>
+  <div style="padding: 10px">
+    <label>
+      Year From:
+      <input
+        type="number"
+        v-model="year"
+        @input="onChange"
+      />
+    </label>
+  </div>
+</template>
+```
+</CodeGroup>
+
+### Using Custom Components
+
+```vue
+<script setup lang="ts">
+import { ref } from 'vue';
+import { ColDef } from 'ag-grid-community';
+import StatusRenderer from './StatusRenderer.vue';
+import RatingEditor from './RatingEditor.vue';
+import YearFilter from './YearFilter.vue';
+
+const columnDefs = ref<ColDef[]>([
+  { 
+    field: 'status',
+    cellRenderer: StatusRenderer
+  },
+  { 
+    field: 'rating',
+    cellEditor: RatingEditor,
+    editable: true
+  },
+  { 
+    field: 'year',
+    filter: YearFilter,
+    floatingFilter: true
+  }
+]);
+</script>
+```
+
+## Reactive Data Binding
+
+Vue's reactivity system works seamlessly with AG Grid.
+
+<Tabs>
+<Tab title="Direct Binding">
+  ```vue
+  <script setup lang="ts">
+  import { ref } from 'vue';
+
+  const rowData = ref([
+    { make: 'Tesla', model: 'Model Y', price: 64950 },
+    { make: 'Ford', model: 'F-Series', price: 33850 },
+  ]);
+
+  const addRow = () => {
+    rowData.value = [
+      ...rowData.value,
+      { make: 'Toyota', model: 'Corolla', price: 29600 }
+    ];
+  };
+  </script>
+
+  <template>
+    <button @click="addRow">Add Row</button>
+    <ag-grid-vue
+      :rowData="rowData"
+      :columnDefs="columnDefs"
+    />
+  </template>
+  ```
+</Tab>
+
+<Tab title="v-model Support">
+  ```vue
+  <script setup lang="ts">
+  import { ref } from 'vue';
+
+  const rowData = ref([
+    { make: 'Tesla', model: 'Model Y', price: 64950 },
+  ]);
+
+  // v-model automatically syncs changes
+  </script>
+
+  <template>
+    <ag-grid-vue
+      v-model="rowData"
+      :columnDefs="columnDefs"
+    />
+  </template>
+  ```
+</Tab>
+
+<Tab title="Computed Data">
+  ```vue
+  <script setup lang="ts">
+  import { ref, computed } from 'vue';
+
+  const allData = ref([...]);
+  const filterText = ref('');
+
+  const filteredData = computed(() => {
+    if (!filterText.value) return allData.value;
+    return allData.value.filter(row => 
+      row.make.toLowerCase().includes(filterText.value.toLowerCase())
+    );
+  });
+  </script>
+
+  <template>
+    <input v-model="filterText" placeholder="Filter..." />
+    <ag-grid-vue
+      :rowData="filteredData"
+      :columnDefs="columnDefs"
+    />
+  </template>
+  ```
+</Tab>
+</Tabs>
+
+## State Management
+
+Integrate with Pinia or Vuex for state management.
+
+<Tabs>
+<Tab title="Pinia">
+  ```typescript
+  // stores/grid.ts
+  import { defineStore } from 'pinia';
+
+  export const useGridStore = defineStore('grid', {
+    state: () => ({
+      rowData: [],
+      loading: false
+    }),
+    actions: {
+      async fetchData() {
+        this.loading = true;
+        const response = await fetch('/api/data');
+        this.rowData = await response.json();
+        this.loading = false;
+      }
+    }
+  });
+  ```
+
+  ```vue
+  <script setup lang="ts">
+  import { onMounted } from 'vue';
+  import { useGridStore } from './stores/grid';
+
+  const gridStore = useGridStore();
+
+  onMounted(() => {
+    gridStore.fetchData();
+  });
+  </script>
+
+  <template>
+    <ag-grid-vue
+      :rowData="gridStore.rowData"
+      :columnDefs="columnDefs"
+      :loading="gridStore.loading"
+    />
+  </template>
+  ```
+</Tab>
+
+<Tab title="Composables">
+  ```typescript
+  // composables/useGridData.ts
+  import { ref, onMounted } from 'vue';
+
+  export function useGridData() {
+    const rowData = ref([]);
+    const loading = ref(false);
+
+    const fetchData = async () => {
+      loading.value = true;
+      const response = await fetch('/api/data');
+      rowData.value = await response.json();
+      loading.value = false;
+    };
+
+    onMounted(fetchData);
+
+    return { rowData, loading, fetchData };
+  }
+  ```
+
+  ```vue
+  <script setup lang="ts">
+  import { useGridData } from './composables/useGridData';
+
+  const { rowData, loading } = useGridData();
+  </script>
+
+  <template>
+    <ag-grid-vue
+      :rowData="rowData"
+      :columnDefs="columnDefs"
+      :loading="loading"
+    />
+  </template>
+  ```
+</Tab>
+</Tabs>
+
+## Props Reference
+
+The `AgGridVue` component accepts all `GridOptions` as props:
+
+<ParamField path="rowData" type="TData[]">
+  The data to display in grid rows
+</ParamField>
+
+<ParamField path="columnDefs" type="ColDef<TData>[]">
+  Column definitions for the grid
+</ParamField>
+
+<ParamField path="gridOptions" type="GridOptions<TData>">
+  Initial grid configuration (component props take precedence)
+</ParamField>
+
+<ParamField path="modules" type="Module[]">
+  AG Grid modules to register for this instance
+</ParamField>
+
+<ParamField path="v-model" type="TData[]">
+  Two-way binding for row data (automatically syncs changes)
+</ParamField>
+
+## Module Registration
+
+<Tabs>
+<Tab title="Global Registration">
+  ```typescript
+  // main.ts
+  import { createApp } from 'vue';
+  import { ModuleRegistry } from 'ag-grid-community';
+  import { ClientSideRowModelModule } from 'ag-grid-community';
+  import { MenuModule } from 'ag-grid-enterprise';
+
+  ModuleRegistry.registerModules([
+    ClientSideRowModelModule,
+    MenuModule
+  ]);
+
+  createApp(App).mount('#app');
+  ```
+</Tab>
+
+<Tab title="Per-Component Registration">
+  ```vue
+  <script setup lang="ts">
+  import { ClientSideRowModelModule } from 'ag-grid-community';
+  import { MenuModule } from 'ag-grid-enterprise';
+
+  const modules = [
+    ClientSideRowModelModule,
+    MenuModule
+  ];
+  </script>
+
+  <template>
+    <ag-grid-vue
+      :modules="modules"
+      :rowData="rowData"
+      :columnDefs="columnDefs"
+    />
+  </template>
+  ```
+</Tab>
+</Tabs>
+
+## Common Patterns
+
+### Dynamic Column Visibility
+
+```vue
+<script setup lang="ts">
+import { ref, computed } from 'vue';
+
+const showPrice = ref(true);
+
+const columnDefs = computed(() => [
+  { field: 'make' },
+  { field: 'model' },
+  ...(showPrice.value ? [{ field: 'price' }] : [])
+]);
+</script>
+
+<template>
+  <label>
+    <input type="checkbox" v-model="showPrice" />
+    Show Price
+  </label>
+  <ag-grid-vue
+    :rowData="rowData"
+    :columnDefs="columnDefs"
+  />
+</template>
+```
+
+### Async Data Loading
+
+```vue
+<script setup lang="ts">
+import { ref, onMounted } from 'vue';
+
+const rowData = ref([]);
+const loading = ref(true);
+
+onMounted(async () => {
+  loading.value = true;
+  const response = await fetch('/api/data');
+  rowData.value = await response.json();
+  loading.value = false;
+});
+</script>
+
+<template>
+  <ag-grid-vue
+    :rowData="rowData"
+    :columnDefs="columnDefs"
+    :loading="loading"
+  />
+</template>
+```
+
+## Troubleshooting
+
+<AccordionGroup>
+<Accordion title="Grid not displaying correctly">
+  Make sure you've imported the CSS files:
+  
+  ```vue
+  <script setup>
+  import 'ag-grid-community/styles/ag-grid.css';
+  import 'ag-grid-community/styles/ag-theme-quartz.css';
+  </script>
+  ```
+  
+  Set explicit height on the grid:
+  
+  ```vue
+  <template>
+    <ag-grid-vue
+      class="ag-theme-quartz"
+      style="height: 500px"
+    />
+  </template>
+  ```
+</Accordion>
+
+<Accordion title="Custom components not working">
+  Ensure your custom components use `defineExpose` to expose required methods:
+  
+  ```vue
+  <script setup>
+  defineExpose({
+    getValue: () => value.value,
+    // Other required methods
+  });
+  </script>
+  ```
+</Accordion>
+
+<Accordion title="Reactivity not updating grid">
+  Use immutable updates for reactive data:
+  
+  ```typescript
+  // Wrong: Mutates array
+  rowData.value.push(newRow);
+  
+  // Correct: Creates new array
+  rowData.value = [...rowData.value, newRow];
+  ```
+</Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+<Card title="Column Definitions" icon="table-columns" href="/column-definitions">
+  Configure grid columns
+</Card>
+<Card title="Grid API" icon="code" href="/grid-api">
+  Explore API methods
+</Card>
+<Card title="Custom Components" icon="puzzle-piece" href="/custom-components">
+  Build Vue components for cells
+</Card>
+<Card title="Styling" icon="palette" href="/styling">
+  Customize appearance
+</Card>
+</CardGroup>

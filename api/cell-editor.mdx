@@ -1,0 +1,446 @@
+---
+title: ICellEditorComp
+description: Interface for custom cell editor components in AG Grid
+---
+
+The `ICellEditorComp` interface allows you to create custom components for editing cell values in AG Grid. Cell editors control how users can modify data in editable cells.
+
+## Overview
+
+Create custom cell editors to provide specialized editing experiences such as custom date pickers, color selectors, or complex data entry forms.
+
+```javascript
+const gridOptions = {
+  columnDefs: [
+    {
+      field: 'rating',
+      editable: true,
+      cellEditor: RatingCellEditor
+    }
+  ]
+};
+```
+
+## Interface Definition
+
+```typescript
+interface ICellEditorComp<TData = any, TValue = any, TContext = any> 
+  extends ICellEditor<TValue>, IPopupComponent<ICellEditorParams<TData, TValue, TContext>> {
+  
+  /** Mandatory - Return the final value */
+  getValue(): TValue | null | undefined;
+  
+  /** Optional: Called once after editing is complete */
+  isCancelBeforeStart?(): boolean;
+  
+  /** Optional: Called once after editing is complete */
+  isCancelAfterEnd?(): boolean;
+  
+  /** Optional: Gets called when focus should be put into the editor */
+  focusIn?(): void;
+  
+  /** Optional: If doing full line edit, then gets called when focus is leaving the editor */
+  focusOut?(): void;
+  
+  /** Optional: A hook to perform any necessary operation just after the GUI has been rendered */
+  afterGuiAttached?(): void;
+  
+  /** Optional: If true, editor appears in a popup */
+  isPopup?(): boolean;
+  
+  /** Optional: Gets called with the latest cell editor params every time they update */
+  refresh?(params: ICellEditorParams<TData, TValue>): void;
+}
+```
+
+## ICellEditorParams
+
+<ParamField path="value" type="TValue | null | undefined">
+  Current value of the cell.
+  
+  ```javascript
+  init(params) {
+    this.value = params.value;
+    this.input.value = this.value || '';
+  }
+  ```
+</ParamField>
+
+<ParamField path="eventKey" type="string | null">
+  Key value of key that started the edit, eg 'Enter' or 'F2' - non-printable characters appear here.
+  
+  ```javascript
+  init(params) {
+    if (params.eventKey && params.eventKey.length === 1) {
+      // User typed a character to start editing
+      this.input.value = params.eventKey;
+    }
+  }
+  ```
+</ParamField>
+
+<ParamField path="column" type="Column<TValue>">
+  Grid column.
+  
+  ```javascript
+  init(params) {
+    const columnId = params.column.getId();
+  }
+  ```
+</ParamField>
+
+<ParamField path="colDef" type="ColDef<TData, TValue>">
+  Column definition.
+  
+  ```javascript
+  init(params) {
+    const field = params.colDef.field;
+  }
+  ```
+</ParamField>
+
+<ParamField path="node" type="IRowNode<TData>">
+  Row node for the cell.
+  
+  ```javascript
+  init(params) {
+    const rowId = params.node.id;
+    const isGroupNode = params.node.group;
+  }
+  ```
+</ParamField>
+
+<ParamField path="data" type="TData">
+  Row data.
+  
+  ```javascript
+  init(params) {
+    // Access other fields in the row
+    const relatedValue = params.data.otherField;
+  }
+  ```
+</ParamField>
+
+<ParamField path="rowIndex" type="number">
+  Editing row index.
+  
+  ```javascript
+  init(params) {
+    console.log('Editing row at index:', params.rowIndex);
+  }
+  ```
+</ParamField>
+
+<ParamField path="cellStartedEdit" type="boolean">
+  If doing full row edit, this is true if the cell is the one that started the edit (eg it is the cell the user double clicked on, or pressed a key on etc).
+  
+  ```javascript
+  afterGuiAttached() {
+    if (this.params.cellStartedEdit) {
+      // Put focus on this editor
+      this.input.focus();
+      this.input.select();
+    }
+  }
+  ```
+</ParamField>
+
+<ParamField path="eGridCell" type="HTMLElement">
+  A reference to the DOM element representing the grid cell that your component will live inside. Useful if you want to add event listeners or classes at this level.
+  
+  ```javascript
+  init(params) {
+    params.eGridCell.classList.add('editing');
+  }
+  ```
+</ParamField>
+
+### Utility Methods
+
+<ParamField path="parseValue" type="(value: string) => TValue | null | undefined">
+  Utility function to parse a value using the column's `colDef.valueParser`.
+  
+  ```javascript
+  getValue() {
+    const rawValue = this.input.value;
+    return this.params.parseValue(rawValue);
+  }
+  ```
+</ParamField>
+
+<ParamField path="formatValue" type="(value: TValue | null | undefined) => string">
+  Utility function to format a value using the column's `colDef.valueFormatter`.
+  
+  ```javascript
+  init(params) {
+    const formatted = params.formatValue(params.value);
+    this.input.value = formatted;
+  }
+  ```
+</ParamField>
+
+<ParamField path="onKeyDown" type="(event: KeyboardEvent) => void">
+  Callback to tell grid a key was pressed - useful to pass control key events (tab, arrows etc) back to grid.
+  
+  ```javascript
+  init(params) {
+    this.input.addEventListener('keydown', (event) => {
+      // Let grid handle tab key
+      if (event.key === 'Tab') {
+        params.onKeyDown(event);
+      }
+    });
+  }
+  ```
+</ParamField>
+
+<ParamField path="stopEditing" type="(suppressNavigateAfterEdit?: boolean) => void">
+  Callback to tell grid to stop editing the current cell. Call with input parameter true to prevent focus from moving to the next cell after editing stops in case the grid property `enterNavigatesVerticallyAfterEdit=true`.
+  
+  ```javascript
+  onSaveClick() {
+    this.params.stopEditing();
+  }
+  
+  onCancelClick() {
+    this.params.stopEditing(true);
+  }
+  ```
+</ParamField>
+
+<ParamField path="validate" type="() => void">
+  Runs the Editor Validation.
+  
+  ```javascript
+  onBlur() {
+    this.params.validate();
+  }
+  ```
+</ParamField>
+
+## Required Methods
+
+<ParamField path="getValue" type="() => TValue | null | undefined">
+  Mandatory - Return the final value. Called by the grid once after editing is complete.
+  
+  ```javascript
+  getValue() {
+    return this.input.value;
+  }
+  ```
+</ParamField>
+
+## Optional Methods
+
+<ParamField path="isCancelBeforeStart" type="() => boolean">
+  Optional: Gets called once after initialised. If you return true, the editor will not be used and the grid will continue editing. Use this to make a decision on editing inside the init() function.
+  
+  ```javascript
+  isCancelBeforeStart() {
+    // Only start editing if value is not null
+    return this.params.value == null;
+  }
+  ```
+</ParamField>
+
+<ParamField path="isCancelAfterEnd" type="() => boolean">
+  Optional: Gets called once after editing is complete. If your return true, then the new value will not be used. The editing will have no impact on the record.
+  
+  ```javascript
+  isCancelAfterEnd() {
+    // Cancel if value hasn't changed
+    return this.getValue() === this.params.value;
+  }
+  ```
+</ParamField>
+
+<ParamField path="afterGuiAttached" type="() => void">
+  Optional: A hook to perform any necessary operation just after the GUI for this component has been rendered on the screen. This is useful for any logic that requires attachment before executing, such as putting focus on a particular DOM element.
+  
+  ```javascript
+  afterGuiAttached() {
+    // Focus the input and select all text
+    this.input.focus();
+    this.input.select();
+  }
+  ```
+</ParamField>
+
+<ParamField path="isPopup" type="() => boolean">
+  Optional: Gets called once after initialised. If you return true, the editor will appear in a popup, so is not constrained to the boundaries of the cell.
+  
+  ```javascript
+  isPopup() {
+    return true; // Editor will appear in a popup
+  }
+  ```
+</ParamField>
+
+<ParamField path="getPopupPosition" type="() => 'over' | 'under' | undefined">
+  Optional: Gets called once, only if isPopup() returns true. Return "over" if the popup should cover the cell, or "under" if it should be positioned below leaving the cell value visible.
+  
+  ```javascript
+  getPopupPosition() {
+    return 'under'; // Popup appears below the cell
+  }
+  ```
+</ParamField>
+
+<ParamField path="focusIn" type="() => void">
+  Optional: If doing full line edit, then gets called when focus should be put into the editor.
+  
+  ```javascript
+  focusIn() {
+    this.input.focus();
+  }
+  ```
+</ParamField>
+
+<ParamField path="focusOut" type="() => void">
+  Optional: If doing full line edit, then gets called when focus is leaving the editor.
+  
+  ```javascript
+  focusOut() {
+    this.input.blur();
+  }
+  ```
+</ParamField>
+
+<ParamField path="refresh" type="(params: ICellEditorParams<TData, TValue>) => void">
+  Optional: Gets called with the latest cell editor params every time they update.
+  
+  ```javascript
+  refresh(params) {
+    this.params = params;
+    this.input.value = params.value;
+  }
+  ```
+</ParamField>
+
+<ParamField path="getValidationElement" type="(tooltip: boolean) => HTMLElement">
+  Optional: Returns the element to use for validation feedback.
+  
+  **Parameters:**
+  - `tooltip`: Whether the element is for a tooltip or direct styling
+  
+  ```javascript
+  getValidationElement(tooltip) {
+    return tooltip ? this.input : this.container;
+  }
+  ```
+</ParamField>
+
+<ParamField path="getValidationErrors" type="() => string[] | null">
+  Optional: The error messages associated with the Editor.
+  
+  ```javascript
+  getValidationErrors() {
+    const value = this.input.value;
+    if (!value) {
+      return ['Value is required'];
+    }
+    if (value.length < 3) {
+      return ['Value must be at least 3 characters'];
+    }
+    return null;
+  }
+  ```
+</ParamField>
+
+## Complete Example
+
+```javascript
+class NumericCellEditor {
+  init(params) {
+    this.params = params;
+    
+    // Create input
+    this.input = document.createElement('input');
+    this.input.type = 'number';
+    this.input.className = 'ag-input-field-input';
+    this.input.value = params.value != null ? params.value : '';
+    
+    // Handle keyboard navigation
+    this.input.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        this.cancelled = true;
+        params.stopEditing();
+      } else if (event.key === 'Enter') {
+        params.stopEditing();
+      } else if (event.key === 'Tab') {
+        params.onKeyDown(event);
+      }
+    });
+  }
+  
+  getGui() {
+    return this.input;
+  }
+  
+  afterGuiAttached() {
+    this.input.focus();
+    this.input.select();
+  }
+  
+  getValue() {
+    const value = this.input.value;
+    return value === '' ? null : Number(value);
+  }
+  
+  isCancelAfterEnd() {
+    return this.cancelled;
+  }
+  
+  destroy() {
+    // Cleanup if needed
+  }
+}
+
+// Usage
+const gridOptions = {
+  columnDefs: [
+    {
+      field: 'age',
+      editable: true,
+      cellEditor: NumericCellEditor
+    }
+  ]
+};
+```
+
+## Built-in Cell Editors
+
+AG Grid provides several built-in cell editors:
+
+- `'agTextCellEditor'`: Simple text input (default)
+- `'agLargeTextCellEditor'`: Multi-line text area
+- `'agSelectCellEditor'`: Dropdown select
+- `'agNumberCellEditor'`: Number input
+- `'agDateCellEditor'`: Date picker
+- `'agCheckboxCellEditor'`: Checkbox
+- `'agRichSelectCellEditor'`: Rich select with search (Enterprise)
+
+```javascript
+{
+  field: 'country',
+  editable: true,
+  cellEditor: 'agSelectCellEditor',
+  cellEditorParams: {
+    values: ['USA', 'UK', 'Canada', 'Australia']
+  }
+}
+```
+
+## Related APIs
+
+<Card title="Cell Renderer" icon="code" href="/api/cell-renderer">
+  Create custom cell renderers
+</Card>
+
+<Card title="Column Definitions" icon="table-columns" href="/api/column-definitions">
+  Configure cell editors in columns
+</Card>
+
+<Card title="GridApi" icon="grid" href="/api/grid-api">
+  Programmatic editing control
+</Card>

@@ -1,0 +1,373 @@
+---
+title: Grid Events
+description: Reference for grid-level events in AG Grid
+---
+
+Grid events are fired in response to user interactions and grid state changes. Listen to events using the `addEventListener` method on the Grid API or by providing event handlers in GridOptions.
+
+## Overview
+
+There are two ways to listen to events:
+
+### Via Grid API
+
+```javascript
+const onGridReady = (params) => {
+  params.api.addEventListener('rowClicked', (event) => {
+    console.log('Row clicked:', event.data);
+  });
+};
+```
+
+### Via GridOptions
+
+```javascript
+const gridOptions = {
+  onRowClicked: (event) => {
+    console.log('Row clicked:', event.data);
+  },
+  onCellValueChanged: (event) => {
+    console.log('Cell changed:', event);
+  }
+};
+```
+
+## Lifecycle Events
+
+<ParamField path="gridReady" type="GridReadyEvent<TData, TContext>">
+  Called once when the grid is ready to use. Use this to access the Grid API.
+  
+  **Event Properties:**
+  - `api`: Grid API reference
+  - `context`: Grid context object
+  
+  ```javascript
+  onGridReady: (event) => {
+    console.log('Grid is ready');
+    const gridApi = event.api;
+    // Safe to use API methods now
+  }
+  ```
+</ParamField>
+
+<ParamField path="gridPreDestroyed" type="GridPreDestroyedEvent<TData, TContext>">
+  Fired before the grid is destroyed. Useful for cleanup operations.
+  
+  **Event Properties:**
+  - `api`: Grid API reference
+  - `state`: Current state of the grid
+  
+  ```javascript
+  onGridPreDestroyed: (event) => {
+    console.log('Grid being destroyed');
+    // Cleanup resources
+  }
+  ```
+</ParamField>
+
+<ParamField path="gridSizeChanged" type="GridSizeChangedEvent<TData, TContext>">
+  The grid's div was resized. Use this to resize columns or adjust layout.
+  
+  **Event Properties:**
+  - `clientWidth`: The grid's DIV's clientWidth
+  - `clientHeight`: The grid's DIV's clientHeight
+  
+  ```javascript
+  onGridSizeChanged: (event) => {
+    console.log('Grid size:', event.clientWidth, 'x', event.clientHeight);
+    event.api.sizeColumnsToFit();
+  }
+  ```
+</ParamField>
+
+<ParamField path="firstDataRendered" type="FirstDataRenderedEvent<TData, TContext>">
+  Fired the first time data is rendered into the grid. Use this event if you want to auto resize columns based on their contents.
+  
+  **Event Properties:**
+  - `firstRow`: Index of the first rendered row
+  - `lastRow`: Index of the last rendered row
+  
+  ```javascript
+  onFirstDataRendered: (event) => {
+    event.api.autoSizeAllColumns();
+  }
+  ```
+</ParamField>
+
+## Data Events
+
+<ParamField path="rowDataUpdated" type="RowDataUpdatedEvent<TData, TContext>">
+  Fired when row data is updated via `api.setRowData()` or the `rowData` property is changed.
+  
+  ```javascript
+  onRowDataUpdated: (event) => {
+    console.log('Row data updated');
+  }
+  ```
+</ParamField>
+
+<ParamField path="modelUpdated" type="ModelUpdatedEvent<TData, TContext>">
+  Fired after the row model (all rows) has been updated. This includes after sorting, filtering, grouping, etc.
+  
+  **Event Properties:**
+  - `animate`: If true, the grid will try and animate the rows to the new positions
+  - `keepRenderedRows`: If true, same data but sorted or filtered
+  - `newData`: If true, this update was a result of setRowData() getting called
+  - `newPage`: True when pagination and a new page is navigated to
+  
+  ```javascript
+  onModelUpdated: (event) => {
+    if (event.newData) {
+      console.log('New data loaded');
+    }
+  }
+  ```
+</ParamField>
+
+<ParamField path="pinnedRowDataChanged" type="PinnedRowDataChangedEvent<TData, TContext>">
+  Fired when pinned row data is changed via the `pinnedTopRowData` or `pinnedBottomRowData` properties.
+  
+  ```javascript
+  onPinnedRowDataChanged: (event) => {
+    console.log('Pinned rows updated');
+  }
+  ```
+</ParamField>
+
+## Selection Events
+
+<ParamField path="selectionChanged" type="SelectionChangedEvent<TData, TContext>">
+  Fired when row selection is changed. Use the grid API to get the selected rows.
+  
+  **Event Properties:**
+  - `source`: The source that triggered the selection change event
+  - `selectedNodes`: The row nodes that are selected (or `null` for SSRM)
+  - `serverSideState`: The SSRM selection state (or `null` for other row models)
+  
+  **Source values:**
+  - `'api'`: from API method
+  - `'checkboxSelected'`: row selection checkbox clicked
+  - `'rowClicked'`: row clicked when row selection enabled
+  - `'uiSelectAll'`: select all in header clicked
+  - `'spaceKey'`: space key pressed on row
+  
+  ```javascript
+  onSelectionChanged: (event) => {
+    const selectedRows = event.api.getSelectedRows();
+    console.log('Selected rows:', selectedRows.length);
+  }
+  ```
+</ParamField>
+
+<ParamField path="rowSelected" type="RowSelectedEvent<TData, TContext>">
+  Fired when a row is selected or deselected.
+  
+  **Event Properties:**
+  - `node`: The row node
+  - `data`: The row data
+  - `rowIndex`: The visible row index
+  - `source`: The source that triggered the event
+  
+  ```javascript
+  onRowSelected: (event) => {
+    console.log('Row selected:', event.node.isSelected());
+  }
+  ```
+</ParamField>
+
+## Filtering Events
+
+<ParamField path="filterChanged" type="FilterChangedEvent<TData, TContext>">
+  Fired when a filter is changed.
+  
+  **Event Properties:**
+  - `source`: The source that triggered the filter change (`'api'`, `'quickFilter'`, `'columnFilter'`, `'advancedFilter'`)
+  - `afterDataChange`: True if the filter was changed as a result of data changing
+  - `afterFloatingFilter`: True if filter was changed via floating filter
+  - `columns`: Columns affected by the filter change
+  
+  ```javascript
+  onFilterChanged: (event) => {
+    console.log('Filter changed, source:', event.source);
+    console.log('Columns affected:', event.columns.length);
+  }
+  ```
+</ParamField>
+
+<ParamField path="filterModified" type="FilterModifiedEvent<TData, TContext>">
+  Fired when the filter UI is modified but not yet applied (e.g., when using filter buttons).
+  
+  **Event Properties:**
+  - `filterInstance`: The filter component instance
+  - `column`: The column
+  
+  ```javascript
+  onFilterModified: (event) => {
+    console.log('Filter modified for column:', event.column.getId());
+  }
+  ```
+</ParamField>
+
+<ParamField path="filterOpened" type="FilterOpenedEvent<TData, TContext>">
+  Fired when a column filter is opened.
+  
+  **Event Properties:**
+  - `column`: Column / ProvidedColumnGroup that contains the filter
+  - `source`: Source of the open request
+  - `eGui`: Parent element of the filter
+  
+  ```javascript
+  onFilterOpened: (event) => {
+    console.log('Filter opened for:', event.column.getId());
+  }
+  ```
+</ParamField>
+
+## Sorting Events
+
+<ParamField path="sortChanged" type="SortChangedEvent<TData, TContext>">
+  Fired when sorting is changed.
+  
+  **Event Properties:**
+  - `source`: String describing where the event is coming from
+  - `columns`: The list of columns impacted by the sort change
+  
+  ```javascript
+  onSortChanged: (event) => {
+    console.log('Sort changed');
+    const sortModel = event.api.getColumnState()
+      .filter(col => col.sort != null)
+      .map(col => ({ colId: col.colId, sort: col.sort }));
+    console.log('Sort model:', sortModel);
+  }
+  ```
+</ParamField>
+
+## Pagination Events
+
+<ParamField path="paginationChanged" type="PaginationChangedEvent<TData, TContext>">
+  Fired when the pagination state changes.
+  
+  **Event Properties:**
+  - `animate`: True if rows were animated to new position
+  - `keepRenderedRows`: True if rows were kept (otherwise complete redraw)
+  - `newData`: True if data was new
+  - `newPage`: True if user went to a new page
+  - `newPageSize`: True if user changed the page size
+  
+  ```javascript
+  onPaginationChanged: (event) => {
+    if (event.newPage) {
+      console.log('Page changed');
+    }
+  }
+  ```
+</ParamField>
+
+## Viewport Events
+
+<ParamField path="viewportChanged" type="ViewportChangedEvent<TData, TContext>">
+  Fired when the displayed rows have changed due to scrolling.
+  
+  **Event Properties:**
+  - `firstRow`: Index of the first rendered row
+  - `lastRow`: Index of the last rendered row
+  
+  ```javascript
+  onViewportChanged: (event) => {
+    console.log('Viewport:', event.firstRow, '-', event.lastRow);
+  }
+  ```
+</ParamField>
+
+<ParamField path="bodyScroll" type="BodyScrollEvent<TData, TContext>">
+  Fired when the grid's body is scrolled horizontally or vertically.
+  
+  **Event Properties:**
+  - `direction`: ScrollDirection ('horizontal' or 'vertical')
+  - `left`: Horizontal scroll position
+  - `top`: Vertical scroll position
+  
+  ```javascript
+  onBodyScroll: (event) => {
+    console.log('Scrolled', event.direction, 'to', event.top, event.left);
+  }
+  ```
+</ParamField>
+
+<ParamField path="bodyScrollEnd" type="BodyScrollEndEvent<TData, TContext>">
+  Fired when the grid's body has stopped scrolling.
+  
+  **Event Properties:**
+  - `direction`: ScrollDirection
+  - `left`: Horizontal scroll position
+  - `top`: Vertical scroll position
+  
+  ```javascript
+  onBodyScrollEnd: (event) => {
+    console.log('Scroll ended at:', event.top);
+  }
+  ```
+</ParamField>
+
+## State Events
+
+<ParamField path="stateUpdated" type="StateUpdatedEvent<TData, TContext>">
+  Fired when the grid state has been updated.
+  
+  **Event Properties:**
+  - `state`: The updated grid state
+  - `sources`: The state keys that triggered the update
+  
+  **Module:** `GridStateModule`
+  
+  ```javascript
+  onStateUpdated: (event) => {
+    console.log('State updated:', event.sources);
+    // Persist state
+    localStorage.setItem('gridState', JSON.stringify(event.state));
+  }
+  ```
+</ParamField>
+
+## Drag Events
+
+<ParamField path="dragStarted" type="DragStartedEvent<TData, TContext>">
+  Fired when a drag operation has started (column, row, etc.).
+  
+  **Event Properties:**
+  - `target`: The DOM element that started the event
+  
+  ```javascript
+  onDragStarted: (event) => {
+    console.log('Drag started');
+  }
+  ```
+</ParamField>
+
+<ParamField path="dragStopped" type="DragStoppedEvent<TData, TContext>">
+  Fired when a drag operation has finished.
+  
+  **Event Properties:**
+  - `target`: The DOM element that started the event
+  
+  ```javascript
+  onDragStopped: (event) => {
+    console.log('Drag stopped');
+  }
+  ```
+</ParamField>
+
+## Related APIs
+
+<Card title="Row Events" icon="table-rows" href="/api/row-events">
+  Events fired by row interactions
+</Card>
+
+<Card title="Column Events" icon="table-columns" href="/api/column-events">
+  Events fired by column interactions
+</Card>
+
+<Card title="GridApi" icon="code" href="/api/grid-api">
+  Add and remove event listeners programmatically
+</Card>

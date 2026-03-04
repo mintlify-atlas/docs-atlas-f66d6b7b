@@ -1,0 +1,588 @@
+---
+title: Installation
+description: Install AG Grid in your JavaScript, React, Angular, or Vue project using npm, yarn, or pnpm
+---
+
+# Installation
+
+AG Grid can be installed using your preferred package manager. Choose the installation method that matches your framework and setup.
+
+## Package Overview
+
+AG Grid provides separate packages for different frameworks:
+
+| Package | Description | License |
+|---------|-------------|----------|
+| `ag-grid-community` | Core grid for vanilla JavaScript/TypeScript | MIT |
+| `ag-grid-enterprise` | Enterprise features add-on | Commercial |
+| `ag-grid-react` | React wrapper component | MIT |
+| `ag-grid-angular` | Angular wrapper component | MIT |
+| `ag-grid-vue3` | Vue 3 wrapper component | MIT |
+
+<Note>
+All framework wrappers depend on `ag-grid-community` as a peer dependency. The enterprise package (`ag-grid-enterprise`) is optional and adds advanced features.
+</Note>
+
+## Vanilla JavaScript / TypeScript
+
+For projects using vanilla JavaScript or TypeScript without a framework:
+
+<CodeGroup>
+
+```bash npm
+npm install ag-grid-community
+```
+
+```bash yarn
+yarn add ag-grid-community
+```
+
+```bash pnpm
+pnpm add ag-grid-community
+```
+
+</CodeGroup>
+
+### With Enterprise Features
+
+<CodeGroup>
+
+```bash npm
+npm install ag-grid-community ag-grid-enterprise
+```
+
+```bash yarn
+yarn add ag-grid-community ag-grid-enterprise
+```
+
+```bash pnpm
+pnpm add ag-grid-community ag-grid-enterprise
+```
+
+</CodeGroup>
+
+### Basic Usage
+
+```typescript
+import { createGrid, GridOptions } from 'ag-grid-community';
+import 'ag-grid-community/styles/ag-grid.css';
+import 'ag-grid-community/styles/ag-theme-quartz.css';
+
+const gridOptions: GridOptions = {
+  columnDefs: [
+    { field: 'make' },
+    { field: 'model' },
+    { field: 'price' },
+  ],
+  rowData: [
+    { make: 'Tesla', model: 'Model Y', price: 64950 },
+    { make: 'Ford', model: 'F-Series', price: 33850 },
+    { make: 'Toyota', model: 'Corolla', price: 29600 },
+  ],
+};
+
+const gridDiv = document.querySelector('#myGrid')!;
+const api = createGrid(gridDiv, gridOptions);
+```
+
+## React
+
+For React applications (supports React 16.8+, 17, 18, and 19):
+
+<CodeGroup>
+
+```bash npm
+npm install ag-grid-react ag-grid-community
+```
+
+```bash yarn
+yarn add ag-grid-react ag-grid-community
+```
+
+```bash pnpm
+pnpm add ag-grid-react ag-grid-community
+```
+
+</CodeGroup>
+
+### With Enterprise Features
+
+<CodeGroup>
+
+```bash npm
+npm install ag-grid-react ag-grid-community ag-grid-enterprise
+```
+
+```bash yarn
+yarn add ag-grid-react ag-grid-community ag-grid-enterprise
+```
+
+```bash pnpm
+pnpm add ag-grid-react ag-grid-community ag-grid-enterprise
+```
+
+</CodeGroup>
+
+### TypeScript Types
+
+TypeScript definitions are included automatically. Ensure your `tsconfig.json` includes:
+
+```json
+{
+  "compilerOptions": {
+    "esModuleInterop": true,
+    "skipLibCheck": false,
+    "strict": true
+  }
+}
+```
+
+### Basic React Component
+
+```tsx
+import { useState } from 'react';
+import { AgGridReact } from 'ag-grid-react';
+import 'ag-grid-community/styles/ag-grid.css';
+import 'ag-grid-community/styles/ag-theme-quartz.css';
+
+function MyGridComponent() {
+  const [rowData] = useState([
+    { make: 'Tesla', model: 'Model Y', price: 64950 },
+    { make: 'Ford', model: 'F-Series', price: 33850 },
+    { make: 'Toyota', model: 'Corolla', price: 29600 },
+  ]);
+
+  const [colDefs] = useState([
+    { field: 'make' },
+    { field: 'model' },
+    { field: 'price' },
+  ]);
+
+  return (
+    <div className="ag-theme-quartz" style={{ height: 500 }}>
+      <AgGridReact rowData={rowData} columnDefs={colDefs} />
+    </div>
+  );
+}
+```
+
+<Tip>
+The `AgGridReact` component automatically handles React lifecycle methods and updates the grid when props change.
+</Tip>
+
+## Angular
+
+For Angular applications (supports Angular 18+):
+
+<CodeGroup>
+
+```bash npm
+npm install ag-grid-angular ag-grid-community
+```
+
+```bash yarn
+yarn add ag-grid-angular ag-grid-community
+```
+
+```bash pnpm
+pnpm add ag-grid-angular ag-grid-community
+```
+
+</CodeGroup>
+
+### With Enterprise Features
+
+<CodeGroup>
+
+```bash npm
+npm install ag-grid-angular ag-grid-community ag-grid-enterprise
+```
+
+```bash yarn
+yarn add ag-grid-angular ag-grid-community ag-grid-enterprise
+```
+
+```bash pnpm
+pnpm add ag-grid-angular ag-grid-community ag-grid-enterprise
+```
+
+</CodeGroup>
+
+### Standalone Component
+
+```typescript
+import { Component } from '@angular/core';
+import { AgGridAngular } from 'ag-grid-angular';
+import { ColDef } from 'ag-grid-community';
+import 'ag-grid-community/styles/ag-grid.css';
+import 'ag-grid-community/styles/ag-theme-quartz.css';
+
+@Component({
+  selector: 'app-grid',
+  standalone: true,
+  imports: [AgGridAngular],
+  template: `
+    <ag-grid-angular
+      class="ag-theme-quartz"
+      style="height: 500px"
+      [rowData]="rowData"
+      [columnDefs]="columnDefs">
+    </ag-grid-angular>
+  `
+})
+export class GridComponent {
+  rowData = [
+    { make: 'Tesla', model: 'Model Y', price: 64950 },
+    { make: 'Ford', model: 'F-Series', price: 33850 },
+    { make: 'Toyota', model: 'Corolla', price: 29600 },
+  ];
+
+  columnDefs: ColDef[] = [
+    { field: 'make' },
+    { field: 'model' },
+    { field: 'price' },
+  ];
+}
+```
+
+### Module-based Component
+
+If you're using NgModule instead of standalone components:
+
+```typescript
+import { NgModule } from '@angular/core';
+import { BrowserModule } from '@angular/platform-browser';
+import { AgGridAngular } from 'ag-grid-angular';
+import { AppComponent } from './app.component';
+
+@NgModule({
+  declarations: [AppComponent],
+  imports: [BrowserModule, AgGridAngular],
+  bootstrap: [AppComponent]
+})
+export class AppModule {}
+```
+
+<Note>
+For Angular applications, import the styles in your `angular.json` or component styles for better tree-shaking.
+</Note>
+
+## Vue 3
+
+For Vue 3 applications (supports Vue 3.5+):
+
+<CodeGroup>
+
+```bash npm
+npm install ag-grid-vue3 ag-grid-community
+```
+
+```bash yarn
+yarn add ag-grid-vue3 ag-grid-community
+```
+
+```bash pnpm
+pnpm add ag-grid-vue3 ag-grid-community
+```
+
+</CodeGroup>
+
+### With Enterprise Features
+
+<CodeGroup>
+
+```bash npm
+npm install ag-grid-vue3 ag-grid-community ag-grid-enterprise
+```
+
+```bash yarn
+yarn add ag-grid-vue3 ag-grid-community ag-grid-enterprise
+```
+
+```bash pnpm
+pnpm add ag-grid-vue3 ag-grid-community ag-grid-enterprise
+```
+
+</CodeGroup>
+
+### Composition API
+
+```vue
+<template>
+  <ag-grid-vue
+    class="ag-theme-quartz"
+    style="height: 500px"
+    :rowData="rowData"
+    :columnDefs="columnDefs">
+  </ag-grid-vue>
+</template>
+
+<script setup>
+import { ref } from 'vue';
+import { AgGridVue } from 'ag-grid-vue3';
+import 'ag-grid-community/styles/ag-grid.css';
+import 'ag-grid-community/styles/ag-theme-quartz.css';
+
+const rowData = ref([
+  { make: 'Tesla', model: 'Model Y', price: 64950 },
+  { make: 'Ford', model: 'F-Series', price: 33850 },
+  { make: 'Toyota', model: 'Corolla', price: 29600 },
+]);
+
+const columnDefs = ref([
+  { field: 'make' },
+  { field: 'model' },
+  { field: 'price' },
+]);
+</script>
+```
+
+### Options API
+
+```vue
+<template>
+  <ag-grid-vue
+    class="ag-theme-quartz"
+    style="height: 500px"
+    :rowData="rowData"
+    :columnDefs="columnDefs">
+  </ag-grid-vue>
+</template>
+
+<script>
+import { AgGridVue } from 'ag-grid-vue3';
+import 'ag-grid-community/styles/ag-grid.css';
+import 'ag-grid-community/styles/ag-theme-quartz.css';
+
+export default {
+  components: {
+    AgGridVue
+  },
+  data() {
+    return {
+      rowData: [
+        { make: 'Tesla', model: 'Model Y', price: 64950 },
+        { make: 'Ford', model: 'F-Series', price: 33850 },
+        { make: 'Toyota', model: 'Corolla', price: 29600 },
+      ],
+      columnDefs: [
+        { field: 'make' },
+        { field: 'model' },
+        { field: 'price' },
+      ]
+    };
+  }
+};
+</script>
+```
+
+<Warning>
+AG Grid Vue 3 requires Vue 3.5+. For Vue 2 applications, you'll need to upgrade to Vue 3 first.
+</Warning>
+
+## CDN Installation
+
+For quick prototyping or simple pages, you can use AG Grid via CDN:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AG Grid Example</title>
+  <!-- AG Grid Styles -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community/styles/ag-grid.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community/styles/ag-theme-quartz.css">
+  <!-- AG Grid Script -->
+  <script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.js"></script>
+</head>
+<body>
+  <div id="myGrid" class="ag-theme-quartz" style="height: 500px"></div>
+
+  <script>
+    const gridOptions = {
+      columnDefs: [
+        { field: 'make' },
+        { field: 'model' },
+        { field: 'price' },
+      ],
+      rowData: [
+        { make: 'Tesla', model: 'Model Y', price: 64950 },
+        { make: 'Ford', model: 'F-Series', price: 33850 },
+        { make: 'Toyota', model: 'Corolla', price: 29600 },
+      ],
+    };
+
+    const gridDiv = document.querySelector('#myGrid');
+    agGrid.createGrid(gridDiv, gridOptions);
+  </script>
+</body>
+</html>
+```
+
+<Tip>
+CDN installation is great for prototyping, but for production applications, use a package manager to enable tree-shaking and reduce bundle size.
+</Tip>
+
+## Enabling Enterprise Features
+
+To use Enterprise features, import the `ag-grid-enterprise` package **before** creating your grid:
+
+### JavaScript/TypeScript
+
+```typescript
+import { createGrid, GridOptions } from 'ag-grid-community';
+import 'ag-grid-enterprise'; // Import enterprise features
+
+const gridOptions: GridOptions = {
+  // Enterprise features are now available
+  rowGroupPanelShow: 'always',
+  sideBar: true,
+};
+```
+
+### React
+
+```tsx
+import { AgGridReact } from 'ag-grid-react';
+import 'ag-grid-enterprise'; // Import at the top
+
+function MyGrid() {
+  return (
+    <AgGridReact
+      rowGroupPanelShow="always"
+      sideBar={true}
+      // ... other props
+    />
+  );
+}
+```
+
+<Warning>
+Enterprise features require a valid license key. Without a license, AG Grid will display a watermark and console warnings. [Contact sales](https://www.ag-grid.com/license-pricing/) for license information.
+</Warning>
+
+## Setting a License Key
+
+Once you have an Enterprise license, set your license key globally:
+
+```typescript
+import { LicenseManager } from 'ag-grid-enterprise';
+
+LicenseManager.setLicenseKey('YOUR_LICENSE_KEY');
+```
+
+Place this code before creating any grids, typically in your application's entry point:
+
+- **React**: `index.tsx` or `App.tsx`
+- **Angular**: `main.ts` or `app.component.ts`
+- **Vue**: `main.ts` or `App.vue`
+
+## Styling Requirements
+
+AG Grid requires two CSS files:
+
+1. **Structural styles** (`ag-grid.css`) - Required for grid layout
+2. **Theme styles** (`ag-theme-*.css`) - Visual appearance
+
+### Available Themes
+
+```typescript
+import 'ag-grid-community/styles/ag-grid.css';           // Required
+import 'ag-grid-community/styles/ag-theme-quartz.css';   // Quartz theme
+// OR
+import 'ag-grid-community/styles/ag-theme-alpine.css';   // Alpine theme
+// OR
+import 'ag-grid-community/styles/ag-theme-balham.css';   // Balham theme
+// OR
+import 'ag-grid-community/styles/ag-theme-material.css'; // Material theme
+```
+
+Each theme is available in light and dark variants. Add the theme class to your grid container:
+
+```html
+<div class="ag-theme-quartz" style="height: 500px">
+  <!-- Grid component goes here -->
+</div>
+```
+
+<Note>
+All themes support both light and dark modes. The mode is automatically detected from the `prefers-color-scheme` media query, or you can manually set `ag-theme-quartz-dark` for dark mode.
+</Note>
+
+## Version Compatibility
+
+| AG Grid Version | React | Angular | Vue |
+|----------------|--------|---------|-----|
+| 35.x | 16.8+, 17, 18, 19 | 18+ | 3.5+ |
+| 34.x | 16.8+, 17, 18 | 16+ | 3.0+ |
+
+<Warning>
+Ensure all AG Grid packages (community, enterprise, and framework wrappers) use the same version to avoid compatibility issues.
+</Warning>
+
+## Troubleshooting
+
+### Styles not loading
+
+Ensure you've imported both required CSS files:
+```typescript
+import 'ag-grid-community/styles/ag-grid.css';
+import 'ag-grid-community/styles/ag-theme-quartz.css';
+```
+
+### TypeScript errors
+
+If you see TypeScript errors, ensure your `tsconfig.json` includes:
+```json
+{
+  "compilerOptions": {
+    "moduleResolution": "node",
+    "esModuleInterop": true
+  }
+}
+```
+
+### Module not found
+
+Clear your package manager's cache:
+
+<CodeGroup>
+
+```bash npm
+npm cache clean --force
+rm -rf node_modules package-lock.json
+npm install
+```
+
+```bash yarn
+yarn cache clean
+rm -rf node_modules yarn.lock
+yarn install
+```
+
+```bash pnpm
+pnpm store prune
+rm -rf node_modules pnpm-lock.yaml
+pnpm install
+```
+
+</CodeGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Quickstart Guide" icon="rocket" href="/quickstart">
+    Build your first grid with a step-by-step tutorial
+  </Card>
+  <Card title="Grid Options" icon="sliders" href="/api-reference/grid-options">
+    Explore all available configuration options
+  </Card>
+  <Card title="Theming" icon="palette" href="/concepts/themes">
+    Customize the appearance of your grid
+  </Card>
+  <Card title="Examples" icon="code" href="https://www.ag-grid.com/example">
+    View live examples and demos
+  </Card>
+</CardGroup>

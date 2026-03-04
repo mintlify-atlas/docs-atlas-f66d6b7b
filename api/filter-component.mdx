@@ -1,0 +1,393 @@
+---
+title: IFilterComp
+description: Interface for custom filter components in AG Grid
+---
+
+The `IFilterComp` interface allows you to create custom filter components in AG Grid. Filters determine which rows are displayed based on user-defined criteria.
+
+## Overview
+
+Create custom filters to provide specialized filtering experiences beyond the built-in text, number, date, and set filters.
+
+```javascript
+const gridOptions = {
+  columnDefs: [
+    {
+      field: 'status',
+      filter: StatusFilter
+    }
+  ]
+};
+```
+
+## Interface Definition
+
+```typescript
+interface IFilterComp<TData = any> extends IComponent<IFilterParams<TData>>, IFilter {
+  /** Returns `true` if the filter is currently active */
+  isFilterActive(): boolean;
+  
+  /** Returns a model representing the current state of the filter */
+  getModel(): any;
+  
+  /** Sets the state of the filter using the supplied model */
+  setModel(model: any): void | AgPromise<void>;
+  
+  /** The grid will ask each active filter if each row passes */
+  doesFilterPass(params: IDoesFilterPassParams): boolean;
+  
+  /** Optional: Called when new rows are inserted into the grid */
+  onNewRowsLoaded?(): void;
+  
+  /** Optional: Called whenever any filter is changed */
+  onAnyFilterChanged?(): void;
+  
+  /** Optional: A hook to perform operations after GUI is rendered */
+  afterGuiAttached?(params?: IAfterGuiAttachedParams): void;
+  
+  /** Optional: A hook to perform operations after GUI is removed */
+  afterGuiDetached?(): void;
+  
+  /** Optional: Used for rendering in floating filter */
+  getModelAsString?(model: any): string;
+}
+```
+
+## IFilterParams
+
+<ParamField path="column" type="Column">
+  The column this filter is for.
+  
+  ```javascript
+  init(params) {
+    this.column = params.column;
+    console.log('Filter for column:', params.column.getId());
+  }
+  ```
+</ParamField>
+
+<ParamField path="colDef" type="ColDef<TData>">
+  The column definition for the column.
+  
+  ```javascript
+  init(params) {
+    const field = params.colDef.field;
+  }
+  ```
+</ParamField>
+
+<ParamField path="getValue" type="<TValue = any>(node: IRowNode<TData>, column?: ColKey<TData, TValue>) => TValue | null | undefined">
+  Get the cell value for the given row node and column.
+  
+  ```javascript
+  doesFilterPass(params) {
+    const value = this.params.getValue(params.node);
+    return this.matchesFilter(value);
+  }
+  ```
+</ParamField>
+
+<ParamField path="doesRowPassOtherFilter" type="(rowNode: IRowNode<TData>) => boolean">
+  A function callback, call with a node to be told whether the node passes all filters except the current filter. This is useful if you want to only present to the user values that this filter can filter given the status of the other filters.
+  
+  ```javascript
+  onNewRowsLoaded() {
+    // Update available filter values based on other filters
+    const availableValues = new Set();
+    this.params.api.forEachNode(node => {
+      if (this.params.doesRowPassOtherFilter(node)) {
+        const value = this.params.getValue(node);
+        availableValues.add(value);
+      }
+    });
+    this.updateFilterOptions(Array.from(availableValues));
+  }
+  ```
+</ParamField>
+
+<ParamField path="filterChangedCallback" type="(additionalEventAttributes?: any) => void">
+  A function callback to be called when the filter changes. The grid will then respond by filtering the grid data. The callback takes one optional parameter which, if included, will get merged to the FilterChangedEvent object.
+  
+  ```javascript
+  onFilterChange() {
+    this.params.filterChangedCallback();
+  }
+  ```
+</ParamField>
+
+<ParamField path="filterModifiedCallback" type="(additionalEventAttributes?: any) => void">
+  A function callback, to be optionally called, when the filter UI changes. The grid will respond with emitting a FilterModifiedEvent.
+  
+  ```javascript
+  onFilterUIChange() {
+    this.params.filterModifiedCallback();
+  }
+  ```
+</ParamField>
+
+## Required Methods
+
+<ParamField path="isFilterActive" type="() => boolean">
+  Returns `true` if the filter is currently active, otherwise `false`. If active then 1) the grid will show the filter icon in the column header and 2) the filter will be included in the filtering of the data.
+  
+  ```javascript
+  isFilterActive() {
+    return this.selectedValues.length > 0;
+  }
+  ```
+</ParamField>
+
+<ParamField path="doesFilterPass" type="(params: IDoesFilterPassParams) => boolean">
+  The grid will ask each active filter, in turn, whether each row in the grid passes. If any filter fails, then the row will be excluded from the final set.
+  
+  **Parameters:**
+  - `params.node`: The row node in question
+  - `params.data`: The data part of the row node in question
+  
+  ```javascript
+  doesFilterPass(params) {
+    const value = this.params.getValue(params.node);
+    return this.selectedValues.includes(value);
+  }
+  ```
+</ParamField>
+
+<ParamField path="getModel" type="() => any">
+  Returns a model representing the current state of the filter, or `null` if the filter is not active. The grid calls `getModel()` on all active filters when `gridApi.getFilterModel()` is called.
+  
+  ```javascript
+  getModel() {
+    if (!this.isFilterActive()) {
+      return null;
+    }
+    return {
+      filterType: 'custom',
+      values: this.selectedValues
+    };
+  }
+  ```
+</ParamField>
+
+<ParamField path="setModel" type="(model: any) => void | AgPromise<void>">
+  Sets the state of the filter using the supplied model. Providing `null` as the model will de-activate the filter.
+  
+  ```javascript
+  setModel(model) {
+    if (model == null) {
+      this.selectedValues = [];
+    } else {
+      this.selectedValues = model.values || [];
+    }
+    this.updateUI();
+  }
+  ```
+</ParamField>
+
+## Optional Methods
+
+<ParamField path="onNewRowsLoaded" type="() => void">
+  Optional: Gets called when new rows are inserted into the grid. If the filter needs to change its state after rows are loaded, it can do it here.
+  
+  ```javascript
+  onNewRowsLoaded() {
+    // Refresh available filter values
+    this.updateAvailableValues();
+  }
+  ```
+</ParamField>
+
+<ParamField path="onAnyFilterChanged" type="() => void">
+  Optional: Called whenever any filter is changed.
+  
+  ```javascript
+  onAnyFilterChanged() {
+    // Update this filter based on other filters
+    this.updateAvailableValues();
+  }
+  ```
+</ParamField>
+
+<ParamField path="afterGuiAttached" type="(params?: IAfterGuiAttachedParams) => void">
+  Optional: A hook to perform any necessary operation just after the GUI for this component has been rendered on the screen.
+  
+  ```javascript
+  afterGuiAttached(params) {
+    // Focus the search input
+    this.searchInput.focus();
+  }
+  ```
+</ParamField>
+
+<ParamField path="afterGuiDetached" type="() => void">
+  Optional: A hook to perform any necessary operation just after the GUI for this component has been removed from the screen.
+  
+  ```javascript
+  afterGuiDetached() {
+    // Reset UI state
+    this.clearSearch();
+  }
+  ```
+</ParamField>
+
+<ParamField path="getModelAsString" type="(model: any) => string">
+  Optional: Used by AG Grid when rendering floating filters and there isn't a floating filter associated for this filter.
+  
+  ```javascript
+  getModelAsString(model) {
+    if (!model || !model.values || model.values.length === 0) {
+      return '';
+    }
+    return model.values.join(', ');
+  }
+  ```
+</ParamField>
+
+## Complete Example
+
+```javascript
+class YearFilter {
+  init(params) {
+    this.params = params;
+    this.selectedYears = [];
+    
+    // Create GUI
+    this.eGui = document.createElement('div');
+    this.eGui.className = 'year-filter';
+    this.eGui.innerHTML = `
+      <div class="year-filter-header">Select Years</div>
+      <div class="year-filter-list"></div>
+      <button class="year-filter-clear">Clear</button>
+    `;
+    
+    // Get available years from data
+    const years = new Set();
+    params.api.forEachNode(node => {
+      const value = params.getValue(node);
+      if (value) {
+        const year = new Date(value).getFullYear();
+        years.add(year);
+      }
+    });
+    
+    // Create checkboxes for each year
+    const list = this.eGui.querySelector('.year-filter-list');
+    Array.from(years).sort().forEach(year => {
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.value = year;
+      checkbox.addEventListener('change', () => this.onFilterChange());
+      
+      const label = document.createElement('label');
+      label.appendChild(checkbox);
+      label.appendChild(document.createTextNode(` ${year}`));
+      
+      list.appendChild(label);
+    });
+    
+    // Clear button
+    this.eGui.querySelector('.year-filter-clear').addEventListener('click', () => {
+      this.selectedYears = [];
+      this.updateCheckboxes();
+      params.filterChangedCallback();
+    });
+  }
+  
+  onFilterChange() {
+    this.selectedYears = Array.from(
+      this.eGui.querySelectorAll('input[type="checkbox"]:checked')
+    ).map(cb => Number(cb.value));
+    
+    this.params.filterChangedCallback();
+  }
+  
+  updateCheckboxes() {
+    this.eGui.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+      cb.checked = this.selectedYears.includes(Number(cb.value));
+    });
+  }
+  
+  getGui() {
+    return this.eGui;
+  }
+  
+  isFilterActive() {
+    return this.selectedYears.length > 0;
+  }
+  
+  doesFilterPass(params) {
+    if (!this.isFilterActive()) {
+      return true;
+    }
+    
+    const value = this.params.getValue(params.node);
+    if (!value) {
+      return false;
+    }
+    
+    const year = new Date(value).getFullYear();
+    return this.selectedYears.includes(year);
+  }
+  
+  getModel() {
+    if (!this.isFilterActive()) {
+      return null;
+    }
+    return { years: this.selectedYears };
+  }
+  
+  setModel(model) {
+    this.selectedYears = model ? (model.years || []) : [];
+    this.updateCheckboxes();
+  }
+  
+  getModelAsString(model) {
+    return model && model.years ? model.years.join(', ') : '';
+  }
+}
+
+// Usage
+const gridOptions = {
+  columnDefs: [
+    {
+      field: 'date',
+      filter: YearFilter,
+      floatingFilter: true
+    }
+  ]
+};
+```
+
+## Built-in Filters
+
+AG Grid provides several built-in filters:
+
+- `'agTextColumnFilter'`: Text matching filter
+- `'agNumberColumnFilter'`: Number range filter
+- `'agDateColumnFilter'`: Date range filter
+- `'agSetColumnFilter'`: Set/list filter (Enterprise)
+- `'agMultiColumnFilter'`: Combines multiple filters (Enterprise)
+
+```javascript
+{
+  field: 'age',
+  filter: 'agNumberColumnFilter',
+  filterParams: {
+    buttons: ['apply', 'reset'],
+    closeOnApply: true
+  }
+}
+```
+
+## Related APIs
+
+<Card title="Column Definitions" icon="table-columns" href="/api/column-definitions">
+  Configure filters in columns
+</Card>
+
+<Card title="GridApi" icon="code" href="/api/grid-api">
+  Programmatic filter control
+</Card>
+
+<Card title="Grid Events" icon="bolt" href="/api/grid-events">
+  Filter-related events
+</Card>

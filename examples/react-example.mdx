@@ -1,0 +1,329 @@
+---
+title: 'React Data Grid Example'
+description: 'Complete implementation of AG Grid in a React application with hooks and TypeScript'
+---
+
+<Note>
+This example demonstrates the complete React integration with AG Grid using functional components, hooks, and TypeScript.
+</Note>
+
+## Overview
+
+AG Grid integrates seamlessly with React through the `ag-grid-react` package. This example covers:
+
+- React functional components with hooks
+- TypeScript type safety
+- State management with `useState`
+- Module registration with `AgGridProvider`
+- Responsive grid configuration
+
+## Installation
+
+<Steps>
+  <Step title="Install packages">
+    ```bash
+    npm install ag-grid-react
+    ```
+    
+    This automatically installs `ag-grid-community` as a dependency.
+  </Step>
+  
+  <Step title="Import required modules">
+    Import AG Grid components and types in your React component.
+  </Step>
+  
+  <Step title="Set up AgGridProvider">
+    Wrap your grid components in `AgGridProvider` to register modules.
+  </Step>
+</Steps>
+
+## Complete React Example
+
+<CodeGroup>
+
+```tsx App.tsx
+import React, { StrictMode, useState } from 'react';
+import { createRoot } from 'react-dom/client';
+import type { ColDef } from 'ag-grid-community';
+import { AllCommunityModule } from 'ag-grid-community';
+import { AgGridProvider, AgGridReact } from 'ag-grid-react';
+import 'ag-grid-community/styles/ag-grid.css';
+import 'ag-grid-community/styles/ag-theme-quartz.css';
+
+// Row Data Interface
+interface IRow {
+    make: string;
+    model: string;
+    price: number;
+    electric: boolean;
+}
+
+// Create new GridExample component
+const GridExample = () => {
+    // Row Data: The data to be displayed.
+    const [rowData, setRowData] = useState<IRow[]>([
+        { make: 'Tesla', model: 'Model Y', price: 64950, electric: true },
+        { make: 'Ford', model: 'F-Series', price: 33850, electric: false },
+        { make: 'Toyota', model: 'Corolla', price: 29600, electric: false },
+        { make: 'Mercedes', model: 'EQA', price: 48890, electric: true },
+        { make: 'Fiat', model: '500', price: 15774, electric: false },
+        { make: 'Nissan', model: 'Juke', price: 20675, electric: false },
+    ]);
+
+    // Column Definitions: Defines & controls grid columns.
+    const [colDefs, setColDefs] = useState<ColDef<IRow>[]>([
+        { field: 'make' },
+        { field: 'model' },
+        { field: 'price' },
+        { field: 'electric' },
+    ]);
+
+    const defaultColDef: ColDef = {
+        flex: 1,
+    };
+
+    // Container: Defines the grid's theme & dimensions.
+    return (
+        <AgGridProvider modules={[AllCommunityModule]}>
+            <div className="ag-theme-quartz" style={{ width: '100%', height: '500px' }}>
+                <AgGridReact 
+                    rowData={rowData} 
+                    columnDefs={colDefs} 
+                    defaultColDef={defaultColDef} 
+                />
+            </div>
+        </AgGridProvider>
+    );
+};
+
+// Render GridExample
+const root = createRoot(document.getElementById('root')!);
+root.render(
+    <StrictMode>
+        <GridExample />
+    </StrictMode>
+);
+```
+
+```tsx Component Only
+const GridExample = () => {
+    const [rowData, setRowData] = useState<IRow[]>([
+        { make: 'Tesla', model: 'Model Y', price: 64950, electric: true },
+        { make: 'Ford', model: 'F-Series', price: 33850, electric: false },
+        { make: 'Toyota', model: 'Corolla', price: 29600, electric: false },
+        { make: 'Mercedes', model: 'EQA', price: 48890, electric: true },
+        { make: 'Fiat', model: '500', price: 15774, electric: false },
+        { make: 'Nissan', model: 'Juke', price: 20675, electric: false },
+    ]);
+
+    const [colDefs, setColDefs] = useState<ColDef<IRow>[]>([
+        { field: 'make' },
+        { field: 'model' },
+        { field: 'price' },
+        { field: 'electric' },
+    ]);
+
+    const defaultColDef: ColDef = {
+        flex: 1,
+    };
+
+    return (
+        <AgGridProvider modules={[AllCommunityModule]}>
+            <div className="ag-theme-quartz" style={{ width: '100%', height: '500px' }}>
+                <AgGridReact 
+                    rowData={rowData} 
+                    columnDefs={colDefs} 
+                    defaultColDef={defaultColDef} 
+                />
+            </div>
+        </AgGridProvider>
+    );
+};
+```
+
+</CodeGroup>
+
+## Key React Concepts
+
+### AgGridProvider
+
+The `AgGridProvider` component registers AG Grid modules for all child grids:
+
+```tsx
+<AgGridProvider modules={[AllCommunityModule]}>
+    {/* Your AgGridReact components go here */}
+</AgGridProvider>
+```
+
+<Note>
+Place `AgGridProvider` at a high level in your component tree. All `AgGridReact` components must be descendants of `AgGridProvider`.
+</Note>
+
+### State Management
+
+Use React hooks to manage grid state:
+
+```tsx
+const [rowData, setRowData] = useState<IRow[]>([...]);
+const [colDefs, setColDefs] = useState<ColDef<IRow>[]>([...]);
+```
+
+This allows you to dynamically update the grid by calling `setRowData()` or `setColDefs()`.
+
+### TypeScript Types
+
+AG Grid provides comprehensive TypeScript definitions:
+
+```tsx
+import type { ColDef } from 'ag-grid-community';
+
+interface IRow {
+    make: string;
+    model: string;
+    price: number;
+    electric: boolean;
+}
+
+const colDefs: ColDef<IRow>[] = [...]; // Fully typed
+```
+
+### Grid Themes
+
+Apply themes via CSS classes:
+
+```tsx
+import 'ag-grid-community/styles/ag-grid.css';  // Core CSS
+import 'ag-grid-community/styles/ag-theme-quartz.css';  // Theme
+
+<div className="ag-theme-quartz" style={{ height: '500px' }}>
+    <AgGridReact ... />
+</div>
+```
+
+## Advanced React Integration
+
+<Tabs>
+  <Tab title="Grid API Access">
+    Access the Grid API for programmatic control:
+
+    ```tsx
+    import { useCallback, useRef } from 'react';
+    import type { GridApi } from 'ag-grid-community';
+
+    const GridExample = () => {
+        const gridRef = useRef<GridApi>(null);
+
+        const onGridReady = useCallback((params) => {
+            gridRef.current = params.api;
+        }, []);
+
+        const exportData = () => {
+            gridRef.current?.exportDataAsCsv();
+        };
+
+        return (
+            <>
+                <button onClick={exportData}>Export CSV</button>
+                <AgGridReact onGridReady={onGridReady} ... />
+            </>
+        );
+    };
+    ```
+  </Tab>
+
+  <Tab title="Fetching Data">
+    Load data from an API:
+
+    ```tsx
+    import { useEffect, useState } from 'react';
+
+    const GridExample = () => {
+        const [rowData, setRowData] = useState([]);
+
+        useEffect(() => {
+            fetch('https://api.example.com/data')
+                .then(response => response.json())
+                .then(data => setRowData(data));
+        }, []);
+
+        return <AgGridReact rowData={rowData} ... />;
+    };
+    ```
+  </Tab>
+
+  <Tab title="Custom Cell Renderer">
+    Create custom React components for cells:
+
+    ```tsx
+    const PriceCellRenderer = (props: any) => {
+        return (
+            <span style={{ color: props.value > 50000 ? 'red' : 'green' }}>
+                ${props.value.toLocaleString()}
+            </span>
+        );
+    };
+
+    const colDefs: ColDef[] = [
+        { field: 'make' },
+        { 
+            field: 'price', 
+            cellRenderer: PriceCellRenderer 
+        },
+    ];
+    ```
+  </Tab>
+
+  <Tab title="Event Handlers">
+    Handle grid events:
+
+    ```tsx
+    const onCellClicked = (event: CellClickedEvent) => {
+        console.log('Cell clicked:', event.value);
+    };
+
+    const onRowSelected = (event: RowSelectedEvent) => {
+        console.log('Row selected:', event.data);
+    };
+
+    return (
+        <AgGridReact
+            onCellClicked={onCellClicked}
+            onRowSelected={onRowSelected}
+            ...
+        />
+    );
+    ```
+  </Tab>
+</Tabs>
+
+## Module Registration
+
+For smaller bundle sizes, register only the modules you need:
+
+```tsx
+import { ClientSideRowModelModule } from 'ag-grid-community';
+import { ColumnsToolPanelModule } from 'ag-grid-enterprise';
+
+const modules = [
+    ClientSideRowModelModule,
+    ColumnsToolPanelModule,
+];
+
+<AgGridProvider modules={modules}>
+    <AgGridReact ... />
+</AgGridProvider>
+```
+
+## Best Practices
+
+1. **Use AgGridProvider** - Always wrap grids in `AgGridProvider`
+2. **Memoize callbacks** - Use `useCallback` for event handlers to prevent unnecessary re-renders
+3. **Type your data** - Define interfaces for row data and use generic types
+4. **Manage state properly** - Use `useState` for data that changes, constants for static config
+5. **Set container height** - Always define a height on the grid container
+
+## Next Steps
+
+- Explore [Angular implementation](/examples/angular-example)
+- Learn about [Vue integration](/examples/vue-example)
+- Add [advanced features like row grouping](/examples/row-grouping)

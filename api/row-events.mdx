@@ -1,0 +1,357 @@
+---
+title: Row Events
+description: Reference for row-related events in AG Grid
+---
+
+Row events are fired in response to row operations such as clicking, editing, dragging, and selection changes.
+
+## Overview
+
+Listen to row events using GridOptions callbacks:
+
+```javascript
+const gridOptions = {
+  onRowClicked: (event) => {
+    console.log('Row clicked:', event.data);
+  },
+  onRowDoubleClicked: (event) => {
+    console.log('Row double-clicked:', event.data);
+  }
+};
+```
+
+## Mouse Events
+
+<ParamField path="rowClicked" type="RowClickedEvent<TData, TContext>">
+  Fired when a row is clicked.
+  
+  **Event Properties:**
+  - `node`: The row node
+  - `data`: The user provided data for the row
+  - `rowIndex`: The visible row index for the row
+  - `rowPinned`: Either 'top', 'bottom' or null / undefined (if not set)
+  - `event`: The browser event
+  - `isEventHandlingSuppressed`: `true` if `suppressMouseEventHandling` has returned `true`
+  
+  ```javascript
+  onRowClicked: (event) => {
+    console.log('Clicked row:', event.data);
+    console.log('Row index:', event.rowIndex);
+  }
+  ```
+</ParamField>
+
+<ParamField path="rowDoubleClicked" type="RowDoubleClickedEvent<TData, TContext>">
+  Fired when a row is double-clicked.
+  
+  **Event Properties:**
+  - `node`: The row node
+  - `data`: The user provided data for the row
+  - `rowIndex`: The visible row index for the row
+  - `rowPinned`: Either 'top', 'bottom' or null / undefined
+  - `event`: The browser event
+  - `isEventHandlingSuppressed`: `true` if `suppressMouseEventHandling` has returned `true`
+  
+  ```javascript
+  onRowDoubleClicked: (event) => {
+    console.log('Double-clicked row:', event.data);
+    // Open detail view, start editing, etc.
+  }
+  ```
+</ParamField>
+
+## Selection Events
+
+<ParamField path="rowSelected" type="RowSelectedEvent<TData, TContext>">
+  Fired when a row is selected or deselected.
+  
+  **Event Properties:**
+  - `node`: The row node
+  - `data`: The user provided data for the row
+  - `rowIndex`: The visible row index for the row
+  - `rowPinned`: Either 'top', 'bottom' or null / undefined
+  - `event`: The browser event
+  - `source`: The source that triggered the event
+  
+  ```javascript
+  onRowSelected: (event) => {
+    if (event.node.isSelected()) {
+      console.log('Row selected:', event.data);
+    } else {
+      console.log('Row deselected:', event.data);
+    }
+  }
+  ```
+</ParamField>
+
+## Editing Events
+
+<ParamField path="rowEditingStarted" type="RowEditingStartedEvent<TData, TContext>">
+  Fired when row editing starts (only when `editType='fullRow'`).
+  
+  **Event Properties:**
+  - `node`: The row node
+  - `data`: The user provided data for the row
+  - `rowIndex`: The visible row index for the row
+  - `rowPinned`: Either 'top', 'bottom' or null / undefined
+  
+  **Module:** `TextEditorModule` / `LargeTextEditorModule` / `NumberEditorModule` / `DateEditorModule` / `CheckboxEditorModule` / `CustomEditorModule` / `SelectEditorModule` / `RichSelectModule`
+  
+  ```javascript
+  onRowEditingStarted: (event) => {
+    console.log('Started editing row:', event.rowIndex);
+  }
+  ```
+</ParamField>
+
+<ParamField path="rowEditingStopped" type="RowEditingStoppedEvent<TData, TContext>">
+  Fired when row editing stops (only when `editType='fullRow'`).
+  
+  **Event Properties:**
+  - `node`: The row node
+  - `data`: The user provided data for the row
+  - `rowIndex`: The visible row index for the row
+  - `rowPinned`: Either 'top', 'bottom' or null / undefined
+  
+  **Module:** `TextEditorModule` / `LargeTextEditorModule` / `NumberEditorModule` / `DateEditorModule` / `CheckboxEditorModule` / `CustomEditorModule` / `SelectEditorModule` / `RichSelectModule`
+  
+  ```javascript
+  onRowEditingStopped: (event) => {
+    console.log('Stopped editing row:', event.rowIndex);
+  }
+  ```
+</ParamField>
+
+<ParamField path="rowValueChanged" type="RowValueChangedEvent<TData, TContext>">
+  Fired when cell value(s) in a row have changed.
+  
+  **Event Properties:**
+  - `node`: The row node
+  - `data`: The user provided data for the row
+  - `rowIndex`: The visible row index for the row
+  - `rowPinned`: Either 'top', 'bottom' or null / undefined
+  
+  ```javascript
+  onRowValueChanged: (event) => {
+    console.log('Row data changed:', event.data);
+    // Save changes to server
+  }
+  ```
+</ParamField>
+
+## Grouping Events
+
+<ParamField path="rowGroupOpened" type="RowGroupOpenedEvent<TData, TContext>">
+  Fired when a row group is opened or closed.
+  
+  **Event Properties:**
+  - `node`: The row node
+  - `data`: The user provided data for the row
+  - `rowIndex`: The visible row index for the row
+  - `expanded`: `true` if the group is expanded
+  
+  **Module:** `RowGroupingModule`
+  
+  ```javascript
+  onRowGroupOpened: (event) => {
+    const action = event.expanded ? 'opened' : 'closed';
+    console.log(`Row group ${action}:`, event.node.key);
+  }
+  ```
+</ParamField>
+
+## Drag & Drop Events
+
+<ParamField path="rowDragEnter" type="RowDragEnterEvent<TData, TContext>">
+  Fired when the mouse enters a row during a drag operation.
+  
+  **Event Properties:**
+  - `node`: The row node getting dragged
+  - `nodes`: The list of nodes being dragged
+  - `event`: The underlying mouse move event
+  - `vDirection`: Direction of the drag ('up', 'down' or null)
+  - `overIndex`: The row index the mouse is dragging over
+  - `overNode`: The row node the mouse is dragging over
+  - `y`: The vertical pixel location
+  
+  **Module:** `RowDragModule`
+  
+  ```javascript
+  onRowDragEnter: (event) => {
+    console.log('Drag entered row:', event.overIndex);
+  }
+  ```
+</ParamField>
+
+<ParamField path="rowDragMove" type="RowDragMoveEvent<TData, TContext>">
+  Fired continuously while the mouse moves during a row drag.
+  
+  **Event Properties:**
+  - `node`: The row node getting dragged
+  - `nodes`: The list of nodes being dragged
+  - `event`: The underlying mouse move event
+  - `vDirection`: Direction of the drag
+  - `overIndex`: The row index the mouse is dragging over
+  - `overNode`: The row node the mouse is dragging over
+  - `y`: The vertical pixel location
+  
+  **Module:** `RowDragModule`
+  
+  ```javascript
+  onRowDragMove: (event) => {
+    // Update drag indicator, etc.
+  }
+  ```
+</ParamField>
+
+<ParamField path="rowDragLeave" type="RowDragLeaveEvent<TData, TContext>">
+  Fired when the mouse leaves a row during a drag operation.
+  
+  **Event Properties:**
+  - `node`: The row node getting dragged
+  - `nodes`: The list of nodes being dragged
+  - `event`: The underlying mouse move event
+  - `vDirection`: Direction of the drag
+  - `overIndex`: The row index the mouse is dragging over
+  
+  **Module:** `RowDragModule`
+  
+  ```javascript
+  onRowDragLeave: (event) => {
+    console.log('Drag left row:', event.overIndex);
+  }
+  ```
+</ParamField>
+
+<ParamField path="rowDragEnd" type="RowDragEndEvent<TData, TContext>">
+  Fired when a row drag operation ends (mouse released).
+  
+  **Event Properties:**
+  - `node`: The row node getting dragged
+  - `nodes`: The list of nodes being dragged
+  - `event`: The underlying mouse move event
+  - `vDirection`: Direction of the drag
+  - `overIndex`: The row index the mouse is dragging over
+  - `overNode`: The row node the mouse is dragging over
+  
+  **Module:** `RowDragModule`
+  
+  ```javascript
+  onRowDragEnd: (event) => {
+    console.log('Drag ended. Dropped at:', event.overIndex);
+    // Update row order in your data
+  }
+  ```
+</ParamField>
+
+<ParamField path="rowDragCancel" type="RowDragCancelEvent<TData, TContext>">
+  Fired when a row drag operation is cancelled (e.g., by pressing Escape).
+  
+  **Event Properties:**
+  - `node`: The row node getting dragged
+  - `nodes`: The list of nodes being dragged
+  - `event`: The underlying mouse move event
+  
+  **Module:** `RowDragModule`
+  
+  ```javascript
+  onRowDragCancel: (event) => {
+    console.log('Drag cancelled');
+  }
+  ```
+</ParamField>
+
+## Resize Events
+
+<ParamField path="rowResizeStarted" type="RowResizeStartedEvent<TData, TContext>">
+  Fired when row height resizing starts.
+  
+  **Event Properties:**
+  - `node`: The row node
+  - `event`: The mouse event
+  - `rowHeight`: The current row height
+  
+  ```javascript
+  onRowResizeStarted: (event) => {
+    console.log('Resizing row:', event.node.id);
+  }
+  ```
+</ParamField>
+
+<ParamField path="rowResizeEnded" type="RowResizeEndedEvent<TData, TContext>">
+  Fired when row height resizing ends.
+  
+  **Event Properties:**
+  - `node`: The row node
+  - `event`: The mouse event
+  - `rowHeight`: The new row height
+  
+  ```javascript
+  onRowResizeEnded: (event) => {
+    console.log('Row resized to:', event.rowHeight);
+  }
+  ```
+</ParamField>
+
+## Virtual Row Events
+
+<ParamField path="virtualRowRemoved" type="VirtualRowRemovedEvent<TData, TContext>">
+  Fired when a virtual row is removed from the DOM (due to row virtualisation).
+  
+  **Event Properties:**
+  - `node`: The row node
+  - `data`: The user provided data for the row
+  - `rowIndex`: The visible row index for the row
+  
+  ```javascript
+  onVirtualRowRemoved: (event) => {
+    // Cleanup any resources associated with this row
+  }
+  ```
+</ParamField>
+
+## Batch Events
+
+<ParamField path="batchEditingStarted" type="BatchEditingStartedEvent<TData, TContext>">
+  Fired when batch editing starts.
+  
+  **Event Properties:**
+  - `changes`: Array of pending cell value changes (initially empty)
+  
+  **Module:** `BatchEditModule`
+  
+  ```javascript
+  onBatchEditingStarted: (event) => {
+    console.log('Batch editing started');
+  }
+  ```
+</ParamField>
+
+<ParamField path="batchEditingStopped" type="BatchEditingStoppedEvent<TData, TContext>">
+  Fired when batch editing stops (committed or cancelled).
+  
+  **Event Properties:**
+  - `changes`: Array of cell value changes made during the batch
+  
+  **Module:** `BatchEditModule`
+  
+  ```javascript
+  onBatchEditingStopped: (event) => {
+    console.log('Batch editing stopped with', event.changes?.length, 'changes');
+  }
+  ```
+</ParamField>
+
+## Related APIs
+
+<Card title="Grid Events" icon="bolt" href="/api/grid-events">
+  Grid-level events
+</Card>
+
+<Card title="Column Events" icon="table-columns" href="/api/column-events">
+  Column interaction events
+</Card>
+
+<Card title="GridApi" icon="code" href="/api/grid-api">
+  Programmatic row control
+</Card>

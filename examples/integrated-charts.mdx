@@ -1,0 +1,547 @@
+---
+title: 'Integrated Charts Example'
+description: 'Create interactive charts directly from grid data with AG Grid Enterprise'
+---
+
+<Note>
+Integrated Charts allow you to create interactive visualizations directly from your grid data. This is an Enterprise feature that requires AG Charts Enterprise.
+</Note>
+
+## Overview
+
+AG Grid's Integrated Charts feature provides:
+
+- **Range-based charts** - Create charts from selected cell ranges
+- **Multiple chart types** - Bar, column, line, pie, area, scatter, and more
+- **Interactive editing** - Modify chart configuration through built-in panels
+- **Dynamic updates** - Charts update automatically when grid data changes
+- **Export capabilities** - Download charts as images
+
+## Basic Charts Implementation
+
+<CodeGroup>
+
+```typescript main.ts
+import { AgChartsEnterpriseModule } from 'ag-charts-enterprise';
+import type { 
+    FirstDataRenderedEvent, 
+    GridApi, 
+    GridOptions 
+} from 'ag-grid-community';
+import { 
+    ClientSideRowModelModule, 
+    ModuleRegistry, 
+    ValidationModule, 
+    createGrid 
+} from 'ag-grid-community';
+import { 
+    ColumnMenuModule, 
+    ContextMenuModule, 
+    IntegratedChartsModule, 
+    RowGroupingModule 
+} from 'ag-grid-enterprise';
+
+ModuleRegistry.registerModules([
+    ClientSideRowModelModule,
+    IntegratedChartsModule.with(AgChartsEnterpriseModule),
+    ColumnMenuModule,
+    ContextMenuModule,
+    RowGroupingModule,
+    ValidationModule,
+]);
+
+let gridApi: GridApi;
+
+const gridOptions: GridOptions = {
+    columnDefs: [
+        // Different ways to define 'categories'
+        { field: 'athlete', width: 150, chartDataType: 'category' },
+        { field: 'age', chartDataType: 'category', sort: 'asc' },
+        { field: 'sport' }, // Inferred as category by grid
+
+        // Excludes year from charts
+        { field: 'year', chartDataType: 'excluded' },
+
+        // Different ways to define 'series'
+        { field: 'gold', chartDataType: 'series' },
+        { field: 'silver', chartDataType: 'series' },
+        { field: 'bronze' }, // Inferred as series by grid
+    ],
+    defaultColDef: {
+        flex: 1,
+    },
+    cellSelection: true,
+    popupParent: document.body,
+    enableCharts: true,
+    chartThemeOverrides: {
+        common: {
+            title: {
+                enabled: true,
+                text: 'Medals by Age',
+            },
+        },
+        bar: {
+            axes: {
+                category: {
+                    label: {
+                        rotation: 0,
+                    },
+                },
+            },
+        },
+    },
+    onFirstDataRendered: onFirstDataRendered,
+};
+
+function onFirstDataRendered(params: FirstDataRenderedEvent) {
+    params.api.createRangeChart({
+        chartContainer: document.querySelector('#myChart') as HTMLElement,
+        cellRange: {
+            rowStartIndex: 0,
+            rowEndIndex: 79,
+            columns: ['age', 'gold', 'silver', 'bronze'],
+        },
+        chartType: 'groupedColumn',
+        aggFunc: 'sum',
+    });
+}
+
+// Setup the grid after the page has finished loading
+document.addEventListener('DOMContentLoaded', function () {
+    const gridDiv = document.querySelector<HTMLElement>('#myGrid')!;
+    gridApi = createGrid(gridDiv, gridOptions);
+
+    fetch('https://www.ag-grid.com/example-assets/wide-spread-of-sports.json')
+        .then((response) => response.json())
+        .then(function (data) {
+            gridApi!.setGridOption('rowData', data);
+        });
+});
+```
+
+```html index.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AG Grid Integrated Charts</title>
+    <script src="main.ts" type="module"></script>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        #myGrid {
+            flex: 1;
+        }
+        #myChart {
+            flex: 1;
+            min-height: 400px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="myGrid" class="ag-theme-quartz"></div>
+        <div id="myChart"></div>
+    </div>
+</body>
+</html>
+```
+
+</CodeGroup>
+
+## Key Configuration
+
+### Enable Charts
+
+Set `enableCharts` to `true` in grid options:
+
+```typescript
+const gridOptions: GridOptions = {
+    enableCharts: true,
+    cellSelection: true,  // Required for user-created charts
+    // ... other options
+};
+```
+
+### Chart Data Types
+
+Control how columns are used in charts:
+
+```typescript
+columnDefs: [
+    // Category - used for X-axis
+    { field: 'athlete', chartDataType: 'category' },
+    { field: 'age', chartDataType: 'category' },
+    
+    // Series - used for Y-axis (values)
+    { field: 'gold', chartDataType: 'series' },
+    { field: 'silver', chartDataType: 'series' },
+    
+    // Excluded - not available for charting
+    { field: 'year', chartDataType: 'excluded' },
+    
+    // Auto-detected based on data type
+    { field: 'sport' },  // String -> category
+    { field: 'bronze' }, // Number -> series
+]
+```
+
+<Note>
+If `chartDataType` is not specified, AG Grid automatically determines the type based on the data.
+</Note>
+
+## Creating Charts
+
+### Programmatically Create Charts
+
+Use the Grid API to create charts:
+
+```typescript
+function onFirstDataRendered(params: FirstDataRenderedEvent) {
+    params.api.createRangeChart({
+        chartContainer: document.querySelector('#myChart') as HTMLElement,
+        cellRange: {
+            rowStartIndex: 0,
+            rowEndIndex: 79,
+            columns: ['age', 'gold', 'silver', 'bronze'],
+        },
+        chartType: 'groupedColumn',
+        aggFunc: 'sum',
+    });
+}
+```
+
+### User-Created Charts
+
+Users can create charts by:
+
+1. Selecting a range of cells
+2. Right-clicking and choosing "Chart Range"
+3. Selecting the desired chart type from the menu
+
+<Steps>
+  <Step title="Enable cell selection">
+    ```typescript
+    cellSelection: true
+    ```
+  </Step>
+  
+  <Step title="Select cells in the grid">
+    Click and drag to select a range of cells
+  </Step>
+  
+  <Step title="Open context menu">
+    Right-click on the selection
+  </Step>
+  
+  <Step title="Create chart">
+    Choose "Chart Range" and select a chart type
+  </Step>
+</Steps>
+
+## Chart Types
+
+AG Grid supports numerous chart types:
+
+<Tabs>
+  <Tab title="Column Charts">
+    - `groupedColumn` - Grouped vertical bars
+    - `stackedColumn` - Stacked vertical bars
+    - `normalizedColumn` - 100% stacked vertical bars
+
+    ```typescript
+    params.api.createRangeChart({
+        chartType: 'groupedColumn',
+        // ... other config
+    });
+    ```
+  </Tab>
+
+  <Tab title="Bar Charts">
+    - `groupedBar` - Grouped horizontal bars
+    - `stackedBar` - Stacked horizontal bars
+    - `normalizedBar` - 100% stacked horizontal bars
+
+    ```typescript
+    params.api.createRangeChart({
+        chartType: 'groupedBar',
+        // ... other config
+    });
+    ```
+  </Tab>
+
+  <Tab title="Line & Area">
+    - `line` - Simple line chart
+    - `area` - Filled area chart
+    - `stackedArea` - Stacked areas
+    - `normalizedArea` - 100% stacked areas
+
+    ```typescript
+    params.api.createRangeChart({
+        chartType: 'line',
+        // ... other config
+    });
+    ```
+  </Tab>
+
+  <Tab title="Other Types">
+    - `pie` - Pie chart
+    - `donut` - Donut chart
+    - `scatter` - Scatter plot
+    - `bubble` - Bubble chart
+    - `histogram` - Histogram
+
+    ```typescript
+    params.api.createRangeChart({
+        chartType: 'pie',
+        // ... other config
+    });
+    ```
+  </Tab>
+</Tabs>
+
+## Chart Customization
+
+### Theme Overrides
+
+Customize chart appearance:
+
+```typescript
+chartThemeOverrides: {
+    common: {
+        title: {
+            enabled: true,
+            text: 'Medals by Age',
+            fontSize: 18,
+            fontWeight: 'bold',
+        },
+        legend: {
+            position: 'bottom',
+        },
+        padding: {
+            top: 20,
+            right: 20,
+            bottom: 20,
+            left: 20,
+        },
+    },
+    bar: {
+        series: {
+            strokeWidth: 2,
+            fillOpacity: 0.8,
+        },
+        axes: {
+            category: {
+                label: {
+                    rotation: 45,
+                },
+            },
+            number: {
+                label: {
+                    formatter: (params) => '$' + params.value,
+                },
+            },
+        },
+    },
+}
+```
+
+### Aggregation Functions
+
+Specify how to aggregate data:
+
+```typescript
+params.api.createRangeChart({
+    chartType: 'groupedColumn',
+    aggFunc: 'sum',  // sum, avg, min, max, count, first, last
+    // ... other config
+});
+```
+
+## Advanced Features
+
+<Tabs>
+  <Tab title="Multiple Charts">
+    Create multiple charts from the same grid:
+
+    ```typescript
+    // First chart - medals by age
+    gridApi.createRangeChart({
+        chartContainer: document.querySelector('#chart1')!,
+        cellRange: {
+            columns: ['age', 'gold', 'silver', 'bronze'],
+        },
+        chartType: 'groupedColumn',
+    });
+
+    // Second chart - medals by sport
+    gridApi.createRangeChart({
+        chartContainer: document.querySelector('#chart2')!,
+        cellRange: {
+            columns: ['sport', 'gold', 'silver', 'bronze'],
+        },
+        chartType: 'pie',
+    });
+    ```
+  </Tab>
+
+  <Tab title="Chart Downloads">
+    Export charts as images:
+
+    ```typescript
+    // Get chart model reference
+    let chartRef: any;
+
+    gridApi.createRangeChart({
+        chartContainer: document.querySelector('#myChart')!,
+        cellRange: { ... },
+        chartType: 'groupedColumn',
+        // Store reference
+        onChartCreated: (params) => {
+            chartRef = params.chartId;
+        },
+    });
+
+    // Download chart
+    function downloadChart() {
+        if (chartRef) {
+            gridApi.downloadChart(chartRef, {
+                fileName: 'my-chart.png',
+            });
+        }
+    }
+    ```
+  </Tab>
+
+  <Tab title="Dynamic Updates">
+    Charts update automatically when grid data changes:
+
+    ```typescript
+    // Update grid data - chart updates automatically
+    function updateData() {
+        const newData = generateNewData();
+        gridApi.setGridOption('rowData', newData);
+        // Chart reflects new data immediately
+    }
+
+    // Filter grid - chart shows filtered data
+    function applyFilter() {
+        gridApi.setFilterModel({
+            age: {
+                type: 'greaterThan',
+                filter: 25,
+            },
+        });
+        // Chart updates to show only filtered rows
+    }
+    ```
+  </Tab>
+
+  <Tab title="Pivot Charts">
+    Create charts from pivoted data:
+
+    ```typescript
+    const gridOptions: GridOptions = {
+        columnDefs: [
+            { field: 'country', rowGroup: true },
+            { field: 'sport', pivot: true },
+            { field: 'gold', aggFunc: 'sum' },
+            { field: 'silver', aggFunc: 'sum' },
+        ],
+        pivotMode: true,
+        enableCharts: true,
+    };
+
+    // Create pivot chart
+    gridApi.createPivotChart({
+        chartType: 'groupedColumn',
+    });
+    ```
+  </Tab>
+</Tabs>
+
+## Required Modules
+
+Integrated Charts requires specific modules:
+
+```typescript
+import { AgChartsEnterpriseModule } from 'ag-charts-enterprise';
+import { IntegratedChartsModule } from 'ag-grid-enterprise';
+
+ModuleRegistry.registerModules([
+    ClientSideRowModelModule,
+    IntegratedChartsModule.with(AgChartsEnterpriseModule),  // Enterprise
+    ColumnMenuModule,
+    ContextMenuModule,
+]);
+```
+
+<Note>
+Integrated Charts is an Enterprise feature requiring both AG Grid Enterprise and AG Charts Enterprise licenses.
+</Note>
+
+## Best Practices
+
+1. **Define chart data types** - Explicitly set `chartDataType` for clarity
+2. **Set appropriate aggregations** - Choose the right `aggFunc` for your data
+3. **Customize themes** - Use `chartThemeOverrides` for consistent branding
+4. **Enable cell selection** - Required for user-created charts
+5. **Use chart containers** - Provide dedicated elements for chart rendering
+6. **Handle chart lifecycle** - Store chart references for programmatic control
+7. **Consider performance** - Limit the number of simultaneously visible charts
+
+## Common Use Cases
+
+### Sales Dashboard
+
+```typescript
+const gridOptions: GridOptions = {
+    columnDefs: [
+        { field: 'salesperson', chartDataType: 'category' },
+        { field: 'region', chartDataType: 'category' },
+        { field: 'revenue', chartDataType: 'series' },
+        { field: 'profit', chartDataType: 'series' },
+        { field: 'units', chartDataType: 'series' },
+    ],
+    enableCharts: true,
+    cellSelection: true,
+};
+```
+
+### Time Series Analysis
+
+```typescript
+const gridOptions: GridOptions = {
+    columnDefs: [
+        { 
+            field: 'date', 
+            chartDataType: 'category',
+            sort: 'asc'
+        },
+        { field: 'temperature', chartDataType: 'series' },
+        { field: 'humidity', chartDataType: 'series' },
+        { field: 'pressure', chartDataType: 'series' },
+    ],
+    enableCharts: true,
+    chartThemeOverrides: {
+        common: {
+            title: { text: 'Weather Trends' },
+        },
+    },
+};
+```
+
+## Next Steps
+
+- Learn about [row grouping](/examples/row-grouping) for aggregated data
+- Explore [chart customization options](https://ag-grid.com/documentation/integrated-charts-customisation/)
+- Implement [pivot charts](https://ag-grid.com/documentation/integrated-charts-pivot-chart/)

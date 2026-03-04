@@ -1,122 +1,169 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "mint",
-  "name": "Mint Starter Kit",
+  "name": "AG Grid",
+  "theme": "sequoia",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#04dcfc",
+    "light": "#040404",
+    "dark": "#f30809"
   },
-  "favicon": "/favicon.svg",
+
+  "logo": {
+    "light": "https://media.brand.dev/1bbc8965-e4cb-4469-9d55-714330ebd9ac.svg",
+    "dark": "https://media.brand.dev/1bbc8965-e4cb-4469-9d55-714330ebd9ac.svg"
+  },
+  "navbar": {
+    "primary": {
+      "type": "github",
+      "href": "https://github.com/ag-grid/ag-grid"
+    }
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/ag-grid/ag-grid",
+      "x": "https://x.com/ag_grid",
+      "linkedin": "https://www.linkedin.com/company/ag-grid/"
+    }
+  },
   "navigation": {
     "tabs": [
       {
-        "tab": "Guides",
+        "tab": "Documentation",
         "groups": [
           {
-            "group": "Getting started",
+            "group": "Get Started",
             "pages": [
-              "index",
-              "quickstart",
-              "development"
+              "introduction",
+              "installation",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Framework Integration",
+            "pages": [
+              "frameworks/react",
+              "frameworks/angular",
+              "frameworks/vue"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/grid-options",
+              "concepts/column-definitions",
+              "concepts/row-data",
+              "concepts/grid-api"
+            ]
+          },
+          {
+            "group": "Features",
+            "pages": [
+              "features/sorting",
+              "features/filtering",
+              "features/pagination",
+              "features/editing",
+              "features/selection",
+              "features/csv-export"
+            ]
+          },
+          {
+            "group": "Enterprise Features",
+            "pages": [
+              "enterprise/overview",
+              "enterprise/row-grouping",
+              "enterprise/pivoting",
+              "enterprise/charts",
+              "enterprise/excel-export",
+              "enterprise/master-detail"
             ]
           },
           {
             "group": "Customization",
             "pages": [
-              "essentials/settings",
-              "essentials/navigation"
+              "customization/custom-components",
+              "customization/cell-renderers",
+              "customization/cell-editors",
+              "customization/filters"
             ]
           },
           {
-            "group": "Writing content",
+            "group": "Themes",
             "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/reusable-snippets"
-            ]
-          },
-          {
-            "group": "AI tools",
-            "pages": [
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
+              "themes/overview",
+              "themes/quartz",
+              "themes/material",
+              "themes/alpine",
+              "themes/balham",
+              "themes/custom-themes"
             ]
           }
         ]
       },
       {
-        "tab": "API reference",
+        "tab": "API Reference",
         "groups": [
           {
-            "group": "API documentation",
+            "group": "Core API",
             "pages": [
-              "api-reference/introduction"
+              "api/grid-api",
+              "api/grid-options",
+              "api/column-api"
             ]
           },
           {
-            "group": "Endpoint examples",
+            "group": "Column Types",
             "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
+              "api/column-properties",
+              "api/column-definitions"
+            ]
+          },
+          {
+            "group": "Events",
+            "pages": [
+              "api/grid-events",
+              "api/column-events",
+              "api/row-events"
+            ]
+          },
+          {
+            "group": "Components",
+            "pages": [
+              "api/cell-renderer",
+              "api/cell-editor",
+              "api/filter-component",
+              "api/header-component"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Examples",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "examples/basic-grid",
+              "examples/simple-example"
+            ]
+          },
+          {
+            "group": "Framework Examples",
+            "pages": [
+              "examples/react-example",
+              "examples/angular-example",
+              "examples/vue-example"
+            ]
+          },
+          {
+            "group": "Advanced Examples",
+            "pages": [
+              "examples/master-detail",
+              "examples/integrated-charts",
+              "examples/row-grouping"
             ]
           }
         ]
       }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
-        }
-      ]
-    }
-  },
-  "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
-  },
-  "navbar": {
-    "links": [
-      {
-        "label": "Support",
-        "href": "mailto:hi@mintlify.com"
-      }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
-    }
-  },
-  "contextual": {
-    "options": [
-     "copy",
-     "view",
-     "chatgpt",
-     "claude",
-     "perplexity",
-     "mcp",
-     "cursor",
-     "vscode"
-   ]
-  },
-  "footer": {
-    "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
-    }
+    ]
   }
 }

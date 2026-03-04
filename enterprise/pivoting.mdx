@@ -1,0 +1,575 @@
+---
+title: Pivot Mode
+description: Create pivot tables with dynamic columns, cross-tabulations, and multi-dimensional data analysis
+---
+
+<Warning>
+**Enterprise Feature**: Pivoting requires `ag-grid-enterprise` and a valid license key.
+</Warning>
+
+Pivot Mode transforms your grid into a pivot table, creating dynamic columns based on row values and aggregating data across multiple dimensions.
+
+## Installation
+
+<Steps>
+  <Step title="Install Package">
+    ```bash
+    npm install ag-grid-enterprise
+    ```
+  </Step>
+  <Step title="Import Module">
+    ```typescript
+    import { ModuleRegistry } from 'ag-grid-community';
+    import { PivotModule } from 'ag-grid-enterprise';
+    
+    ModuleRegistry.registerModules([PivotModule]);
+    ```
+  </Step>
+  <Step title="Set License Key">
+    ```typescript
+    import { LicenseManager } from 'ag-grid-enterprise';
+    
+    LicenseManager.setLicenseKey('YOUR_LICENSE_KEY');
+    ```
+  </Step>
+</Steps>
+
+<Note>
+Pivot Module requires Row Grouping Module. Source: `/packages/ag-grid-enterprise/src/pivot/pivotModule.ts:55-61`
+</Note>
+
+## Basic Pivot Table
+
+Create a pivot table by enabling pivot mode and configuring pivot columns:
+
+<CodeGroup>
+```typescript TypeScript
+import { ColDef, GridOptions } from 'ag-grid-community';
+
+const columnDefs: ColDef[] = [
+  { 
+    field: 'country',
+    rowGroup: true,      // Group rows by country
+    hide: true
+  },
+  { 
+    field: 'year',
+    pivot: true,         // Create columns for each year
+    hide: true
+  },
+  { 
+    field: 'sport',
+    pivot: true          // Secondary pivot dimension
+  },
+  { 
+    field: 'gold',
+    aggFunc: 'sum'       // Aggregate gold medals
+  },
+  { 
+    field: 'silver',
+    aggFunc: 'sum'
+  }
+];
+
+const gridOptions: GridOptions = {
+  columnDefs,
+  rowData: olympicData,
+  pivotMode: true,               // Enable pivot mode
+  autoGroupColumnDef: {
+    minWidth: 200
+  }
+};
+```
+
+```jsx React
+import { AgGridReact } from 'ag-grid-react';
+import { useMemo } from 'react';
+
+function PivotGrid() {
+  const columnDefs = useMemo(() => [
+    { field: 'country', rowGroup: true, hide: true },
+    { field: 'year', pivot: true, hide: true },
+    { field: 'gold', aggFunc: 'sum' },
+    { field: 'silver', aggFunc: 'sum' }
+  ], []);
+
+  return (
+    <AgGridReact
+      columnDefs={columnDefs}
+      rowData={rowData}
+      pivotMode={true}
+      autoGroupColumnDef={{ minWidth: 200 }}
+    />
+  );
+}
+```
+
+```vue Vue
+<template>
+  <ag-grid-vue
+    :columnDefs="columnDefs"
+    :rowData="rowData"
+    :pivotMode="true"
+    :autoGroupColumnDef="autoGroupColumnDef">
+  </ag-grid-vue>
+</template>
+
+<script setup lang="ts">
+import { ref } from 'vue';
+
+const columnDefs = ref([
+  { field: 'country', rowGroup: true, hide: true },
+  { field: 'year', pivot: true, hide: true },
+  { field: 'gold', aggFunc: 'sum' },
+  { field: 'silver', aggFunc: 'sum' }
+]);
+
+const autoGroupColumnDef = { minWidth: 200 };
+</script>
+```
+</CodeGroup>
+
+## Understanding Pivot Tables
+
+A pivot table has three key components:
+
+<CardGroup cols={3}>
+  <Card title="Row Groups" icon="layer-group">
+    Columns with `rowGroup: true` form the row hierarchy (e.g., Country)
+  </Card>
+  <Card title="Pivot Columns" icon="table-pivot">
+    Columns with `pivot: true` create dynamic column headers (e.g., Year)
+  </Card>
+  <Card title="Value Columns" icon="calculator">
+    Columns with `aggFunc` are aggregated in pivot cells (e.g., Sum of Gold)
+  </Card>
+</CardGroup>
+
+## Column Configuration
+
+### Enable Pivot
+
+Configure columns to support pivoting:
+
+```typescript
+const columnDefs: ColDef[] = [
+  {
+    field: 'year',
+    enablePivot: true,    // Allow user to drag to pivot panel
+    pivot: false          // Not pivoted by default
+  },
+  {
+    field: 'quarter',
+    pivot: true,          // Pivoted by default
+    pivotIndex: 0         // First pivot dimension
+  },
+  {
+    field: 'month',
+    pivot: true,
+    pivotIndex: 1         // Second pivot dimension (nested)
+  }
+];
+```
+
+### Pivot Comparator
+
+Control the order of pivot columns:
+
+```typescript
+const columnDefs: ColDef[] = [
+  {
+    field: 'month',
+    pivot: true,
+    pivotComparator: (a, b) => {
+      const monthOrder = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                          'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return monthOrder.indexOf(a) - monthOrder.indexOf(b);
+    }
+  }
+];
+```
+
+## Programmatic API
+
+Control pivot mode and columns programmatically:
+
+### Check Pivot Mode
+
+```typescript
+import { GridApi } from 'ag-grid-community';
+
+const api: GridApi = gridRef.current.api;
+
+// Check if pivot mode is enabled
+const isPivot = api.isPivotMode();
+console.log('Pivot mode:', isPivot);
+```
+
+<Note>
+Source: `/packages/ag-grid-enterprise/src/pivot/pivotApi.ts:3-5`
+</Note>
+
+### Set Pivot Columns
+
+```typescript
+// Set columns to pivot by
+api.setPivotColumns(['year', 'quarter']);
+
+// Add a column to pivoting
+api.addPivotColumns(['month']);
+
+// Remove a column from pivoting
+api.removePivotColumns(['quarter']);
+
+// Get current pivot columns
+const pivotCols = api.getPivotColumns();
+console.log(pivotCols.map(col => col.getColId()));
+```
+
+<Note>
+Source: `/packages/ag-grid-enterprise/src/pivot/pivotApi.ts:31-44`
+</Note>
+
+### Set Value Columns
+
+```typescript
+// Set which columns to aggregate in pivot cells
+api.setValueColumns(['gold', 'silver', 'bronze']);
+
+// Add value column
+api.addValueColumns(['total']);
+
+// Remove value column
+api.removeValueColumns(['bronze']);
+
+// Get current value columns
+const valueCols = api.getValueColumns();
+console.log(valueCols.map(col => col.getColId()));
+```
+
+<Note>
+Source: `/packages/ag-grid-enterprise/src/pivot/pivotApi.ts:15-29`
+</Note>
+
+### Access Pivot Result Columns
+
+```typescript
+// Get generated pivot result columns
+const resultCols = api.getPivotResultColumns();
+
+// Get specific pivot result column
+const col = api.getPivotResultColumn(
+  ['2020', 'Q1'],  // Pivot keys
+  'gold'           // Value column key
+);
+
+if (col) {
+  console.log('Column ID:', col.getColId());
+  console.log('Column definition:', col.getColDef());
+}
+```
+
+<Note>
+Source: `/packages/ag-grid-enterprise/src/pivot/pivotApi.ts:7-13` and `47-54`
+</Note>
+
+## Grid Options
+
+### Pivot Mode Configuration
+
+```typescript
+const gridOptions: GridOptions = {
+  // Enable pivot mode
+  pivotMode: true,
+  
+  // Suppress auto-generated pivot columns
+  suppressExpandablePivotGroups: false,
+  
+  // Show pivot panel for drag-and-drop
+  pivotPanelShow: 'always',  // 'always', 'onlyWhenPivoting', 'never'
+  
+  // Pivot column group totals
+  pivotColumnGroupTotals: 'before',  // 'before', 'after', undefined
+  
+  // Pivot row totals
+  pivotRowTotals: 'before',  // 'before', 'after', undefined
+  
+  // Suppress aggregation at higher levels
+  suppressAggFuncInHeader: false,
+  
+  // Remove pivot columns that have no values
+  removePivotHeaderRowWhenSingleValueColumn: false
+};
+```
+
+### Pivot Default Expanded
+
+```typescript
+const gridOptions: GridOptions = {
+  pivotMode: true,
+  
+  // Control default expansion of pivot groups
+  groupDefaultExpanded: 0,    // Collapse all
+  // groupDefaultExpanded: 1, // Expand first level
+  // groupDefaultExpanded: -1 // Expand all
+};
+```
+
+## Value Columns with Multiple Aggregations
+
+Allow different aggregation functions per value column:
+
+```typescript
+const columnDefs: ColDef[] = [
+  { field: 'country', rowGroup: true },
+  { field: 'year', pivot: true },
+  {
+    field: 'gold',
+    enableValue: true,
+    allowedAggFuncs: ['sum', 'avg', 'min', 'max'],
+    aggFunc: 'sum'
+  },
+  {
+    headerName: 'Total Medals',
+    valueGetter: params => {
+      return (params.data.gold || 0) + 
+             (params.data.silver || 0) + 
+             (params.data.bronze || 0);
+    },
+    aggFunc: 'sum'
+  }
+];
+```
+
+## Advanced Pivot Features
+
+### Secondary Columns
+
+Customize the generated pivot result columns:
+
+```typescript
+const gridOptions: GridOptions = {
+  pivotMode: true,
+  
+  // Process secondary columns as they're created
+  processSecondaryColDef: (colDef) => {
+    // Customize generated pivot columns
+    colDef.minWidth = 100;
+    colDef.maxWidth = 300;
+    colDef.headerClass = 'pivot-header';
+    return colDef;
+  },
+  
+  // Process secondary column groups
+  processSecondaryColGroupDef: (colGroupDef) => {
+    // Customize generated column groups
+    colGroupDef.headerClass = 'pivot-group-header';
+    return colGroupDef;
+  }
+};
+```
+
+### Pivot Chart Integration
+
+Create charts directly from pivot data:
+
+```typescript
+import { IntegratedChartsModule } from 'ag-grid-enterprise';
+import { AgChartsEnterpriseModule } from 'ag-charts-enterprise';
+
+ModuleRegistry.registerModules([
+  IntegratedChartsModule.with(AgChartsEnterpriseModule)
+]);
+
+const gridOptions: GridOptions = {
+  pivotMode: true,
+  enableCharts: true,
+  
+  // Create pivot chart
+  onGridReady: (params) => {
+    params.api.createPivotChart({
+      chartType: 'groupedColumn',
+      chartContainer: document.querySelector('#chartContainer')
+    });
+  }
+};
+```
+
+### Total Columns
+
+Add total columns before or after pivot groups:
+
+```typescript
+const gridOptions: GridOptions = {
+  pivotMode: true,
+  
+  // Show totals for column groups
+  pivotColumnGroupTotals: 'before',  // Total column before group
+  
+  // Show totals for rows
+  pivotRowTotals: 'after',          // Total row after group
+  
+  // Grand total configuration
+  groupIncludeTotalFooter: true
+};
+```
+
+## Pivot Panel
+
+Enable the Pivot Panel for drag-and-drop configuration:
+
+```typescript
+const gridOptions: GridOptions = {
+  // Show pivot panel
+  pivotPanelShow: 'always',
+  
+  // Enable drag and drop
+  rowGroupPanelShow: 'always',
+  
+  // Column configuration
+  columnDefs: [
+    { field: 'country', enableRowGroup: true },
+    { field: 'year', enablePivot: true },
+    { field: 'sport', enablePivot: true },
+    { field: 'gold', enableValue: true, aggFunc: 'sum' }
+  ],
+  
+  // Keep columns visible when dragged to panel
+  suppressDragLeaveHidesColumns: true
+};
+```
+
+## Custom Pivot Aggregations
+
+Implement custom aggregation logic for pivot cells:
+
+```typescript
+import { IAggFunc, IAggFuncParams } from 'ag-grid-community';
+
+// Weighted average aggregation
+const weightedAverage: IAggFunc = (params: IAggFuncParams) => {
+  let totalWeight = 0;
+  let totalValue = 0;
+  
+  params.values.forEach((value, index) => {
+    if (value != null && typeof value === 'number') {
+      const weight = params.rowNode.data?.weight || 1;
+      totalValue += value * weight;
+      totalWeight += weight;
+    }
+  });
+  
+  return totalWeight > 0 ? totalValue / totalWeight : null;
+};
+
+const columnDefs: ColDef[] = [
+  { field: 'country', rowGroup: true },
+  { field: 'year', pivot: true },
+  {
+    field: 'score',
+    aggFunc: weightedAverage,
+    headerName: 'Weighted Avg Score'
+  }
+];
+```
+
+## Performance Optimization
+
+<CardGroup cols={2}>
+  <Card title="Limit Pivot Dimensions" icon="layer-group">
+    Use fewer pivot columns to reduce the number of generated columns
+  </Card>
+  <Card title="Suppress Expansion" icon="compress">
+    Set `groupDefaultExpanded: 0` to collapse all groups initially
+  </Card>
+  <Card title="Filter Data" icon="filter">
+    Apply filters before pivoting to reduce data volume
+  </Card>
+  <Card title="Debounce Updates" icon="clock">
+    Use `debounceMs` on filters to reduce recalculation frequency
+  </Card>
+</CardGroup>
+
+## Common Patterns
+
+### Year-Over-Year Comparison
+
+```typescript
+const columnDefs: ColDef[] = [
+  { field: 'product', rowGroup: true },
+  { field: 'year', pivot: true },
+  { field: 'revenue', aggFunc: 'sum' },
+  { field: 'units', aggFunc: 'sum' }
+];
+
+const gridOptions: GridOptions = {
+  pivotMode: true,
+  autoGroupColumnDef: {
+    headerName: 'Product'
+  }
+};
+```
+
+### Cross-Tabulation Report
+
+```typescript
+const columnDefs: ColDef[] = [
+  { field: 'region', rowGroup: true, rowGroupIndex: 0 },
+  { field: 'department', rowGroup: true, rowGroupIndex: 1 },
+  { field: 'quarter', pivot: true },
+  { field: 'sales', aggFunc: 'sum' },
+  { field: 'profit', aggFunc: 'sum' }
+];
+
+const gridOptions: GridOptions = {
+  pivotMode: true,
+  groupDefaultExpanded: 1,
+  pivotColumnGroupTotals: 'after'
+};
+```
+
+## Troubleshooting
+
+### Pivot Columns Not Appearing
+
+<Steps>
+  <Step title="Enable Pivot Mode">
+    Ensure `pivotMode: true` is set in grid options
+  </Step>
+  <Step title="Configure Pivot Columns">
+    At least one column must have `pivot: true`
+  </Step>
+  <Step title="Set Value Columns">
+    At least one column must have `aggFunc` defined
+  </Step>
+  <Step title="Check Module Registration">
+    Verify `PivotModule` is registered
+  </Step>
+</Steps>
+
+### No Data in Pivot Cells
+
+Ensure value columns have valid aggregation functions:
+
+```typescript
+const columnDefs: ColDef[] = [
+  { field: 'gold', aggFunc: 'sum' }  // Must have aggFunc
+];
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Row Grouping" icon="layer-group" href="/enterprise/row-grouping">
+    Learn about row grouping fundamentals
+  </Card>
+  <Card title="Integrated Charts" icon="chart-line" href="/enterprise/charts">
+    Create charts from pivot data
+  </Card>
+  <Card title="Excel Export" icon="file-excel" href="/enterprise/excel-export">
+    Export pivot tables to Excel
+  </Card>
+  <Card title="Aggregation" icon="calculator" href="/aggregation">
+    Advanced aggregation techniques
+  </Card>
+</CardGroup>

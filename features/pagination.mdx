@@ -1,0 +1,458 @@
+---
+title: "Pagination"
+description: "Implement client-side and server-side pagination for large datasets"
+---
+
+## Overview
+
+AG Grid supports pagination to display large datasets across multiple pages. Pagination can be implemented in client-side mode (all data loaded) or server-side mode (data loaded on demand).
+
+## Enabling Pagination
+
+Enable pagination with the `pagination` property:
+
+```typescript
+const gridOptions = {
+  pagination: true,              // Enable pagination
+  paginationPageSize: 100,       // Rows per page
+  paginationPageSizeSelector: [20, 50, 100, 200]  // Page size options
+};
+```
+
+<Note>
+Pagination is disabled by default. Set `pagination: true` to enable it.
+</Note>
+
+## Page Size Configuration
+
+### Fixed Page Size
+
+Set a specific number of rows per page:
+
+```typescript
+const gridOptions = {
+  pagination: true,
+  paginationPageSize: 50  // Default: 100
+};
+```
+
+### Auto Page Size
+
+Automatically calculate page size to fit the viewport:
+
+```typescript
+const gridOptions = {
+  pagination: true,
+  paginationAutoPageSize: true  // Overrides paginationPageSize
+};
+```
+
+<Warning>
+When `paginationAutoPageSize` is enabled, the `paginationPageSize` property is ignored.
+</Warning>
+
+### Page Size Selector
+
+Allow users to change the page size:
+
+<CodeGroup>
+```typescript Custom Options
+const gridOptions = {
+  pagination: true,
+  paginationPageSizeSelector: [10, 25, 50, 100]  // Custom page sizes
+};
+```
+
+```typescript Default Options
+const gridOptions = {
+  pagination: true,
+  paginationPageSizeSelector: true  // Uses [20, 50, 100]
+};
+```
+
+```typescript Disable Selector
+const gridOptions = {
+  pagination: true,
+  paginationPageSizeSelector: false  // Hide the selector
+};
+```
+</CodeGroup>
+
+## Pagination Controls
+
+### Built-in Controls
+
+The grid provides default pagination controls at the bottom:
+
+```typescript
+const gridOptions = {
+  pagination: true,
+  suppressPaginationPanel: false  // Show built-in controls (default)
+};
+```
+
+### Custom Controls
+
+Hide built-in controls and use your own:
+
+```typescript
+const gridOptions = {
+  pagination: true,
+  suppressPaginationPanel: true  // Hide built-in controls
+};
+```
+
+## Pagination API
+
+Control pagination programmatically using the Grid API.
+
+### Navigation Methods
+
+```typescript
+import { 
+  paginationGoToNextPage,
+  paginationGoToPreviousPage,
+  paginationGoToFirstPage,
+  paginationGoToLastPage,
+  paginationGoToPage
+} from 'ag-grid-community';
+
+// Navigate to next page
+paginationGoToNextPage(beans);
+
+// Navigate to previous page
+paginationGoToPreviousPage(beans);
+
+// Navigate to first page
+paginationGoToFirstPage(beans);
+
+// Navigate to last page
+paginationGoToLastPage(beans);
+
+// Navigate to specific page (0-indexed)
+paginationGoToPage(beans, 2);  // Go to page 3
+```
+
+### Get Pagination State
+
+```typescript
+import {
+  paginationGetCurrentPage,
+  paginationGetTotalPages,
+  paginationGetPageSize,
+  paginationGetRowCount,
+  paginationIsLastPageFound
+} from 'ag-grid-community';
+
+// Get current page (0-indexed)
+const currentPage = paginationGetCurrentPage(beans);
+console.log('Current page:', currentPage);
+
+// Get total number of pages
+const totalPages = paginationGetTotalPages(beans);
+console.log('Total pages:', totalPages);
+
+// Get page size
+const pageSize = paginationGetPageSize(beans);
+console.log('Rows per page:', pageSize);
+
+// Get total row count
+const rowCount = paginationGetRowCount(beans);
+console.log('Total rows:', rowCount);
+
+// Check if last page is found (server-side)
+const isLastPageFound = paginationIsLastPageFound(beans);
+console.log('Last page known:', isLastPageFound);
+```
+
+### Custom Pagination Example
+
+```typescript
+function CustomPaginationControls({ api, beans }) {
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  
+  useEffect(() => {
+    const updatePagination = () => {
+      setCurrentPage(paginationGetCurrentPage(beans));
+      setTotalPages(paginationGetTotalPages(beans));
+    };
+    
+    // Listen to pagination changes
+    api.addEventListener('paginationChanged', updatePagination);
+    
+    return () => {
+      api.removeEventListener('paginationChanged', updatePagination);
+    };
+  }, [api, beans]);
+  
+  return (
+    <div>
+      <button onClick={() => paginationGoToFirstPage(beans)}>First</button>
+      <button onClick={() => paginationGoToPreviousPage(beans)}>Previous</button>
+      <span>Page {currentPage + 1} of {totalPages}</span>
+      <button onClick={() => paginationGoToNextPage(beans)}>Next</button>
+      <button onClick={() => paginationGoToLastPage(beans)}>Last</button>
+    </div>
+  );
+}
+```
+
+## Client-Side Pagination
+
+With client-side pagination, all data is loaded into the grid at once.
+
+```typescript
+const gridOptions = {
+  rowData: data,  // All data loaded
+  pagination: true,
+  paginationPageSize: 50,
+  
+  // Pagination with grouping
+  paginateChildRows: false  // Don't split child rows across pages (default)
+};
+```
+
+### Pagination with Row Grouping
+
+Control how grouped rows are paginated:
+
+```typescript
+const gridOptions = {
+  pagination: true,
+  paginateChildRows: true,  // Split children across pages
+  
+  // Row grouping configuration
+  rowGroupPanelShow: 'always',
+  groupDefaultExpanded: 1
+};
+```
+
+## Server-Side Pagination
+
+Load data on demand from the server as users navigate pages.
+
+### Server-Side Row Model
+
+```typescript
+import { IServerSideDatasource, IServerSideGetRowsParams } from 'ag-grid-community';
+
+const datasource: IServerSideDatasource = {
+  getRows: (params: IServerSideGetRowsParams) => {
+    const { request, success, fail } = params;
+    const { startRow, endRow } = request;
+    
+    // Calculate page from row range
+    const page = Math.floor(startRow / gridOptions.paginationPageSize!);
+    const pageSize = endRow - startRow;
+    
+    // Fetch data from server
+    fetch(`/api/data?page=${page}&pageSize=${pageSize}`)
+      .then(response => response.json())
+      .then(data => {
+        success({
+          rowData: data.rows,
+          rowCount: data.totalRows
+        });
+      })
+      .catch(error => {
+        fail();
+      });
+  }
+};
+
+const gridOptions = {
+  rowModelType: 'serverSide',
+  pagination: true,
+  paginationPageSize: 100,
+  serverSideDatasource: datasource,
+  
+  // Server-side specific options
+  cacheBlockSize: 100,
+  maxBlocksInCache: 10
+};
+```
+
+### Infinite Row Model
+
+```typescript
+import { IDatasource, IGetRowsParams } from 'ag-grid-community';
+
+const datasource: IDatasource = {
+  rowCount: undefined,  // Unknown initially
+  
+  getRows: (params: IGetRowsParams) => {
+    const { startRow, endRow, successCallback } = params;
+    const pageSize = endRow - startRow;
+    const page = Math.floor(startRow / pageSize);
+    
+    fetch(`/api/data?page=${page}&pageSize=${pageSize}`)
+      .then(response => response.json())
+      .then(data => {
+        let lastRow = -1;
+        if (data.rows.length < pageSize) {
+          lastRow = startRow + data.rows.length;
+        }
+        successCallback(data.rows, lastRow);
+      });
+  }
+};
+
+const gridOptions = {
+  rowModelType: 'infinite',
+  pagination: true,
+  paginationPageSize: 100,
+  datasource: datasource,
+  
+  cacheBlockSize: 100,
+  cacheOverflowSize: 2,
+  maxConcurrentDatasourceRequests: 2,
+  infiniteInitialRowCount: 1000,
+  maxBlocksInCache: 10
+};
+```
+
+## Pagination Number Formatting
+
+Customize how pagination numbers are displayed:
+
+```typescript
+import { PaginationNumberFormatter } from 'ag-grid-community';
+
+const paginationNumberFormatter: PaginationNumberFormatter = (params) => {
+  const { value } = params;
+  // Format with thousand separators
+  return value.toLocaleString();
+};
+
+const gridOptions = {
+  pagination: true,
+  paginationNumberFormatter: paginationNumberFormatter
+};
+```
+
+## Events
+
+Listen to pagination changes:
+
+```typescript
+import { PaginationChangedEvent } from 'ag-grid-community';
+
+const gridOptions = {
+  pagination: true,
+  
+  onPaginationChanged: (event: PaginationChangedEvent) => {
+    console.log('Pagination changed');
+    console.log('New state:', {
+      page: event.api.paginationGetCurrentPage(),
+      pageSize: event.api.paginationGetPageSize(),
+      totalPages: event.api.paginationGetTotalPages()
+    });
+  }
+};
+```
+
+## Common Use Cases
+
+<Accordion title="Pagination with Master-Detail">
+```typescript
+const gridOptions = {
+  pagination: true,
+  paginationPageSize: 50,
+  
+  // Master-Detail configuration
+  masterDetail: true,
+  detailCellRendererParams: {
+    detailGridOptions: {
+      pagination: true,  // Pagination in detail grids too
+      paginationPageSize: 10
+    }
+  }
+};
+```
+</Accordion>
+
+<Accordion title="Pagination with Selection">
+```typescript
+import { RowSelectionOptions } from 'ag-grid-community';
+
+const gridOptions = {
+  pagination: true,
+  
+  rowSelection: {
+    mode: 'multiRow',
+    selectAll: 'filtered'  // Select all across all pages
+  } as RowSelectionOptions
+};
+```
+</Accordion>
+
+<Accordion title="Remember Page on Data Update">
+```typescript
+const gridOptions = {
+  pagination: true,
+  
+  onGridReady: (params) => {
+    // Save current page before data update
+    const currentPage = params.api.paginationGetCurrentPage();
+    
+    // Update data
+    params.api.setRowData(newData);
+    
+    // Restore page
+    params.api.paginationGoToPage(currentPage);
+  }
+};
+```
+</Accordion>
+
+## TypeScript Interfaces
+
+```typescript
+// From gridOptions.ts
+interface GridOptions {
+  pagination?: boolean;
+  paginationPageSize?: number;
+  paginationPageSizeSelector?: number[] | boolean;
+  paginationAutoPageSize?: boolean;
+  paginateChildRows?: boolean;
+  suppressPaginationPanel?: boolean;
+  paginationNumberFormatter?: PaginationNumberFormatter;
+}
+
+// From paginationApi.ts
+export function paginationIsLastPageFound(beans: BeanCollection): boolean;
+export function paginationGetPageSize(beans: BeanCollection): number;
+export function paginationGetCurrentPage(beans: BeanCollection): number;
+export function paginationGetTotalPages(beans: BeanCollection): number;
+export function paginationGetRowCount(beans: BeanCollection): number;
+export function paginationGoToNextPage(beans: BeanCollection): void;
+export function paginationGoToPreviousPage(beans: BeanCollection): void;
+export function paginationGoToFirstPage(beans: BeanCollection): void;
+export function paginationGoToLastPage(beans: BeanCollection): void;
+export function paginationGoToPage(beans: BeanCollection, page: number): void;
+```
+
+## Best Practices
+
+<Steps>
+  <Step title="Choose appropriate page size">
+    Balance between performance and user experience. Larger pages reduce scrolling but may impact performance.
+  </Step>
+  
+  <Step title="Use auto page size for responsive layouts">
+    Enable `paginationAutoPageSize` to automatically fit the viewport height.
+  </Step>
+  
+  <Step title="Provide page size options">
+    Use `paginationPageSizeSelector` to let users control how much data they see.
+  </Step>
+  
+  <Step title="Server-side pagination for large datasets">
+    Use server-side row model when dealing with millions of rows to avoid loading all data at once.
+  </Step>
+  
+  <Step title="Consider UX with grouped data">
+    Set `paginateChildRows: false` to keep row groups together on the same page.
+  </Step>
+</Steps>

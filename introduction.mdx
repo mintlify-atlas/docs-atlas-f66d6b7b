@@ -1,0 +1,254 @@
+---
+title: Introduction to AG Grid
+description: Learn about AG Grid, the industry-leading JavaScript data grid with enterprise-grade features and exceptional performance
+---
+
+# Introduction to AG Grid
+
+AG Grid is a fully-featured and highly customizable JavaScript Data Grid. It delivers outstanding performance, has no third-party dependencies, and comes with support for React, Angular, and Vue.
+
+<Note>
+AG Grid is used by 100,000+ developers worldwide across almost every industry, from startups to Fortune 500 companies including J.P. Morgan, MongoDB, and NASA.
+</Note>
+
+## What is AG Grid?
+
+AG Grid is a powerful data grid component that transforms your data into interactive, feature-rich tables. Built with TypeScript and designed for modern web applications, AG Grid handles millions of rows with ease while providing a rich set of features out of the box.
+
+### Key Features
+
+<CardGroup cols={2}>
+  <Card title="High Performance" icon="gauge-high">
+    Custom virtual DOM rendering engine handles millions of rows without performance degradation
+  </Card>
+  <Card title="Framework Agnostic" icon="layer-group">
+    Native support for React, Angular, Vue, and vanilla JavaScript with consistent APIs
+  </Card>
+  <Card title="Zero Dependencies" icon="box-open">
+    No third-party runtime dependencies means smaller bundle sizes and fewer security concerns
+  </Card>
+  <Card title="Fully Customizable" icon="palette">
+    Extensive theming API, custom components, and flexible configuration options
+  </Card>
+</CardGroup>
+
+## Community vs Enterprise
+
+AG Grid is available in two versions to suit different needs:
+
+### AG Grid Community
+
+The Community edition is free and available under the MIT license. It includes all core features expected from a professional data grid:
+
+- **Sorting & Filtering** - Multi-column sorting and built-in filter types
+- **Pagination** - Client-side pagination with customizable page sizes
+- **Cell Editing** - Inline editing with validation support
+- **CSV Export** - Export your data to CSV format
+- **Drag & Drop** - Row and column reordering
+- **Themes & Styling** - Four built-in themes with customization options
+- **Selection** - Row and cell selection with range support
+- **Accessibility** - WCAG 2.1 Level AA compliant
+- **Custom Components** - Cell renderers, editors, and filters
+
+### AG Grid Enterprise
+
+The Enterprise edition is available under a commercial license and includes advanced features for complex data applications:
+
+<Card title="Enterprise Features" icon="star">
+  - **AI Toolkit** - Natural language grid interactions
+  - **Integrated Charting** - Create charts directly from grid data
+  - **Formulas** - Excel-like formula support
+  - **Row Grouping & Aggregation** - Hierarchical data with aggregations
+  - **Pivoting** - Pivot table functionality
+  - **Master/Detail** - Expandable detail rows
+  - **Server-side Row Model** - Handle massive datasets server-side
+  - **Advanced Filtering** - Set filters and advanced filter builder
+  - **Excel Export** - Export to Excel with formatting
+  - **Range Selection** - Excel-like range selection
+  - **Clipboard Operations** - Copy/paste with Excel compatibility
+  - **Tree Data** - Display hierarchical tree structures
+  - **Dedicated Support** - Engineering team support via ZenDesk
+</Card>
+
+<Tip>
+You can start with AG Grid Community and upgrade to Enterprise at any time. Both versions share the same core API, making migration seamless.
+</Tip>
+
+## Performance Benchmarks
+
+AG Grid's custom rendering engine is built for speed:
+
+- **Virtual Rendering** - Only renders visible rows and columns
+- **Lazy Loading** - Load data on demand as users scroll
+- **Efficient Updates** - Intelligent change detection minimizes re-renders
+- **Optimized Bundle** - Tree-shakeable modules reduce bundle size
+
+<Note>
+In benchmarks, AG Grid handles 100,000+ rows with smooth scrolling at 60fps. The grid only renders what's visible, typically 20-30 rows, regardless of total dataset size.
+</Note>
+
+## Framework Support
+
+AG Grid provides first-class support for major JavaScript frameworks:
+
+### React
+
+```tsx
+import { AgGridReact } from 'ag-grid-react';
+import 'ag-grid-community/styles/ag-grid.css';
+import 'ag-grid-community/styles/ag-theme-quartz.css';
+
+function MyGrid() {
+  const [rowData] = useState([
+    { make: 'Tesla', model: 'Model Y', price: 64950 },
+    { make: 'Ford', model: 'F-Series', price: 33850 },
+  ]);
+
+  const [colDefs] = useState([
+    { field: 'make' },
+    { field: 'model' },
+    { field: 'price' },
+  ]);
+
+  return (
+    <div className="ag-theme-quartz" style={{ height: 500 }}>
+      <AgGridReact rowData={rowData} columnDefs={colDefs} />
+    </div>
+  );
+}
+```
+
+### Angular
+
+```typescript
+import { Component } from '@angular/core';
+import { AgGridAngular } from 'ag-grid-angular';
+import { ColDef } from 'ag-grid-community';
+
+@Component({
+  selector: 'app-grid',
+  standalone: true,
+  imports: [AgGridAngular],
+  template: `
+    <ag-grid-angular
+      class="ag-theme-quartz"
+      style="height: 500px"
+      [rowData]="rowData"
+      [columnDefs]="columnDefs">
+    </ag-grid-angular>
+  `
+})
+export class GridComponent {
+  rowData = [
+    { make: 'Tesla', model: 'Model Y', price: 64950 },
+    { make: 'Ford', model: 'F-Series', price: 33850 },
+  ];
+
+  columnDefs: ColDef[] = [
+    { field: 'make' },
+    { field: 'model' },
+    { field: 'price' },
+  ];
+}
+```
+
+### Vue
+
+```vue
+<template>
+  <ag-grid-vue
+    class="ag-theme-quartz"
+    style="height: 500px"
+    :rowData="rowData"
+    :columnDefs="columnDefs">
+  </ag-grid-vue>
+</template>
+
+<script setup>
+import { ref } from 'vue';
+import { AgGridVue } from 'ag-grid-vue3';
+import 'ag-grid-community/styles/ag-grid.css';
+import 'ag-grid-community/styles/ag-theme-quartz.css';
+
+const rowData = ref([
+  { make: 'Tesla', model: 'Model Y', price: 64950 },
+  { make: 'Ford', model: 'F-Series', price: 33850 },
+]);
+
+const columnDefs = ref([
+  { field: 'make' },
+  { field: 'model' },
+  { field: 'price' },
+]);
+</script>
+```
+
+## Architecture
+
+AG Grid is built with a modular architecture:
+
+- **Core Engine** - Framework-agnostic vanilla JavaScript core
+- **Framework Wrappers** - Thin wrappers for React, Angular, and Vue
+- **Module System** - Tree-shakeable modules for optimal bundle sizes
+- **Virtual Rendering** - Custom rendering engine for maximum performance
+
+<Warning>
+The core AG Grid packages (ag-grid-community and ag-grid-enterprise) have **zero runtime dependencies** by design. This ensures minimal bundle size and maximum compatibility.
+</Warning>
+
+## TypeScript Support
+
+AG Grid is written in TypeScript and provides complete type definitions:
+
+```typescript
+import type { GridApi, GridOptions, ColDef } from 'ag-grid-community';
+
+interface CarData {
+  make: string;
+  model: string;
+  price: number;
+  electric: boolean;
+}
+
+const gridOptions: GridOptions<CarData> = {
+  columnDefs: [
+    { field: 'make' },
+    { field: 'model' },
+    { field: 'price', valueFormatter: p => `$${p.value.toLocaleString()}` },
+    { field: 'electric' },
+  ],
+  rowData: [],
+  defaultColDef: {
+    sortable: true,
+    filter: true,
+  },
+};
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Installation" icon="download" href="/installation">
+    Install AG Grid in your project with npm, yarn, or pnpm
+  </Card>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Build your first grid in under 5 minutes
+  </Card>
+  <Card title="Examples" icon="code" href="https://www.ag-grid.com/example">
+    Explore interactive examples and demos
+  </Card>
+  <Card title="API Reference" icon="book" href="/api-reference">
+    Browse the complete API documentation
+  </Card>
+</CardGroup>
+
+## Community Resources
+
+- **GitHub** - [github.com/ag-grid/ag-grid](https://github.com/ag-grid/ag-grid) (14k+ stars)
+- **Stack Overflow** - Use the `ag-grid` tag for questions
+- **Blog** - [blog.ag-grid.com](https://blog.ag-grid.com) for tutorials and updates
+- **Community Showcase** - See how companies use AG Grid in production
+
+<Tip>
+AG Grid has an active community with thousands of developers. Check Stack Overflow for answers to common questions, or explore the GitHub repository for examples and contributions.
+</Tip>

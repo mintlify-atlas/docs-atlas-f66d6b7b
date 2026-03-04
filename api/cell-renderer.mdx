@@ -1,0 +1,334 @@
+---
+title: ICellRendererComp
+description: Interface for custom cell renderer components in AG Grid
+---
+
+The `ICellRendererComp` interface allows you to create custom components for rendering cell content in AG Grid. Cell renderers control how data is displayed in individual cells.
+
+## Overview
+
+Create custom cell renderers to display complex content, add interactivity, or format data in ways that go beyond simple text formatting.
+
+```javascript
+const gridOptions = {
+  columnDefs: [
+    {
+      field: 'status',
+      cellRenderer: StatusCellRenderer
+    }
+  ]
+};
+```
+
+## Interface Definition
+
+```typescript
+interface ICellRendererComp<TData = any> extends IComponent<ICellRendererParams<TData>>, ICellRenderer<TData> {
+  /** Component lifecycle method */
+  init(params: ICellRendererParams<TData>): void;
+  
+  /** Get the cell to refresh */
+  refresh(params: ICellRendererParams<TData>): boolean;
+  
+  /** Return the DOM element */
+  getGui(): HTMLElement;
+  
+  /** Optional: Clean up resources */
+  destroy?(): void;
+}
+```
+
+## ICellRendererParams
+
+<ParamField path="value" type="TValue | null | undefined">
+  Value to be rendered.
+  
+  ```javascript
+  // In your cell renderer
+  init(params) {
+    const value = params.value;
+    this.eGui.innerHTML = value ? String(value) : '';
+  }
+  ```
+</ParamField>
+
+<ParamField path="valueFormatted" type="string | null | undefined">
+  Formatted value to be rendered (if a valueFormatter was provided).
+  
+  ```javascript
+  init(params) {
+    const displayValue = params.valueFormatted || params.value;
+    this.eGui.textContent = displayValue;
+  }
+  ```
+</ParamField>
+
+<ParamField path="data" type="TData | undefined">
+  The row's data. Data property can be `undefined` when row grouping or loading infinite row models.
+  
+  ```javascript
+  init(params) {
+    if (params.data) {
+      // Access other fields
+      const fullName = `${params.data.firstName} ${params.data.lastName}`;
+    }
+  }
+  ```
+</ParamField>
+
+<ParamField path="node" type="IRowNode<TData>">
+  The row node.
+  
+  ```javascript
+  init(params) {
+    if (params.node.group) {
+      // This is a group row
+      this.eGui.textContent = params.node.key;
+    }
+  }
+  ```
+</ParamField>
+
+<ParamField path="colDef" type="ColDef<TData, TValue>">
+  The cell's column definition.
+  
+  ```javascript
+  init(params) {
+    const field = params.colDef.field;
+    console.log('Rendering column:', field);
+  }
+  ```
+</ParamField>
+
+<ParamField path="column" type="Column<TValue>">
+  The cell's column.
+  
+  ```javascript
+  init(params) {
+    const columnId = params.column.getId();
+  }
+  ```
+</ParamField>
+
+<ParamField path="eGridCell" type="HTMLElement">
+  The grid's cell, a DOM div element.
+  
+  ```javascript
+  init(params) {
+    // Add event listener to grid cell
+    params.eGridCell.addEventListener('keydown', this.onKeyDown);
+  }
+  ```
+</ParamField>
+
+<ParamField path="eParentOfValue" type="HTMLElement">
+  The parent DOM item for the cell renderer, same as eGridCell unless using checkbox selection.
+  
+  ```javascript
+  init(params) {
+    params.eParentOfValue.appendChild(this.eGui);
+  }
+  ```
+</ParamField>
+
+### Utility Methods
+
+<ParamField path="getValue" type="() => TValue | null | undefined">
+  Convenience function to get most recent up to data value.
+  
+  ```javascript
+  refresh(params) {
+    const latestValue = params.getValue();
+    this.updateDisplay(latestValue);
+    return true;
+  }
+  ```
+</ParamField>
+
+<ParamField path="setValue" type="(value: TValue | null | undefined) => void">
+  Convenience function to set the value.
+  
+  ```javascript
+  onClick() {
+    const newValue = calculateNewValue();
+    this.params.setValue(newValue);
+  }
+  ```
+</ParamField>
+
+<ParamField path="formatValue" type="(value: TValue | null | undefined) => string">
+  Convenience function to format a value using the column's formatter.
+  
+  ```javascript
+  init(params) {
+    const formatted = params.formatValue(params.value);
+    this.eGui.textContent = formatted;
+  }
+  ```
+</ParamField>
+
+<ParamField path="refreshCell" type="() => void">
+  Convenience function to refresh the cell.
+  
+  ```javascript
+  onExternalDataChange() {
+    this.params.refreshCell();
+  }
+  ```
+</ParamField>
+
+<ParamField path="registerRowDragger" type="(rowDraggerElement: HTMLElement, dragStartPixels?: number, value?: string, suppressVisibilityChange?: boolean) => void">
+  Register an element as a row dragger.
+  
+  **Parameters:**
+  - `rowDraggerElement`: The HTMLElement to be used as Row Dragger
+  - `dragStartPixels`: The amount of pixels required to start the drag (Default: 4)
+  - `value`: The value to be displayed while dragging
+  - `suppressVisibilityChange`: Set to `true` to prevent the Grid from hiding the Row Dragger when it is disabled
+  
+  **Module:** `RowDragModule`
+  
+  ```javascript
+  init(params) {
+    const dragHandle = document.createElement('div');
+    dragHandle.className = 'drag-handle';
+    dragHandle.innerHTML = '⋮⋮';
+    params.registerRowDragger(dragHandle, 4);
+    this.eGui.appendChild(dragHandle);
+  }
+  ```
+</ParamField>
+
+<ParamField path="setTooltip" type="(value: string, shouldDisplayTooltip?: () => boolean) => void">
+  Sets a tooltip to the main element of this component.
+  
+  **Parameters:**
+  - `value`: The value to be displayed by the tooltip
+  - `shouldDisplayTooltip`: A function returning a boolean that allows the tooltip to be displayed conditionally
+  
+  **Module:** `TooltipModule`
+  
+  ```javascript
+  init(params) {
+    params.setTooltip('Click to view details');
+  }
+  ```
+</ParamField>
+
+## Required Methods
+
+<ParamField path="init" type="(params: ICellRendererParams<TData>) => void">
+  Called once when the component is created. Use this to set up your component.
+  
+  ```javascript
+  init(params) {
+    this.params = params;
+    this.eGui = document.createElement('div');
+    this.eGui.innerHTML = `<span>${params.value}</span>`;
+  }
+  ```
+</ParamField>
+
+<ParamField path="getGui" type="() => HTMLElement">
+  Return the DOM element for your cell renderer.
+  
+  ```javascript
+  getGui() {
+    return this.eGui;
+  }
+  ```
+</ParamField>
+
+<ParamField path="refresh" type="(params: ICellRendererParams<TData>) => boolean">
+  Get the cell to refresh. Return `true` if successful. Return `false` if not (or you don't have refresh logic), then the grid will refresh the cell for you.
+  
+  ```javascript
+  refresh(params) {
+    // Update the display with new value
+    this.eGui.querySelector('span').textContent = params.value;
+    return true; // Refresh was successful
+  }
+  ```
+</ParamField>
+
+## Optional Methods
+
+<ParamField path="destroy" type="() => void">
+  Optional: Gets called once when the component is being removed. Use this to clean up any resources.
+  
+  ```javascript
+  destroy() {
+    // Clean up event listeners
+    this.button.removeEventListener('click', this.onClick);
+  }
+  ```
+</ParamField>
+
+## Complete Example
+
+```javascript
+class ButtonCellRenderer {
+  init(params) {
+    this.params = params;
+    this.eGui = document.createElement('button');
+    this.eGui.className = 'btn-cell-renderer';
+    this.eGui.textContent = params.value || 'Click';
+    
+    // Add click handler
+    this.onClick = this.onClick.bind(this);
+    this.eGui.addEventListener('click', this.onClick);
+  }
+  
+  onClick(event) {
+    // Prevent row selection when clicking button
+    event.stopPropagation();
+    
+    if (this.params.clicked) {
+      this.params.clicked(this.params.data);
+    }
+  }
+  
+  getGui() {
+    return this.eGui;
+  }
+  
+  refresh(params) {
+    this.params = params;
+    this.eGui.textContent = params.value || 'Click';
+    return true;
+  }
+  
+  destroy() {
+    this.eGui.removeEventListener('click', this.onClick);
+  }
+}
+
+// Usage
+const gridOptions = {
+  columnDefs: [
+    {
+      field: 'action',
+      cellRenderer: ButtonCellRenderer,
+      cellRendererParams: {
+        clicked: (data) => {
+          console.log('Button clicked for:', data);
+        }
+      }
+    }
+  ]
+};
+```
+
+## Related APIs
+
+<Card title="Cell Editor" icon="edit" href="/api/cell-editor">
+  Create custom cell editors
+</Card>
+
+<Card title="Column Definitions" icon="table-columns" href="/api/column-definitions">
+  Configure cell renderers in columns
+</Card>
+
+<Card title="GridOptions" icon="gear" href="/api/grid-options">
+  Grid-level component configuration
+</Card>

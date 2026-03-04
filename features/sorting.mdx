@@ -1,0 +1,382 @@
+---
+title: "Row Sorting"
+description: "Configure and control row sorting with built-in comparators and custom sort functions"
+---
+
+## Overview
+
+AG Grid provides powerful row sorting capabilities that allow users to order data by one or multiple columns. Sorting can be configured at the column level and controlled programmatically via the Grid API.
+
+## Enabling Sorting
+
+Sorting is enabled by default for all columns. To enable or disable sorting for specific columns, use the `sortable` property in your column definitions.
+
+<CodeGroup>
+```typescript Column Definition
+const columnDefs = [
+  {
+    field: 'athlete',
+    sortable: true  // Sorting enabled (default)
+  },
+  {
+    field: 'country',
+    sortable: false // Sorting disabled
+  }
+];
+```
+
+```typescript Grid Options
+const gridOptions = {
+  columnDefs: columnDefs,
+  rowData: rowData
+};
+```
+</CodeGroup>
+
+## Sort Configuration Options
+
+### Initial Sort State
+
+Set the default sort when the grid loads using the `sort` and `sortIndex` properties.
+
+```typescript
+const columnDefs = [
+  {
+    field: 'athlete',
+    sort: 'asc' as const,     // Initial sort direction
+    sortIndex: 0               // Sort order (for multi-column sort)
+  },
+  {
+    field: 'year',
+    sort: 'desc' as const,
+    sortIndex: 1
+  }
+];
+```
+
+<Note>
+Use `initialSort` and `initialSortIndex` if you only want the sort applied when creating a new column, not when updating column definitions.
+</Note>
+
+### Sort Direction Options
+
+The `sortingOrder` property defines the sequence of sort states when clicking column headers.
+
+```typescript
+const columnDefs = [
+  {
+    field: 'athlete',
+    sortingOrder: ['asc', 'desc', null] // Default: asc -> desc -> no sort
+  },
+  {
+    field: 'medals',
+    sortingOrder: ['desc', 'asc']       // Only toggle between desc and asc
+  }
+];
+```
+
+### Advanced Sort Types
+
+AG Grid supports absolute value sorting and custom sort types:
+
+```typescript
+import { SortDef } from 'ag-grid-community';
+
+const columnDefs = [
+  {
+    field: 'temperature',
+    sort: {
+      type: 'absolute',
+      direction: 'asc'
+    } as SortDef,
+    sortingOrder: [
+      { type: 'absolute', direction: 'asc' },
+      { type: 'absolute', direction: 'desc' },
+      null
+    ]
+  }
+];
+```
+
+## Custom Sort Comparators
+
+Provide custom sorting logic using the `comparator` property:
+
+```typescript
+import { SortComparatorFn } from 'ag-grid-community';
+
+const dateComparator: SortComparatorFn = (
+  valueA,
+  valueB,
+  nodeA,
+  nodeB,
+  isDescending
+) => {
+  const dateA = new Date(valueA).getTime();
+  const dateB = new Date(valueB).getTime();
+  
+  if (dateA === dateB) return 0;
+  return dateA > dateB ? 1 : -1;
+};
+
+const columnDefs = [
+  {
+    field: 'date',
+    comparator: dateComparator
+  }
+];
+```
+
+<Warning>
+The `isDescending` parameter indicates the current sort direction but should **not** be used to invert the return value. The grid automatically handles ascending/descending ordering.
+</Warning>
+
+### Multiple Comparators by Sort Type
+
+You can provide different comparators for different sort types:
+
+```typescript
+const columnDefs = [
+  {
+    field: 'value',
+    comparator: {
+      standard: (valueA, valueB) => valueA - valueB,
+      absolute: (valueA, valueB) => Math.abs(valueA) - Math.abs(valueB)
+    }
+  }
+];
+```
+
+## Multi-Column Sorting
+
+### User Interaction
+
+By default, users can sort by multiple columns by holding modifier keys:
+
+```typescript
+const gridOptions = {
+  multiSortKey: 'ctrl', // Use Ctrl/Cmd key for multi-sort (default)
+  // or
+  multiSortKey: 'shift' // Use Shift key for multi-sort
+};
+```
+
+### Always Multi-Sort
+
+Force multi-column sorting to always be enabled:
+
+```typescript
+const gridOptions = {
+  alwaysMultiSort: true,
+  suppressMultiSort: false  // Ensure multi-sort is not disabled
+};
+```
+
+## API Methods
+
+Control sorting programmatically using the Grid API.
+
+### Get Sort State
+
+Retrieve the current sort configuration:
+
+```typescript
+import { Column, SortDef } from 'ag-grid-community';
+
+// Get sort for a specific column
+const column: Column = gridApi.getColumn('athlete');
+const sortDef: SortDef | null = column.getSortDef();
+const sortDirection = column.getSort(); // 'asc' | 'desc' | undefined
+const sortIndex = column.getSortIndex();
+
+console.log('Sort direction:', sortDirection);
+console.log('Sort index:', sortIndex);
+console.log('Is sorting:', column.isSorting());
+```
+
+### Apply Sort
+
+Trigger sorting via the API:
+
+```typescript
+// Trigger sort recalculation
+api.onSortChanged();
+
+// Or from beans context
+import { onSortChanged } from 'ag-grid-community';
+onSortChanged(beans);
+```
+
+### Check Sort Status
+
+```typescript
+import { Column } from 'ag-grid-community';
+
+const column: Column = gridApi.getColumn('athlete');
+
+if (column.isSortable()) {
+  const isActive = column.getSort() !== undefined;
+  console.log('Sorting is active:', isActive);
+}
+```
+
+## Post-Sort Processing
+
+Execute custom logic after sorting completes:
+
+```typescript
+import { PostSortRows } from 'ag-grid-community';
+
+const gridOptions = {
+  postSortRows: ((params) => {
+    const { nodes } = params;
+    // Custom logic after sorting
+    console.log('Sort completed with', nodes.length, 'rows');
+  }) as PostSortRows
+};
+```
+
+## Events
+
+Listen to sort changes:
+
+```typescript
+import { SortChangedEvent } from 'ag-grid-community';
+
+const gridOptions = {
+  onSortChanged: (event: SortChangedEvent) => {
+    console.log('Sort changed from:', event.source);
+    if (event.columns) {
+      console.log('Affected columns:', event.columns.map(c => c.getColId()));
+    }
+  }
+};
+```
+
+## Common Use Cases
+
+<Accordion title="Case-Insensitive String Sorting">
+```typescript
+const stringComparator: SortComparatorFn = (valueA, valueB) => {
+  const a = (valueA || '').toLowerCase();
+  const b = (valueB || '').toLowerCase();
+  
+  if (a === b) return 0;
+  return a > b ? 1 : -1;
+};
+
+const columnDefs = [
+  {
+    field: 'name',
+    comparator: stringComparator
+  }
+];
+```
+</Accordion>
+
+<Accordion title="Numeric Sorting with Null Handling">
+```typescript
+const numericComparator: SortComparatorFn = (valueA, valueB) => {
+  // Treat null/undefined as smallest values
+  if (valueA == null && valueB == null) return 0;
+  if (valueA == null) return -1;
+  if (valueB == null) return 1;
+  
+  return valueA - valueB;
+};
+```
+</Accordion>
+
+<Accordion title="Complex Object Sorting">
+```typescript
+interface ComplexValue {
+  priority: number;
+  name: string;
+}
+
+const objectComparator: SortComparatorFn<any, ComplexValue> = (
+  valueA,
+  valueB
+) => {
+  // Sort by priority first, then by name
+  if (valueA.priority !== valueB.priority) {
+    return valueA.priority - valueB.priority;
+  }
+  return valueA.name.localeCompare(valueB.name);
+};
+```
+</Accordion>
+
+## Related Configuration
+
+### Column Grouping with Sorting
+
+When using row grouping, you can couple sorting to grouped columns:
+
+```typescript
+const gridOptions = {
+  columnsSortingCoupledToGroup: true
+};
+```
+
+### Maintain Sort Order
+
+Preserve sort order when data changes:
+
+```typescript
+const gridOptions = {
+  accentedSort: true,        // Handle accented characters
+  maintainColumnOrder: true  // Keep column order when updating definitions
+};
+```
+
+## TypeScript Interfaces
+
+Key interfaces from the source code:
+
+```typescript
+// From colDef.ts
+export type SortDirection = 'asc' | 'desc' | null;
+
+export interface SortDef {
+  type?: SortType;
+  direction: SortDirection;
+}
+
+export type SortComparatorFn<TData = any, TValue = any> = (
+  valueA: TValue | null | undefined,
+  valueB: TValue | null | undefined,
+  nodeA: IRowNode<TData>,
+  nodeB: IRowNode<TData>,
+  isDescending: boolean
+) => number;
+
+// Column interface methods
+interface Column {
+  getSort(): SortDirection | undefined;
+  getSortDef(): SortDef | null;
+  getSortIndex(): number | null | undefined;
+  isSortable(): boolean;
+  isSorting(): boolean;
+}
+```
+
+## Best Practices
+
+<Steps>
+  <Step title="Enable sorting selectively">
+    Only enable sorting on columns where it makes sense. Disable it on action columns or columns with complex renderers.
+  </Step>
+  
+  <Step title="Use custom comparators for complex data">
+    Provide custom comparators for dates, numbers with special formatting, or objects to ensure correct sorting behavior.
+  </Step>
+  
+  <Step title="Set initial sort state">
+    Use `initialSort` and `initialSortIndex` to establish a default sort order that guides users to the most relevant data.
+  </Step>
+  
+  <Step title="Handle null values explicitly">
+    In custom comparators, always handle null and undefined values to prevent unexpected sorting behavior.
+  </Step>
+</Steps>

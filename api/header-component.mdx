@@ -1,0 +1,357 @@
+---
+title: IHeaderComp
+description: Interface for custom header components in AG Grid
+---
+
+The `IHeaderComp` interface allows you to create custom components for column headers in AG Grid. Header components control how column headers are displayed and can add custom functionality like sorting, filtering, or custom interactions.
+
+## Overview
+
+Create custom header components to add specialized header displays, custom sorting controls, or additional header functionality.
+
+```javascript
+const gridOptions = {
+  columnDefs: [
+    {
+      field: 'name',
+      headerComponent: CustomHeaderComponent
+    }
+  ]
+};
+```
+
+## Interface Definition
+
+```typescript
+interface IHeaderComp extends IHeader, IComponent<IHeaderParams> {
+  /** Get the header to refresh */
+  refresh(params: IHeaderParams): boolean;
+}
+
+interface IHeader {
+  /** Get the header to refresh. Gets called whenever Column Defs are updated. */
+  refresh(params: IHeaderParams): boolean;
+}
+```
+
+## IHeaderParams
+
+<ParamField path="column" type="Column">
+  The column the header is for.
+  
+  ```javascript
+  init(params) {
+    this.column = params.column;
+    console.log('Header for:', params.column.getId());
+  }
+  ```
+</ParamField>
+
+<ParamField path="displayName" type="string">
+  The name to display for the column. If the column is using a headerValueGetter, the displayName will take this into account.
+  
+  ```javascript
+  init(params) {
+    this.eText.textContent = params.displayName;
+  }
+  ```
+</ParamField>
+
+<ParamField path="enableSorting" type="boolean | undefined">
+  Whether sorting is enabled for the column. Only put sort logic into your header if this is true.
+  
+  ```javascript
+  init(params) {
+    if (params.enableSorting) {
+      this.setupSorting();
+    }
+  }
+  ```
+</ParamField>
+
+<ParamField path="enableMenu" type="boolean">
+  Whether menu is enabled for the column. Only display a menu button in your header if this is true.
+  
+  ```javascript
+  init(params) {
+    if (params.enableMenu) {
+      this.eMenu.style.display = 'block';
+    }
+  }
+  ```
+</ParamField>
+
+<ParamField path="enableFilterButton" type="boolean">
+  Whether filter button should be displayed in the header (for new column menu).
+  
+  ```javascript
+  init(params) {
+    if (params.enableFilterButton) {
+      this.eFilterButton.style.display = 'block';
+    }
+  }
+  ```
+</ParamField>
+
+<ParamField path="enableFilterIcon" type="boolean">
+  Whether filter icon should be displayed in the header (for legacy tabbed column menu).
+  
+  ```javascript
+  init(params) {
+    if (params.enableFilterIcon) {
+      this.eFilterIcon.style.display = 'block';
+    }
+  }
+  ```
+</ParamField>
+
+<ParamField path="eGridHeader" type="HTMLElement">
+  The header the grid provides. The custom header component is a child of the grid provided header. This is provided should you want to make changes to this cell, eg add ARIA tags, or add keyboard event listener.
+  
+  ```javascript
+  init(params) {
+    params.eGridHeader.setAttribute('aria-label', 'Custom header');
+  }
+  ```
+</ParamField>
+
+### Callback Methods
+
+<ParamField path="showColumnMenu" type="(source: HTMLElement, onClosedCallback?: () => void) => void">
+  Callback to request the grid to show the column menu. Pass in the html element of the column menu button to have the grid position the menu over the button.
+  
+  ```javascript
+  onMenuClick(event) {
+    this.params.showColumnMenu(this.eMenuButton);
+  }
+  ```
+</ParamField>
+
+<ParamField path="showColumnMenuAfterMouseClick" type="(mouseEvent: MouseEvent | Touch, onClosedCallback?: () => void) => void">
+  Callback to request the grid to show the column menu. Similar to `showColumnMenu`, but will position the menu next to the provided `mouseEvent`.
+  
+  ```javascript
+  onContextMenu(event) {
+    event.preventDefault();
+    this.params.showColumnMenuAfterMouseClick(event);
+  }
+  ```
+</ParamField>
+
+<ParamField path="showFilter" type="(source: HTMLElement) => void">
+  Callback to request the grid to show the filter. Pass in the html element of the filter button to have the grid position the menu over the button.
+  
+  ```javascript
+  onFilterClick() {
+    this.params.showFilter(this.eFilterButton);
+  }
+  ```
+</ParamField>
+
+<ParamField path="progressSort" type="(multiSort?: boolean) => void">
+  Callback to progress the sort for this column. The grid will decide the next sort direction eg ascending, descending or 'no sort'. Pass `multiSort=true` if you want to do a multi sort (eg user has Shift held down when they click).
+  
+  ```javascript
+  onSortClick(event) {
+    this.params.progressSort(event.shiftKey);
+  }
+  ```
+</ParamField>
+
+<ParamField path="setSort" type="(sort: SortDirection | SortDef, multiSort?: boolean) => void">
+  Callback to set the sort for this column. Pass the sort direction to use ignoring the current sort. Pass `multiSort=true` if you want to do a multi sort.
+  
+  ```javascript
+  onAscClick() {
+    this.params.setSort('asc');
+  }
+  ```
+</ParamField>
+
+<ParamField path="setTooltip" type="(value: string, shouldDisplayTooltip?: () => boolean) => void">
+  Sets a tooltip to the main element of this component.
+  
+  **Module:** `TooltipModule`
+  
+  ```javascript
+  init(params) {
+    params.setTooltip('Click to sort');
+  }
+  ```
+</ParamField>
+
+### Template Properties
+
+<ParamField path="template" type="string">
+  Custom header template if provided to `headerComponentParams`, otherwise will be `undefined`.
+  
+  ```javascript
+  init(params) {
+    if (params.template) {
+      this.eGui.innerHTML = params.template;
+    }
+  }
+  ```
+</ParamField>
+
+<ParamField path="innerHeaderComponent" type="any">
+  The component to use for inside the header (replaces the text value and leaves the remainder of the Grid's original component).
+  
+  ```javascript
+  // In column definition
+  {
+    field: 'name',
+    headerComponentParams: {
+      innerHeaderComponent: CustomInnerHeader
+    }
+  }
+  ```
+</ParamField>
+
+## Required Methods
+
+<ParamField path="refresh" type="(params: IHeaderParams) => boolean">
+  Get the header to refresh. Gets called whenever Column Defs are updated. Return `true` if the refresh was successful, `false` if not (then grid will destroy and recreate the component).
+  
+  ```javascript
+  refresh(params) {
+    this.params = params;
+    this.eText.textContent = params.displayName;
+    this.updateSortIndicator();
+    return true;
+  }
+  ```
+</ParamField>
+
+## Complete Example
+
+```javascript
+class CustomHeaderComponent {
+  init(params) {
+    this.params = params;
+    
+    // Create GUI
+    this.eGui = document.createElement('div');
+    this.eGui.className = 'custom-header';
+    this.eGui.innerHTML = `
+      <div class="custom-header-label">
+        <span class="header-text"></span>
+        <span class="sort-indicator"></span>
+      </div>
+      <button class="header-menu-button">☰</button>
+    `;
+    
+    // References to elements
+    this.eText = this.eGui.querySelector('.header-text');
+    this.eSortIndicator = this.eGui.querySelector('.sort-indicator');
+    this.eMenuButton = this.eGui.querySelector('.header-menu-button');
+    
+    // Set text
+    this.eText.textContent = params.displayName;
+    
+    // Setup sorting
+    if (params.enableSorting) {
+      this.onSortRequested = this.onSortRequested.bind(this);
+      this.eText.addEventListener('click', this.onSortRequested);
+      this.eText.style.cursor = 'pointer';
+    }
+    
+    // Setup menu
+    if (params.enableMenu) {
+      this.onMenuClick = this.onMenuClick.bind(this);
+      this.eMenuButton.addEventListener('click', this.onMenuClick);
+    } else {
+      this.eMenuButton.style.display = 'none';
+    }
+    
+    // Update sort indicator
+    this.updateSortIndicator();
+  }
+  
+  onSortRequested(event) {
+    this.params.progressSort(event.shiftKey);
+  }
+  
+  onMenuClick() {
+    this.params.showColumnMenu(this.eMenuButton);
+  }
+  
+  updateSortIndicator() {
+    const sort = this.params.column.getSort();
+    if (sort === 'asc') {
+      this.eSortIndicator.textContent = '↑';
+    } else if (sort === 'desc') {
+      this.eSortIndicator.textContent = '↓';
+    } else {
+      this.eSortIndicator.textContent = '';
+    }
+  }
+  
+  getGui() {
+    return this.eGui;
+  }
+  
+  refresh(params) {
+    this.params = params;
+    this.eText.textContent = params.displayName;
+    this.updateSortIndicator();
+    return true;
+  }
+  
+  destroy() {
+    if (this.params.enableSorting) {
+      this.eText.removeEventListener('click', this.onSortRequested);
+    }
+    if (this.params.enableMenu) {
+      this.eMenuButton.removeEventListener('click', this.onMenuClick);
+    }
+  }
+}
+
+// Usage
+const gridOptions = {
+  columnDefs: [
+    {
+      field: 'name',
+      headerComponent: CustomHeaderComponent,
+      sortable: true,
+      menuTabs: ['filterMenuTab', 'generalMenuTab']
+    }
+  ]
+};
+```
+
+## Header Templates
+
+You can also provide a simple HTML template for the header:
+
+```javascript
+const gridOptions = {
+  columnDefs: [
+    {
+      field: 'name',
+      headerComponentParams: {
+        template:
+          '<div>' +
+          '  <span class="custom-icon">🔍</span>' +
+          '  <span class="ag-header-cell-text" ref="eText"></span>' +
+          '</div>'
+      }
+    }
+  ]
+};
+```
+
+## Related APIs
+
+<Card title="Column Definitions" icon="table-columns" href="/api/column-definitions">
+  Configure header components in columns
+</Card>
+
+<Card title="Column Events" icon="bolt" href="/api/column-events">
+  Header interaction events
+</Card>
+
+<Card title="GridApi" icon="code" href="/api/grid-api">
+  Programmatic column control
+</Card>

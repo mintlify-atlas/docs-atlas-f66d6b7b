@@ -1,0 +1,390 @@
+---
+title: GridApi
+description: Reference documentation for the AG Grid GridApi interface and methods
+---
+
+The `GridApi` is the primary interface for interacting with the AG Grid programmatically. It provides methods to control the grid's behavior, manage data, and respond to user interactions.
+
+## Overview
+
+Access the Grid API via the `onGridReady` event:
+
+```javascript
+const onGridReady = (params) => {
+  const gridApi = params.api;
+  // Use gridApi methods
+};
+```
+
+## Core Methods
+
+### Grid Lifecycle
+
+<ParamField path="getGridId" type="() => string">
+  Returns the `gridId` for the current grid as specified via the gridOptions property `gridId` or the auto assigned grid id if none was provided.
+  
+  ```javascript
+  const gridId = gridApi.getGridId();
+  console.log('Grid ID:', gridId);
+  ```
+</ParamField>
+
+<ParamField path="destroy" type="() => void">
+  Will destroy the grid and release resources. If you are using a framework you do not need to call this, as the grid links in with the framework lifecycle. However if you are using Web Components or native JavaScript, you do need to call this, to avoid a memory leak in your application.
+  
+  ```javascript
+  // Clean up when component unmounts
+  gridApi.destroy();
+  ```
+</ParamField>
+
+<ParamField path="isDestroyed" type="() => boolean">
+  Returns `true` if the grid has been destroyed.
+  
+  ```javascript
+  if (!gridApi.isDestroyed()) {
+    // Safe to use API
+  }
+  ```
+</ParamField>
+
+### Grid Options
+
+<ParamField path="getGridOption" type="<Key extends keyof GridOptions<TData>>(key: Key) => GridOptions<TData>[Key]">
+  Returns the grid option value for a provided key.
+  
+  ```javascript
+  const rowHeight = gridApi.getGridOption('rowHeight');
+  const pagination = gridApi.getGridOption('pagination');
+  ```
+</ParamField>
+
+<ParamField path="setGridOption" type="<Key extends ManagedGridOptionKey>(key: Key, value: GridOptions<TData>[Key]) => void">
+  Updates a single gridOption to the new value provided. Cannot be used on `Initial` properties. If updating multiple options, it is recommended to instead use `api.updateGridOptions()` which batches update logic.
+  
+  ```javascript
+  gridApi.setGridOption('rowHeight', 50);
+  gridApi.setGridOption('pagination', true);
+  ```
+</ParamField>
+
+<ParamField path="updateGridOptions" type="<TDataUpdate extends TData>(options: ManagedGridOptions<TDataUpdate>) => void">
+  Updates the provided subset of gridOptions with the provided values. Cannot be used on `Initial` properties.
+  
+  ```javascript
+  gridApi.updateGridOptions({
+    rowHeight: 50,
+    pagination: true,
+    paginationPageSize: 20
+  });
+  ```
+</ParamField>
+
+## Row Selection API
+
+<Accordion title="Row Selection Methods">
+
+<ParamField path="setNodesSelected" type="(params: { nodes: IRowNode<TData>[]; newValue: boolean; source?: SelectionEventSourceType }) => void">
+  Set all of the provided nodes selection state to the provided value.
+  
+  **Module:** `RowSelectionModule`
+  
+  ```javascript
+  const nodesToSelect = [rowNode1, rowNode2];
+  gridApi.setNodesSelected({ 
+    nodes: nodesToSelect, 
+    newValue: true,
+    source: 'api' 
+  });
+  ```
+</ParamField>
+
+<ParamField path="selectAll" type="(mode?: SelectAllMode, source?: SelectionEventSourceType) => void">
+  Select all rows. By default this ignores filtering, expansion and pagination settings. Pass the appropriate select all mode as an argument in order to select only rows that satisfy the filter, or those rows on the current page.
+  
+  **Module:** `RowSelectionModule`
+  
+  **Parameters:**
+  - `mode`: SelectAll mode to use. See `SelectAllMode`
+  - `source`: Source property that will appear in the `selectionChanged` event, defaults to `'apiSelectAll'`
+  
+  ```javascript
+  // Select all rows
+  gridApi.selectAll();
+  
+  // Select only filtered rows
+  gridApi.selectAll('filtered');
+  
+  // Select only current page
+  gridApi.selectAll('currentPage');
+  ```
+</ParamField>
+
+<ParamField path="deselectAll" type="(mode?: SelectAllMode, source?: SelectionEventSourceType) => void">
+  Clear all row selections. By default this ignores filtering, expansion and pagination settings.
+  
+  **Module:** `RowSelectionModule`
+  
+  ```javascript
+  gridApi.deselectAll();
+  gridApi.deselectAll('filtered');
+  ```
+</ParamField>
+
+<ParamField path="getSelectedNodes" type="() => IRowNode<TData>[]">
+  Returns an unsorted list of selected nodes. Getting the underlying node (rather than the data) is useful when working with tree / aggregated data, as the node can be traversed.
+  
+  **Module:** `RowSelectionModule`
+  
+  ```javascript
+  const selectedNodes = gridApi.getSelectedNodes();
+  selectedNodes.forEach(node => {
+    console.log('Selected:', node.data);
+  });
+  ```
+</ParamField>
+
+<ParamField path="getSelectedRows" type="() => TData[]">
+  Returns an unsorted list of selected rows (i.e. row data that you provided).
+  
+  **Module:** `RowSelectionModule`
+  
+  ```javascript
+  const selectedData = gridApi.getSelectedRows();
+  console.log('Selected rows:', selectedData.length);
+  ```
+</ParamField>
+
+</Accordion>
+
+## Row API
+
+<ParamField path="redrawRows" type="(params?: RedrawRowsParams<TData>) => void">
+  Remove row(s) from the DOM and recreate them again from scratch.
+  
+  **Module:** `RowApiModule`
+  
+  ```javascript
+  // Redraw all rows
+  gridApi.redrawRows();
+  
+  // Redraw specific rows
+  gridApi.redrawRows({ rowNodes: [rowNode1, rowNode2] });
+  ```
+</ParamField>
+
+<ParamField path="setRowNodeExpanded" type="(rowNode: IRowNode<TData>, expanded: boolean, expandParents?: boolean, forceSync?: boolean) => void">
+  Expand or collapse a specific row node, optionally expanding/collapsing all of its parent nodes. By default rows are expanded asynchronously for best performance. Set `forceSync: true` if you need to interact with the expanded row immediately after this function.
+  
+  **Module:** `RowApiModule`
+  
+  ```javascript
+  const rowNode = gridApi.getRowNode('myId');
+  gridApi.setRowNodeExpanded(rowNode, true, true);
+  ```
+</ParamField>
+
+<ParamField path="getRowNode" type="(id: string) => IRowNode<TData> | undefined">
+  Returns the row node with the given ID. The row node ID is the one you provide from the callback `getRowId(params)`, otherwise the ID is a number (cast as string) auto-generated by the grid when the row data is set.
+  
+  **Module:** `RowApiModule`
+  
+  ```javascript
+  const rowNode = gridApi.getRowNode('unique-row-id');
+  if (rowNode) {
+    console.log('Found row:', rowNode.data);
+  }
+  ```
+</ParamField>
+
+<ParamField path="forEachNode" type="(callback: (rowNode: IRowNode<TData>, index: number) => void, includeFooterNodes?: boolean) => void">
+  Iterates through each node (row) in the grid and calls the callback for each node. This works similar to the `forEach` method on a JavaScript array. This is called for every node, ignoring any filtering or sorting applied within the grid.
+  
+  **Module:** `RowApiModule`
+  
+  ```javascript
+  gridApi.forEachNode((node, index) => {
+    console.log(`Node ${index}:`, node.data);
+  });
+  ```
+</ParamField>
+
+<ParamField path="getDisplayedRowCount" type="() => number">
+  Returns the total number of displayed rows.
+  
+  **Module:** `RowApiModule`
+  
+  ```javascript
+  const rowCount = gridApi.getDisplayedRowCount();
+  console.log('Total rows:', rowCount);
+  ```
+</ParamField>
+
+## Column API
+
+<ParamField path="getColumns" type="() => Column[] | null">
+  Returns all the columns, regardless of visible or not.
+  
+  **Module:** `ColumnApiModule`
+  
+  ```javascript
+  const allColumns = gridApi.getColumns();
+  allColumns.forEach(col => {
+    console.log('Column ID:', col.getColId());
+  });
+  ```
+</ParamField>
+
+<ParamField path="getColumn" type="<TValue = any>(key: ColKey<TData, TValue>) => Column<TValue> | null">
+  Returns the column with the given `colKey`, which can either be the `colId` (a string) or the `colDef` (an object).
+  
+  **Module:** `ColumnApiModule`
+  
+  ```javascript
+  const column = gridApi.getColumn('age');
+  if (column) {
+    console.log('Column def:', column.getColDef());
+  }
+  ```
+</ParamField>
+
+<ParamField path="setColumnsVisible" type="(keys: (string | Column)[], visible: boolean) => void">
+  Sets the visibility of columns. Key can be the column ID or `Column` object.
+  
+  **Module:** `ColumnApiModule`
+  
+  ```javascript
+  // Hide columns
+  gridApi.setColumnsVisible(['age', 'country'], false);
+  
+  // Show columns
+  gridApi.setColumnsVisible(['age', 'country'], true);
+  ```
+</ParamField>
+
+<ParamField path="setColumnsPinned" type="(keys: ColKey[], pinned: ColumnPinnedType) => void">
+  Set a column's pinned / unpinned state. Key can be the column ID, field, `ColDef` object or `Column` object.
+  
+  **Module:** `ColumnApiModule`
+  
+  ```javascript
+  // Pin to left
+  gridApi.setColumnsPinned(['name'], 'left');
+  
+  // Unpin
+  gridApi.setColumnsPinned(['name'], null);
+  ```
+</ParamField>
+
+## Filter API
+
+<ParamField path="setFilterModel" type="(model: FilterModel | null) => void">
+  Sets the state of all the column filters. Provide it with what you get from `getFilterModel()` to restore filter state.
+  
+  **Module:** `TextFilterModule` / `NumberFilterModule` / `DateFilterModule` / `SetFilterModule` / `MultiFilterModule` / `CustomFilterModule`
+  
+  ```javascript
+  const filterModel = {
+    age: {
+      filterType: 'number',
+      type: 'greaterThan',
+      filter: 18
+    }
+  };
+  gridApi.setFilterModel(filterModel);
+  ```
+</ParamField>
+
+<ParamField path="getFilterModel" type="() => FilterModel">
+  Gets the current state of all the column filters. Used for saving filter state.
+  
+  **Module:** `TextFilterModule` / `NumberFilterModule` / `DateFilterModule` / `SetFilterModule` / `MultiFilterModule` / `CustomFilterModule`
+  
+  ```javascript
+  const filterModel = gridApi.getFilterModel();
+  console.log('Current filters:', filterModel);
+  ```
+</ParamField>
+
+<ParamField path="isAnyFilterPresent" type="() => boolean">
+  Returns `true` if any filter is set. This includes quick filter, column filter, external filter or advanced filter.
+  
+  **Module:** `TextFilterModule` / `NumberFilterModule` / `DateFilterModule` / `SetFilterModule` / `MultiFilterModule` / `CustomFilterModule` / `QuickFilterModule` / `ExternalFilterModule` / `AdvancedFilterModule`
+  
+  ```javascript
+  if (gridApi.isAnyFilterPresent()) {
+    console.log('Filters are active');
+  }
+  ```
+</ParamField>
+
+## Event Handling
+
+<ParamField path="addEventListener" type="<TEventType extends AgPublicEventType>(eventType: TEventType, listener: AgEventListener<TData, any, TEventType>) => void">
+  Add an event listener for the specified `eventType`. Listener will receive the `event` as a single parameter. Listeners will be automatically removed when the grid is destroyed.
+  
+  **Module:** `EventApiModule`
+  
+  ```javascript
+  gridApi.addEventListener('rowClicked', (event) => {
+    console.log('Row clicked:', event.data);
+  });
+  ```
+</ParamField>
+
+<ParamField path="removeEventListener" type="<TEventType extends AgPublicEventType>(eventType: TEventType, listener: AgEventListener<TData, any, TEventType>) => void">
+  Remove an event listener.
+  
+  **Module:** `EventApiModule`
+  
+  ```javascript
+  const listener = (event) => console.log('Row clicked:', event.data);
+  gridApi.addEventListener('rowClicked', listener);
+  
+  // Later...
+  gridApi.removeEventListener('rowClicked', listener);
+  ```
+</ParamField>
+
+## Editing API
+
+<ParamField path="startEditingCell" type="(params: StartEditingCellParams) => void">
+  Start editing the provided cell. If another cell is editing, the editing will be stopped in that other cell.
+  
+  **Module:** `TextEditorModule` / `LargeTextEditorModule` / `NumberEditorModule` / `DateEditorModule` / `CheckboxEditorModule` / `CustomEditorModule` / `SelectEditorModule` / `RichSelectModule`
+  
+  ```javascript
+  gridApi.startEditingCell({
+    rowIndex: 0,
+    colKey: 'age'
+  });
+  ```
+</ParamField>
+
+<ParamField path="stopEditing" type="(cancel?: boolean) => void">
+  If a cell is editing, it stops the editing. Pass `true` if you want to cancel the editing (i.e. don't accept changes).
+  
+  **Module:** `TextEditorModule` / `LargeTextEditorModule` / `NumberEditorModule` / `DateEditorModule` / `CheckboxEditorModule` / `CustomEditorModule` / `SelectEditorModule` / `RichSelectModule`
+  
+  ```javascript
+  // Accept changes
+  gridApi.stopEditing();
+  
+  // Cancel changes
+  gridApi.stopEditing(true);
+  ```
+</ParamField>
+
+## Related APIs
+
+<Card title="GridOptions" icon="gear" href="/api/grid-options">
+  Configure grid behavior and appearance
+</Card>
+
+<Card title="Column API" icon="table-columns" href="/api/column-api">
+  Deprecated column-specific methods (now part of GridApi)
+</Card>
+
+<Card title="Grid Events" icon="bolt" href="/api/grid-events">
+  Listen to grid-level events
+</Card>

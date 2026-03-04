@@ -1,0 +1,480 @@
+---
+title: 'Custom Components'
+description: 'Overview of the AG Grid component customization system'
+icon: 'puzzle-piece'
+---
+
+## Overview
+
+AG Grid provides a powerful component framework that allows you to customize almost every visual aspect of the grid. You can create custom components for:
+
+- **Cell Renderers** - Control how cell values are displayed
+- **Cell Editors** - Create custom editing interfaces
+- **Filters** - Build advanced filtering logic
+- **Headers** - Customize column header appearance and behavior
+- **Loading Overlays** - Custom loading states
+- **Tool Panels** - Add custom side panels
+
+<Note>
+All custom components share common lifecycle methods and can be implemented as vanilla JavaScript classes, React components, Angular components, or Vue components.
+</Note>
+
+## Component Lifecycle
+
+Every custom component follows a consistent lifecycle:
+
+<Steps>
+  <Step title="Initialization">
+    The grid creates your component instance and calls the `init()` method with component-specific parameters.
+    
+    ```typescript
+    init(params: IComponentParams): void {
+      // Initialize your component
+      // Store params for later use
+      this.params = params;
+    }
+    ```
+  </Step>
+
+  <Step title="GUI Attachment">
+    After the component is rendered, `afterGuiAttached()` is called. This is where you should focus elements or perform DOM operations.
+    
+    ```typescript
+    afterGuiAttached?(): void {
+      // Focus input elements
+      // Start animations
+      // Measure DOM elements
+    }
+    ```
+  </Step>
+
+  <Step title="Refresh (Optional)">
+    When data changes, the grid calls `refresh()` to give your component a chance to update without recreating it.
+    
+    ```typescript
+    refresh(params: IComponentParams): boolean {
+      // Return true if refresh was successful
+      // Return false to destroy and recreate
+      return true;
+    }
+    ```
+  </Step>
+
+  <Step title="Cleanup">
+    When the component is destroyed, `destroy()` is called to clean up resources.
+    
+    ```typescript
+    destroy?(): void {
+      // Remove event listeners
+      // Clear timers
+      // Release resources
+    }
+    ```
+  </Step>
+</Steps>
+
+## Component Types
+
+### Cell Renderers
+
+Customize how cell values are displayed without entering edit mode.
+
+<Card title="Cell Renderers" icon="eye" href="/customization/cell-renderers">
+  Learn how to create custom cell renderers for displaying data
+</Card>
+
+### Cell Editors
+
+Provide custom editing interfaces when users enter edit mode.
+
+<Card title="Cell Editors" icon="pen-to-square" href="/customization/cell-editors">
+  Build custom cell editors for data input and validation
+</Card>
+
+### Filters
+
+Create sophisticated filtering logic beyond the built-in filters.
+
+<Card title="Filters" icon="filter" href="/customization/filters">
+  Implement custom filter components with advanced logic
+</Card>
+
+## Framework-Specific Implementation
+
+AG Grid supports custom components across all major frameworks:
+
+<Tabs>
+  <Tab title="Vanilla JS">
+    Implement components as ES6 classes:
+
+    ```javascript
+    class CustomComponent {
+      init(params) {
+        this.params = params;
+        this.eGui = document.createElement('div');
+        this.eGui.innerHTML = '<span>Custom Content</span>';
+      }
+
+      getGui() {
+        return this.eGui;
+      }
+
+      destroy() {
+        // Cleanup
+      }
+    }
+    ```
+
+    Register the component:
+
+    ```javascript
+    const gridOptions = {
+      components: {
+        customComponent: CustomComponent
+      }
+    };
+    ```
+  </Tab>
+
+  <Tab title="React">
+    Use React functional components or classes:
+
+    ```jsx
+    import { forwardRef, useImperativeHandle } from 'react';
+
+    export default forwardRef((props, ref) => {
+      useImperativeHandle(ref, () => {
+        return {
+          refresh(params) {
+            // Update component
+            return true;
+          }
+        };
+      });
+
+      return (
+        <div>
+          <span>Custom Content: {props.value}</span>
+        </div>
+      );
+    });
+    ```
+
+    Register the component:
+
+    ```jsx
+    <AgGridReact
+      components={{
+        customComponent: CustomComponent
+      }}
+    />
+    ```
+  </Tab>
+
+  <Tab title="Angular">
+    Create an Angular component:
+
+    ```typescript
+    import { Component } from '@angular/core';
+    import { ICellRendererAngularComp } from 'ag-grid-angular';
+    import { ICellRendererParams } from 'ag-grid-community';
+
+    @Component({
+      selector: 'custom-component',
+      template: '<span>Custom Content: {{ params.value }}</span>'
+    })
+    export class CustomComponent implements ICellRendererAngularComp {
+      public params: ICellRendererParams;
+
+      agInit(params: ICellRendererParams): void {
+        this.params = params;
+      }
+
+      refresh(params: ICellRendererParams): boolean {
+        this.params = params;
+        return true;
+      }
+    }
+    ```
+
+    Register the component:
+
+    ```typescript
+    <ag-grid-angular
+      [components]="{
+        customComponent: CustomComponent
+      }"
+    >
+    </ag-grid-angular>
+    ```
+  </Tab>
+
+  <Tab title="Vue">
+    Create a Vue component:
+
+    ```vue
+    <template>
+      <div>
+        <span>Custom Content: {{ params.value }}</span>
+      </div>
+    </template>
+
+    <script>
+    export default {
+      data() {
+        return {
+          params: null
+        };
+      },
+      methods: {
+        refresh(params) {
+          this.params = params;
+          return true;
+        }
+      }
+    };
+    </script>
+    ```
+
+    Register the component:
+
+    ```vue
+    <ag-grid-vue
+      :components="{
+        customComponent: CustomComponent
+      }"
+    />
+    ```
+  </Tab>
+</Tabs>
+
+## Common Interfaces
+
+All custom components extend from the base `IComponent` interface:
+
+```typescript
+interface IComponent<TParams> {
+  /** Return the DOM element for your component */
+  getGui?(): HTMLElement;
+  
+  /** Called after the GUI is attached to the DOM */
+  afterGuiAttached?(params?: IAfterGuiAttachedParams): void;
+  
+  /** Called when the component is destroyed */
+  destroy?(): void;
+}
+```
+
+### AgGridCommon Interface
+
+Most component params extend `AgGridCommon`, which provides access to grid APIs:
+
+```typescript
+interface AgGridCommon<TData, TContext> {
+  /** Grid API for programmatic control */
+  api: GridApi<TData>;
+  
+  /** Column API for column operations */
+  columnApi: ColumnApi;
+  
+  /** Custom context object */
+  context: TContext;
+}
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Performance Optimization">
+    - Implement `refresh()` to update components efficiently instead of recreating them
+    - Cache DOM elements to avoid repeated queries
+    - Debounce expensive operations like API calls
+    - Use event delegation for better performance with many cells
+  </Accordion>
+
+  <Accordion title="Memory Management">
+    - Always implement `destroy()` to clean up event listeners
+    - Remove timers and intervals in the destroy method
+    - Unsubscribe from observables and streams
+    - Clear references to DOM elements
+  </Accordion>
+
+  <Accordion title="Accessibility">
+    - Add proper ARIA attributes to interactive elements
+    - Ensure keyboard navigation works correctly
+    - Provide screen reader-friendly labels
+    - Test with assistive technologies
+  </Accordion>
+
+  <Accordion title="Type Safety">
+    - Use TypeScript generics for type-safe components
+    - Define custom parameter interfaces that extend base params
+    - Leverage IDE autocomplete with proper typing
+    - Avoid `any` types when possible
+  </Accordion>
+</AccordionGroup>
+
+## Example: Custom Component with All Lifecycle Methods
+
+<CodeGroup>
+```typescript Vanilla JS
+class FullLifecycleComponent {
+  private eGui: HTMLElement;
+  private params: ICellRendererParams;
+  private eventListener: () => void;
+
+  init(params: ICellRendererParams) {
+    this.params = params;
+    
+    // Create GUI
+    this.eGui = document.createElement('div');
+    this.eGui.innerHTML = `<span>${params.value}</span>`;
+    
+    // Add event listener
+    this.eventListener = () => {
+      console.log('Clicked:', params.value);
+    };
+    this.eGui.addEventListener('click', this.eventListener);
+  }
+
+  getGui() {
+    return this.eGui;
+  }
+
+  refresh(params: ICellRendererParams): boolean {
+    this.params = params;
+    this.eGui.querySelector('span').textContent = params.value;
+    return true;
+  }
+
+  afterGuiAttached() {
+    // Focus or measure if needed
+    console.log('Component attached to DOM');
+  }
+
+  destroy() {
+    // Clean up
+    if (this.eventListener) {
+      this.eGui.removeEventListener('click', this.eventListener);
+    }
+  }
+}
+```
+
+```jsx React
+import { forwardRef, useImperativeHandle, useState, useEffect } from 'react';
+
+const FullLifecycleComponent = forwardRef((props, ref) => {
+  const [value, setValue] = useState(props.value);
+
+  useImperativeHandle(ref, () => ({
+    refresh(params) {
+      setValue(params.value);
+      return true;
+    }
+  }));
+
+  useEffect(() => {
+    console.log('Component mounted');
+    return () => {
+      console.log('Component unmounted');
+    };
+  }, []);
+
+  const handleClick = () => {
+    console.log('Clicked:', value);
+  };
+
+  return (
+    <div onClick={handleClick}>
+      <span>{value}</span>
+    </div>
+  );
+});
+
+export default FullLifecycleComponent;
+```
+
+```typescript Angular
+import { Component, OnDestroy } from '@angular/core';
+import { ICellRendererAngularComp } from 'ag-grid-angular';
+import { ICellRendererParams } from 'ag-grid-community';
+
+@Component({
+  selector: 'full-lifecycle-component',
+  template: `
+    <div (click)="handleClick()">
+      <span>{{ params.value }}</span>
+    </div>
+  `
+})
+export class FullLifecycleComponent implements ICellRendererAngularComp, OnDestroy {
+  public params: ICellRendererParams;
+
+  agInit(params: ICellRendererParams): void {
+    this.params = params;
+    console.log('Component initialized');
+  }
+
+  refresh(params: ICellRendererParams): boolean {
+    this.params = params;
+    return true;
+  }
+
+  ngOnDestroy(): void {
+    console.log('Component destroyed');
+  }
+
+  handleClick(): void {
+    console.log('Clicked:', this.params.value);
+  }
+}
+```
+
+```vue Vue
+<template>
+  <div @click="handleClick">
+    <span>{{ params.value }}</span>
+  </div>
+</template>
+
+<script>
+export default {
+  data() {
+    return {
+      params: null
+    };
+  },
+  mounted() {
+    console.log('Component mounted');
+  },
+  beforeUnmount() {
+    console.log('Component unmounted');
+  },
+  methods: {
+    refresh(params) {
+      this.params = params;
+      return true;
+    },
+    handleClick() {
+      console.log('Clicked:', this.params.value);
+    }
+  }
+};
+</script>
+```
+</CodeGroup>
+
+## Next Steps
+
+<CardGroup cols={3}>
+  <Card title="Cell Renderers" icon="eye" href="/customization/cell-renderers">
+    Create custom cell renderers
+  </Card>
+  <Card title="Cell Editors" icon="pen-to-square" href="/customization/cell-editors">
+    Build custom editors
+  </Card>
+  <Card title="Filters" icon="filter" href="/customization/filters">
+    Implement custom filters
+  </Card>
+</CardGroup>

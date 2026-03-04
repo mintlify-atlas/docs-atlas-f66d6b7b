@@ -1,0 +1,585 @@
+---
+title: "CSV Export"
+description: "Export grid data to CSV format with custom formatting and filtering options"
+---
+
+## Overview
+
+AG Grid provides built-in CSV export functionality allowing you to export grid data to CSV files. You can export all data, filtered data, or selected rows with extensive customization options for formatting and content.
+
+## Basic Export
+
+Export grid data using the API methods:
+
+<CodeGroup>
+```typescript Export to File
+import { exportDataAsCsv } from 'ag-grid-community';
+
+// Export with default settings
+exportDataAsCsv(beans);
+
+// Export with custom filename
+exportDataAsCsv(beans, {
+  fileName: 'my-export.csv'
+});
+```
+
+```typescript Get CSV String
+import { getDataAsCsv } from 'ag-grid-community';
+
+// Get CSV data as string
+const csvData = getDataAsCsv(beans);
+
+if (csvData) {
+  console.log('CSV Data:', csvData);
+  // Send to server or process further
+}
+```
+</CodeGroup>
+
+## Export Configuration
+
+### Default Export Params
+
+Set default parameters for all CSV exports:
+
+```typescript
+import { CsvExportParams } from 'ag-grid-community';
+
+const gridOptions = {
+  defaultCsvExportParams: {
+    fileName: 'data-export',
+    columnSeparator: ',',
+    suppressQuotes: false,
+    skipColumnHeaders: false,
+    skipColumnGroupHeaders: true,
+    allColumns: false,
+    onlySelected: false,
+    exportedRows: 'filteredAndSorted'
+  } as CsvExportParams
+};
+```
+
+### Column Separator
+
+Customize the delimiter between columns:
+
+```typescript
+import { CsvExportParams } from 'ag-grid-community';
+
+exportDataAsCsv(beans, {
+  columnSeparator: ';'  // Use semicolon instead of comma
+} as CsvExportParams);
+
+// Tab-separated values
+exportDataAsCsv(beans, {
+  columnSeparator: '\t'
+} as CsvExportParams);
+```
+
+## Export Scope
+
+### Export Filtered Data
+
+```typescript
+import { CsvExportParams } from 'ag-grid-community';
+
+// Export only filtered and sorted rows (default)
+exportDataAsCsv(beans, {
+  exportedRows: 'filteredAndSorted'
+} as CsvExportParams);
+
+// Export all rows regardless of filter
+exportDataAsCsv(beans, {
+  exportedRows: 'all'
+} as CsvExportParams);
+```
+
+### Export Selected Rows
+
+```typescript
+import { CsvExportParams } from 'ag-grid-community';
+
+// Export only selected rows
+exportDataAsCsv(beans, {
+  onlySelected: true
+} as CsvExportParams);
+
+// Export selected rows across all pages
+exportDataAsCsv(beans, {
+  onlySelected: true,
+  onlySelectedAllPages: true
+} as CsvExportParams);
+```
+
+### Export Specific Columns
+
+```typescript
+import { CsvExportParams } from 'ag-grid-community';
+
+// Export all columns in column definition order
+exportDataAsCsv(beans, {
+  allColumns: true
+} as CsvExportParams);
+
+// Export specific columns
+exportDataAsCsv(beans, {
+  columnKeys: ['athlete', 'age', 'country']
+} as CsvExportParams);
+
+// Export using column objects
+const columns = [api.getColumn('athlete'), api.getColumn('age')];
+exportDataAsCsv(beans, {
+  columnKeys: columns
+} as CsvExportParams);
+```
+
+## Headers and Groups
+
+### Column Headers
+
+```typescript
+import { CsvExportParams } from 'ag-grid-community';
+
+// Skip column headers
+exportDataAsCsv(beans, {
+  skipColumnHeaders: true
+} as CsvExportParams);
+
+// Include column headers (default)
+exportDataAsCsv(beans, {
+  skipColumnHeaders: false
+} as CsvExportParams);
+```
+
+### Column Group Headers
+
+```typescript
+import { CsvExportParams } from 'ag-grid-community';
+
+// Include column group headers
+exportDataAsCsv(beans, {
+  skipColumnGroupHeaders: false
+} as CsvExportParams);
+
+// Skip column group headers (default)
+exportDataAsCsv(beans, {
+  skipColumnGroupHeaders: true
+} as CsvExportParams);
+```
+
+## Custom Processing
+
+### Process Cell Callback
+
+Customize cell values during export:
+
+```typescript
+import { ProcessCellForExportParams, CsvExportParams } from 'ag-grid-community';
+
+const processCellCallback = (params: ProcessCellForExportParams): string => {
+  const { value, column, node } = params;
+  
+  // Format dates
+  if (column.getColId() === 'date' && value instanceof Date) {
+    return value.toLocaleDateString();
+  }
+  
+  // Format currency
+  if (column.getColId() === 'price') {
+    return `$${value.toFixed(2)}`;
+  }
+  
+  return value;
+};
+
+exportDataAsCsv(beans, {
+  processCellCallback: processCellCallback
+} as CsvExportParams);
+```
+
+### Process Header Callback
+
+Customize column header text:
+
+```typescript
+import { ProcessHeaderForExportParams, CsvExportParams } from 'ag-grid-community';
+
+const processHeaderCallback = (params: ProcessHeaderForExportParams): string => {
+  const { column } = params;
+  
+  // Use custom header names
+  const headerMap: Record<string, string> = {
+    'athlete': 'Athlete Name',
+    'age': 'Age (years)',
+    'country': 'Country of Origin'
+  };
+  
+  return headerMap[column.getColId()] || column.getColDef().headerName || '';
+};
+
+exportDataAsCsv(beans, {
+  processHeaderCallback: processHeaderCallback
+} as CsvExportParams);
+```
+
+### Process Group Header Callback
+
+```typescript
+import { ProcessGroupHeaderForExportParams, CsvExportParams } from 'ag-grid-community';
+
+const processGroupHeaderCallback = (params: ProcessGroupHeaderForExportParams): string => {
+  const { columnGroup } = params;
+  return columnGroup.getColGroupDef()?.headerName?.toUpperCase() || '';
+};
+
+exportDataAsCsv(beans, {
+  processGroupHeaderCallback: processGroupHeaderCallback
+} as CsvExportParams);
+```
+
+### Process Row Group Callback
+
+```typescript
+import { ProcessRowGroupForExportParams, CsvExportParams } from 'ag-grid-community';
+
+const processRowGroupCallback = (params: ProcessRowGroupForExportParams): string => {
+  const { node } = params;
+  
+  if (node.group) {
+    return `Group: ${node.key} (${node.allChildrenCount} items)`;
+  }
+  
+  return '';
+};
+
+exportDataAsCsv(beans, {
+  processRowGroupCallback: processRowGroupCallback
+} as CsvExportParams);
+```
+
+## Row Filtering
+
+### Should Row Be Skipped
+
+```typescript
+import { ShouldRowBeSkippedParams, CsvExportParams } from 'ag-grid-community';
+
+const shouldRowBeSkipped = (params: ShouldRowBeSkippedParams): boolean => {
+  const { node } = params;
+  
+  // Skip rows with incomplete data
+  return !node.data.athlete || !node.data.country;
+};
+
+exportDataAsCsv(beans, {
+  shouldRowBeSkipped: shouldRowBeSkipped
+} as CsvExportParams);
+```
+
+## Pinned Rows
+
+```typescript
+import { CsvExportParams } from 'ag-grid-community';
+
+// Skip pinned rows
+exportDataAsCsv(beans, {
+  skipPinnedTop: true,
+  skipPinnedBottom: true
+} as CsvExportParams);
+
+// Include pinned rows (default)
+exportDataAsCsv(beans, {
+  skipPinnedTop: false,
+  skipPinnedBottom: false
+} as CsvExportParams);
+```
+
+## Row Groups
+
+```typescript
+import { CsvExportParams } from 'ag-grid-community';
+
+// Skip row group headers
+exportDataAsCsv(beans, {
+  skipRowGroups: true
+} as CsvExportParams);
+
+// Include row group headers (default)
+exportDataAsCsv(beans, {
+  skipRowGroups: false
+} as CsvExportParams);
+```
+
+## Custom Content
+
+### Prepend and Append Content
+
+```typescript
+import { CsvExportParams, CsvCustomContent } from 'ag-grid-community';
+
+const prependContent: CsvCustomContent = [
+  ['Company Report'],
+  ['Generated:', new Date().toLocaleDateString()],
+  []  // Empty row
+];
+
+const appendContent: CsvCustomContent = [
+  [],
+  ['Total Rows:', 'COUNT']
+];
+
+exportDataAsCsv(beans, {
+  prependContent: prependContent,
+  appendContent: appendContent
+} as CsvExportParams);
+```
+
+### Custom Content Below Row
+
+```typescript
+import { ProcessRowGroupForExportParams, CsvExportParams, CsvCustomContent } from 'ag-grid-community';
+
+const getCustomContentBelowRow = (params: ProcessRowGroupForExportParams): CsvCustomContent | undefined => {
+  const { node } = params;
+  
+  if (node.group && node.footer) {
+    return [[
+      { data: { value: 'Subtotal:' } },
+      { data: { value: node.aggData?.total || '' } }
+    ]];
+  }
+  
+  return undefined;
+};
+
+exportDataAsCsv(beans, {
+  getCustomContentBelowRow: getCustomContentBelowRow
+} as CsvExportParams);
+```
+
+## Advanced Options
+
+### Quote Handling
+
+```typescript
+import { CsvExportParams } from 'ag-grid-community';
+
+// Suppress quotes around values
+exportDataAsCsv(beans, {
+  suppressQuotes: true  // No quotes, ensure no separator in values
+} as CsvExportParams);
+
+// Use quotes (default for proper CSV format)
+exportDataAsCsv(beans, {
+  suppressQuotes: false  // Values wrapped in quotes, escapes internal quotes
+} as CsvExportParams);
+```
+
+### Export Row Numbers
+
+```typescript
+import { CsvExportParams } from 'ag-grid-community';
+
+exportDataAsCsv(beans, {
+  exportRowNumbers: true  // Include row number column
+} as CsvExportParams);
+```
+
+### Value Source
+
+```typescript
+import { CsvExportParams, CellValueResolveFrom } from 'ag-grid-community';
+
+// Export from underlying data (default)
+exportDataAsCsv(beans, {
+  valueFrom: 'data' as CellValueResolveFrom
+} as CsvExportParams);
+
+// Export pending batch edit values
+exportDataAsCsv(beans, {
+  valueFrom: 'batch' as CellValueResolveFrom
+} as CsvExportParams);
+
+// Export current editor values
+exportDataAsCsv(beans, {
+  valueFrom: 'edit' as CellValueResolveFrom
+} as CsvExportParams);
+```
+
+## Disable Export
+
+Prevent CSV export:
+
+```typescript
+const gridOptions = {
+  suppressCsvExport: true  // Disable CSV export completely
+};
+```
+
+## File Naming
+
+### Static File Name
+
+```typescript
+import { CsvExportParams } from 'ag-grid-community';
+
+exportDataAsCsv(beans, {
+  fileName: 'export-2024-03-04.csv'
+} as CsvExportParams);
+```
+
+### Dynamic File Name
+
+```typescript
+import { ExportFileNameGetter, ExportFileNameGetterParams, CsvExportParams } from 'ag-grid-community';
+
+const fileNameGetter: ExportFileNameGetter = (params: ExportFileNameGetterParams) => {
+  const date = new Date().toISOString().split('T')[0];
+  return `data-export-${date}`;
+};
+
+exportDataAsCsv(beans, {
+  fileName: fileNameGetter
+} as CsvExportParams);
+```
+
+## Common Use Cases
+
+<Accordion title="Export with Custom Date Formatting">
+```typescript
+import { ProcessCellForExportParams, CsvExportParams } from 'ag-grid-community';
+
+const processCellCallback = (params: ProcessCellForExportParams): string => {
+  const { column, value } = params;
+  
+  // Format all date columns
+  if (column.getColDef().cellDataType === 'date' && value) {
+    const date = new Date(value);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  }
+  
+  return value;
+};
+
+exportDataAsCsv(beans, {
+  processCellCallback: processCellCallback
+} as CsvExportParams);
+```
+</Accordion>
+
+<Accordion title="Export Selected Rows with Summary">
+```typescript
+function exportSelectedWithSummary() {
+  const selectedRows = api.getSelectedRows();
+  const count = selectedRows.length;
+  
+  exportDataAsCsv(beans, {
+    onlySelected: true,
+    prependContent: [['Selected Rows Export']],
+    appendContent: [[], [`Total Selected: ${count}`]]
+  });
+}
+```
+</Accordion>
+
+<Accordion title="Export to Server Instead of Download">
+```typescript
+import { getDataAsCsv, CsvExportParams } from 'ag-grid-community';
+
+async function exportToServer() {
+  const csvData = getDataAsCsv(beans, {
+    allColumns: true,
+    exportedRows: 'filteredAndSorted'
+  } as CsvExportParams);
+  
+  if (csvData) {
+    await fetch('/api/export', {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/csv' },
+      body: csvData
+    });
+  }
+}
+```
+</Accordion>
+
+<Accordion title="Export with Row Groups Expanded">
+```typescript
+import { CsvExportParams } from 'ag-grid-community';
+
+// Expand all groups before export
+api.expandAll();
+
+exportDataAsCsv(beans, {
+  skipRowGroups: false,  // Include group headers
+  exportedRows: 'filteredAndSorted'
+} as CsvExportParams);
+
+// Collapse groups after export
+api.collapseAll();
+```
+</Accordion>
+
+## TypeScript Interfaces
+
+```typescript
+// From exportParams.ts
+export interface CsvExportParams extends ExportParams<CsvCustomContent> {
+  columnSeparator?: string;
+  suppressQuotes?: boolean;
+}
+
+export interface BaseExportParams {
+  allColumns?: boolean;
+  columnKeys?: (string | Column)[];
+  rowPositions?: RowPosition[];
+  fileName?: string | ExportFileNameGetter;
+  exportedRows?: 'all' | 'filteredAndSorted';
+  onlySelected?: boolean;
+  onlySelectedAllPages?: boolean;
+  skipColumnGroupHeaders?: boolean;
+  skipColumnHeaders?: boolean;
+  skipRowGroups?: boolean;
+  skipPinnedTop?: boolean;
+  skipPinnedBottom?: boolean;
+  valueFrom?: CellValueResolveFrom;
+  shouldRowBeSkipped?(params: ShouldRowBeSkippedParams): boolean;
+  processCellCallback?(params: ProcessCellForExportParams): string;
+  processHeaderCallback?(params: ProcessHeaderForExportParams): string;
+  processGroupHeaderCallback?(params: ProcessGroupHeaderForExportParams): string;
+  processRowGroupCallback?(params: ProcessRowGroupForExportParams): string;
+}
+
+// From csvExportApi.ts
+export function getDataAsCsv(beans: BeanCollection, params?: CsvExportParams): string | undefined;
+export function exportDataAsCsv(beans: BeanCollection, params?: CsvExportParams): void;
+```
+
+## Best Practices
+
+<Steps>
+  <Step title="Use default export params for consistency">
+    Set `defaultCsvExportParams` in gridOptions to ensure consistent exports across your application.
+  </Step>
+  
+  <Step title="Format data appropriately">
+    Use `processCellCallback` to format dates, numbers, and other data types for readability in CSV.
+  </Step>
+  
+  <Step title="Handle special characters">
+    Keep `suppressQuotes: false` (default) to properly escape commas, quotes, and newlines in cell values.
+  </Step>
+  
+  <Step title="Consider large datasets">
+    For very large exports, use `exportedRows: 'filteredAndSorted'` and encourage users to filter data first.
+  </Step>
+  
+  <Step title="Provide clear file names">
+    Use dynamic file names with dates or filters applied to help users organize their exports.
+  </Step>
+</Steps>

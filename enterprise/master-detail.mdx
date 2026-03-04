@@ -1,0 +1,696 @@
+---
+title: Master Detail
+description: Create expandable rows with nested grid instances for hierarchical data display
+---
+
+<Warning>
+**Enterprise Feature**: Master Detail requires `ag-grid-enterprise` and a valid license key.
+</Warning>
+
+Master Detail allows you to embed full grid instances within expandable row details, creating hierarchical data displays with independent grids for each master row.
+
+## Installation
+
+<Steps>
+  <Step title="Install Package">
+    ```bash
+    npm install ag-grid-enterprise
+    ```
+  </Step>
+  <Step title="Import Module">
+    ```typescript
+    import { ModuleRegistry } from 'ag-grid-community';
+    import { MasterDetailModule } from 'ag-grid-enterprise';
+    
+    ModuleRegistry.registerModules([MasterDetailModule]);
+    ```
+  </Step>
+  <Step title="Set License Key">
+    ```typescript
+    import { LicenseManager } from 'ag-grid-enterprise';
+    
+    LicenseManager.setLicenseKey('YOUR_LICENSE_KEY');
+    ```
+  </Step>
+</Steps>
+
+<Note>
+Source: `/packages/ag-grid-enterprise/src/masterDetail/masterDetailModule.ts:40-44`
+</Note>
+
+## Basic Master Detail
+
+Enable Master Detail with a simple configuration:
+
+<CodeGroup>
+```typescript TypeScript
+import { GridOptions, IDetailCellRendererParams } from 'ag-grid-community';
+
+const gridOptions: GridOptions = {
+  masterDetail: true,
+  
+  columnDefs: [
+    { field: 'name', cellRenderer: 'agGroupCellRenderer' },
+    { field: 'account' },
+    { field: 'calls' }
+  ],
+  
+  rowData: [
+    {
+      name: 'Customer A',
+      account: 'ACC-001',
+      calls: 10,
+      callRecords: [
+        { date: '2024-01-01', duration: 300, outcome: 'Success' },
+        { date: '2024-01-05', duration: 450, outcome: 'Failed' }
+      ]
+    }
+  ],
+  
+  // Detail cell renderer parameters
+  detailCellRendererParams: {
+    detailGridOptions: {
+      columnDefs: [
+        { field: 'date' },
+        { field: 'duration' },
+        { field: 'outcome' }
+      ]
+    },
+    getDetailRowData: (params) => {
+      params.successCallback(params.data.callRecords);
+    }
+  } as IDetailCellRendererParams
+};
+```
+
+```jsx React
+import { AgGridReact } from 'ag-grid-react';
+import { useMemo } from 'react';
+
+function MasterDetailGrid() {
+  const columnDefs = useMemo(() => [
+    { field: 'name', cellRenderer: 'agGroupCellRenderer' },
+    { field: 'account' },
+    { field: 'calls' }
+  ], []);
+  
+  const detailCellRendererParams = useMemo(() => ({
+    detailGridOptions: {
+      columnDefs: [
+        { field: 'date' },
+        { field: 'duration' },
+        { field: 'outcome' }
+      ]
+    },
+    getDetailRowData: (params) => {
+      params.successCallback(params.data.callRecords);
+    }
+  }), []);
+
+  return (
+    <AgGridReact
+      masterDetail={true}
+      columnDefs={columnDefs}
+      rowData={rowData}
+      detailCellRendererParams={detailCellRendererParams}
+    />
+  );
+}
+```
+
+```vue Vue
+<template>
+  <ag-grid-vue
+    :masterDetail="true"
+    :columnDefs="columnDefs"
+    :rowData="rowData"
+    :detailCellRendererParams="detailCellRendererParams">
+  </ag-grid-vue>
+</template>
+
+<script setup lang="ts">
+import { ref } from 'vue';
+
+const columnDefs = ref([
+  { field: 'name', cellRenderer: 'agGroupCellRenderer' },
+  { field: 'account' },
+  { field: 'calls' }
+]);
+
+const detailCellRendererParams = {
+  detailGridOptions: {
+    columnDefs: [
+      { field: 'date' },
+      { field: 'duration' },
+      { field: 'outcome' }
+    ]
+  },
+  getDetailRowData: (params) => {
+    params.successCallback(params.data.callRecords);
+  }
+};
+</script>
+```
+</CodeGroup>
+
+## Configuration
+
+### Enable Master Detail
+
+Basic grid options for Master Detail:
+
+```typescript
+const gridOptions: GridOptions = {
+  // Enable master detail
+  masterDetail: true,
+  
+  // Keep detail rows on data update
+  keepDetailRows: true,
+  
+  // Keep detail row count in sync
+  keepDetailRowsCount: 10,
+  
+  // Embed full width rows
+  embedFullWidthRows: true,
+  
+  // Detail row height
+  detailRowHeight: 300,
+  
+  // Auto height for detail rows
+  detailRowAutoHeight: true
+};
+```
+
+### Detail Cell Renderer Parameters
+
+Configure the detail grid:
+
+```typescript
+import { IDetailCellRendererParams } from 'ag-grid-community';
+
+const detailCellRendererParams: IDetailCellRendererParams = {
+  // Detail grid options
+  detailGridOptions: {
+    columnDefs: [
+      { field: 'callId', headerName: 'Call ID' },
+      { field: 'date', headerName: 'Date' },
+      { field: 'duration', headerName: 'Duration (sec)' },
+      { field: 'outcome', headerName: 'Outcome' }
+    ],
+    defaultColDef: {
+      flex: 1,
+      sortable: true,
+      filter: true
+    },
+    rowSelection: 'multiple'
+  },
+  
+  // Provide data for detail grid
+  getDetailRowData: (params) => {
+    // params.data contains the master row data
+    params.successCallback(params.data.callRecords);
+  },
+  
+  // Template for loading state
+  template: '<div style="padding: 20px;">Loading...</div>',
+  
+  // Refresh strategy
+  refreshStrategy: 'rows'  // 'rows' | 'everything'
+};
+```
+
+### Async Data Loading
+
+Load detail data asynchronously:
+
+```typescript
+const detailCellRendererParams: IDetailCellRendererParams = {
+  detailGridOptions: {
+    columnDefs: detailColumnDefs
+  },
+  getDetailRowData: async (params) => {
+    try {
+      // Fetch data from API
+      const response = await fetch(
+        `/api/call-records/${params.data.accountId}`
+      );
+      const data = await response.json();
+      
+      // Provide data to detail grid
+      params.successCallback(data);
+    } catch (error) {
+      console.error('Error loading detail data:', error);
+      params.successCallback([]);
+    }
+  }
+};
+```
+
+## Master Row Configuration
+
+### Group Cell Renderer
+
+The master row needs a group cell renderer to show expand/collapse:
+
+```typescript
+const columnDefs: ColDef[] = [
+  {
+    field: 'name',
+    cellRenderer: 'agGroupCellRenderer',
+    cellRendererParams: {
+      // Customize expand icon
+      innerRenderer: (params) => {
+        return params.data.name;
+      },
+      // Suppress row count
+      suppressCount: true,
+      // Add checkbox
+      checkbox: true
+    }
+  },
+  { field: 'account' },
+  { field: 'calls' }
+];
+```
+
+### Conditional Detail Rows
+
+Show detail rows only for certain master rows:
+
+```typescript
+const gridOptions: GridOptions = {
+  masterDetail: true,
+  
+  // Determine if row has detail
+  isRowMaster: (dataItem) => {
+    return dataItem.callRecords && dataItem.callRecords.length > 0;
+  },
+  
+  detailCellRendererParams: {
+    detailGridOptions: { /*...*/ },
+    getDetailRowData: (params) => {
+      params.successCallback(params.data.callRecords || []);
+    }
+  }
+};
+```
+
+## Detail Grid API
+
+Access and control detail grids programmatically:
+
+### Access Detail Grid Info
+
+```typescript
+import { GridApi, DetailGridInfo } from 'ag-grid-community';
+
+const api: GridApi = gridRef.current.api;
+
+// Get detail grid info for a specific master row
+const detailInfo = api.getDetailGridInfo('master-row-id');
+
+if (detailInfo) {
+  console.log('Detail Grid API:', detailInfo.api);
+  console.log('Detail Column API:', detailInfo.columnApi);
+  
+  // Use detail grid API
+  detailInfo.api.selectAll();
+  detailInfo.api.exportDataAsCsv();
+}
+```
+
+<Note>
+Source: `/packages/ag-grid-enterprise/src/masterDetail/masterDetailApi.ts:23-25`
+</Note>
+
+### Store Detail Grid Reference
+
+```typescript
+// Add detail grid info
+api.addDetailGridInfo('master-row-id', detailGridInfo);
+
+// Remove detail grid info
+api.removeDetailGridInfo('master-row-id');
+
+// Iterate all detail grids
+api.forEachDetailGridInfo((detailInfo, index) => {
+  console.log(`Detail grid ${index}:`, detailInfo);
+  
+  // Apply operation to all detail grids
+  detailInfo.api.deselectAll();
+});
+```
+
+<Note>
+Sources:
+- `addDetailGridInfo`: `/packages/ag-grid-enterprise/src/masterDetail/masterDetailApi.ts:11-15`
+- `removeDetailGridInfo`: `/packages/ag-grid-enterprise/src/masterDetail/masterDetailApi.ts:17-21`
+- `forEachDetailGridInfo`: `/packages/ag-grid-enterprise/src/masterDetail/masterDetailApi.ts:27-40`
+</Note>
+
+## Advanced Features
+
+### Full-Width Detail Rows
+
+Create custom detail renderers:
+
+```typescript
+import { ICellRendererParams } from 'ag-grid-community';
+
+// Custom detail renderer component
+const CustomDetailRenderer = (props: ICellRendererParams) => {
+  const data = props.data;
+  
+  return (
+    <div style={{ padding: '20px', background: '#f5f5f5' }}>
+      <h3>Call Details for {data.name}</h3>
+      <div>
+        <p>Account: {data.account}</p>
+        <p>Total Calls: {data.calls}</p>
+        <div style={{ marginTop: '20px' }}>
+          <AgGridReact
+            columnDefs={detailColumnDefs}
+            rowData={data.callRecords}
+            domLayout="autoHeight"
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const gridOptions: GridOptions = {
+  masterDetail: true,
+  detailCellRenderer: CustomDetailRenderer
+};
+```
+
+### Detail Row Auto Height
+
+Automatically size detail rows based on content:
+
+```typescript
+const gridOptions: GridOptions = {
+  masterDetail: true,
+  detailRowAutoHeight: true,
+  
+  detailCellRendererParams: {
+    detailGridOptions: {
+      columnDefs: detailColumnDefs,
+      domLayout: 'autoHeight',  // Auto-size detail grid
+      pagination: false
+    },
+    getDetailRowData: (params) => {
+      params.successCallback(params.data.callRecords);
+    }
+  }
+};
+```
+
+### Nested Master Detail
+
+Create multiple levels of detail grids:
+
+```typescript
+const detailCellRendererParams: IDetailCellRendererParams = {
+  detailGridOptions: {
+    columnDefs: [
+      { field: 'region', cellRenderer: 'agGroupCellRenderer' },
+      { field: 'sales' }
+    ],
+    masterDetail: true,  // Enable master detail in detail grid
+    detailCellRendererParams: {
+      // Nested detail configuration
+      detailGridOptions: {
+        columnDefs: [
+          { field: 'product' },
+          { field: 'quantity' },
+          { field: 'price' }
+        ]
+      },
+      getDetailRowData: (params) => {
+        params.successCallback(params.data.products);
+      }
+    }
+  },
+  getDetailRowData: (params) => {
+    params.successCallback(params.data.regions);
+  }
+};
+```
+
+### Detail Grid Events
+
+Handle events from detail grids:
+
+```typescript
+const detailCellRendererParams: IDetailCellRendererParams = {
+  detailGridOptions: {
+    columnDefs: detailColumnDefs,
+    
+    onGridReady: (params) => {
+      console.log('Detail grid ready:', params);
+      // Store detail grid API reference
+      params.api.sizeColumnsToFit();
+    },
+    
+    onRowClicked: (event) => {
+      console.log('Detail row clicked:', event.data);
+    },
+    
+    onSelectionChanged: (event) => {
+      const selectedRows = event.api.getSelectedRows();
+      console.log('Detail selection changed:', selectedRows);
+    }
+  },
+  getDetailRowData: (params) => {
+    params.successCallback(params.data.callRecords);
+  }
+};
+```
+
+### Refresh Detail Grids
+
+Refresh detail grids when master data changes:
+
+```typescript
+const gridOptions: GridOptions = {
+  masterDetail: true,
+  
+  detailCellRendererParams: {
+    refreshStrategy: 'rows',  // Refresh only changed rows
+    detailGridOptions: { /*...*/ },
+    getDetailRowData: (params) => {
+      params.successCallback(params.data.callRecords);
+    }
+  },
+  
+  onRowDataUpdated: (event) => {
+    // Optionally refresh all detail grids
+    event.api.forEachDetailGridInfo((detailInfo) => {
+      detailInfo.api.refreshCells({ force: true });
+    });
+  }
+};
+```
+
+## Performance Optimization
+
+<CardGroup cols={2}>
+  <Card title="Lazy Loading" icon="clock">
+    Use `getDetailRowData` with async loading to fetch data on demand
+  </Card>
+  <Card title="Keep Detail Rows Count" icon="database">
+    Set `keepDetailRowsCount` to limit the number of cached detail grids
+  </Card>
+  <Card title="Destroy Unused Details" icon="trash">
+    Don't use `keepDetailRows: true` for large datasets
+  </Card>
+  <Card title="Virtual Scrolling" icon="scroll">
+    Enable virtual scrolling in detail grids for large row counts
+  </Card>
+</CardGroup>
+
+### Optimize Detail Grid Configuration
+
+```typescript
+const detailCellRendererParams: IDetailCellRendererParams = {
+  detailGridOptions: {
+    columnDefs: detailColumnDefs,
+    
+    // Performance settings for detail grid
+    rowBuffer: 10,
+    suppressRowTransform: true,
+    suppressColumnVirtualisation: false,
+    
+    // Debounce events
+    debounceVerticalScrollbar: true,
+    
+    // Pagination for large detail datasets
+    pagination: true,
+    paginationPageSize: 20
+  },
+  getDetailRowData: (params) => {
+    params.successCallback(params.data.callRecords);
+  }
+};
+
+const gridOptions: GridOptions = {
+  masterDetail: true,
+  keepDetailRowsCount: 5,  // Keep only 5 detail grids in memory
+  detailCellRendererParams
+};
+```
+
+## Common Patterns
+
+### Orders and Line Items
+
+```typescript
+interface Order {
+  orderId: string;
+  customer: string;
+  orderDate: string;
+  total: number;
+  lineItems: LineItem[];
+}
+
+interface LineItem {
+  product: string;
+  quantity: number;
+  price: number;
+  subtotal: number;
+}
+
+const gridOptions: GridOptions<Order> = {
+  masterDetail: true,
+  columnDefs: [
+    { field: 'orderId', cellRenderer: 'agGroupCellRenderer' },
+    { field: 'customer' },
+    { field: 'orderDate' },
+    { field: 'total', valueFormatter: params => `$${params.value}` }
+  ],
+  detailCellRendererParams: {
+    detailGridOptions: {
+      columnDefs: [
+        { field: 'product' },
+        { field: 'quantity' },
+        { field: 'price', valueFormatter: p => `$${p.value}` },
+        { field: 'subtotal', valueFormatter: p => `$${p.value}` }
+      ],
+      defaultColDef: {
+        flex: 1
+      }
+    },
+    getDetailRowData: (params) => {
+      params.successCallback(params.data.lineItems);
+    }
+  }
+};
+```
+
+### Customers and Transactions
+
+```typescript
+const gridOptions: GridOptions = {
+  masterDetail: true,
+  columnDefs: [
+    { field: 'customerId', cellRenderer: 'agGroupCellRenderer' },
+    { field: 'name' },
+    { field: 'accountBalance' },
+    { field: 'transactionCount' }
+  ],
+  isRowMaster: (data) => {
+    return data.transactionCount > 0;
+  },
+  detailCellRendererParams: {
+    detailGridOptions: {
+      columnDefs: [
+        { field: 'date' },
+        { field: 'description' },
+        { field: 'amount', cellClass: (params) => 
+          params.value < 0 ? 'negative' : 'positive' },
+        { field: 'balance' }
+      ]
+    },
+    getDetailRowData: async (params) => {
+      const response = await fetch(
+        `/api/transactions?customerId=${params.data.customerId}`
+      );
+      const transactions = await response.json();
+      params.successCallback(transactions);
+    }
+  }
+};
+```
+
+## Troubleshooting
+
+### Detail Rows Not Expanding
+
+<Steps>
+  <Step title="Check Master Detail Enabled">
+    Ensure `masterDetail: true` is set in grid options
+  </Step>
+  <Step title="Verify Group Cell Renderer">
+    Master column must use `agGroupCellRenderer`:
+    ```typescript
+    { field: 'name', cellRenderer: 'agGroupCellRenderer' }
+    ```
+  </Step>
+  <Step title="Check Module Registration">
+    Verify `MasterDetailModule` is registered
+  </Step>
+  <Step title="Verify getDetailRowData">
+    Ensure `getDetailRowData` calls `successCallback`:
+    ```typescript
+    getDetailRowData: (params) => {
+      params.successCallback(params.data.details);
+    }
+    ```
+  </Step>
+</Steps>
+
+### Detail Grid Not Rendering
+
+Check that `detailGridOptions` includes column definitions:
+
+```typescript
+detailCellRendererParams: {
+  detailGridOptions: {
+    columnDefs: [ /* Must have column defs */ ]
+  },
+  getDetailRowData: (params) => {
+    params.successCallback(params.data.details);
+  }
+}
+```
+
+### Performance Issues
+
+Limit the number of detail grids kept in memory:
+
+```typescript
+const gridOptions: GridOptions = {
+  masterDetail: true,
+  keepDetailRowsCount: 3,     // Keep only 3 detail grids
+  keepDetailRows: false       // Destroy detail grids when collapsed
+};
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Row Grouping" icon="layer-group" href="/enterprise/row-grouping">
+    Learn about row grouping for hierarchical data
+  </Card>
+  <Card title="Tree Data" icon="tree" href="/tree-data">
+    Display tree data structures
+  </Card>
+  <Card title="Full Width Rows" icon="expand" href="/full-width-rows">
+    Custom full-width row rendering
+  </Card>
+  <Card title="Excel Export" icon="file-excel" href="/enterprise/excel-export">
+    Export master-detail data to Excel
+  </Card>
+</CardGroup>

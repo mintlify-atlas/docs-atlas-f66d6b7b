@@ -1,97 +1,260 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: AG Grid Documentation
+description: The most powerful JavaScript data grid for building enterprise applications
+mode: custom
 ---
 
-## Setting up
+<div className="relative overflow-hidden dark:bg-[#0f1117] bg-white">
+  {/* Hero Section */}
+  <div className="relative py-20 px-4 sm:px-6 lg:px-8 dark:bg-gradient-to-b dark:from-[#1a1d27] dark:to-[#0f1117] bg-gradient-to-b from-gray-50 to-white">
+    <div className="max-w-7xl mx-auto">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+        <div className="lg:col-span-7">
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold dark:text-gray-100 text-gray-900 mb-6">
+            The best JavaScript Data Grid
+          </h1>
+          <p className="text-lg sm:text-xl dark:text-gray-400 text-gray-600 mb-8 max-w-2xl">
+            Build enterprise-grade data tables with outstanding performance. Fully customizable, framework-agnostic, with zero dependencies.
+          </p>
+          <div className="flex flex-wrap gap-4">
+            <a
+              href="/quickstart"
+              className="inline-flex items-center px-6 py-3 rounded-lg font-semibold text-white transition-colors"
+              style={{ backgroundColor: '#04dcfc' }}
+            >
+              Get Started
+              <svg className="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
+            </a>
+            <a
+              href="/api/grid-api"
+              className="inline-flex items-center px-6 py-3 rounded-lg font-semibold dark:text-gray-100 text-gray-900 dark:border-[#27272a] border-gray-300 border dark:bg-white/5 bg-gray-50 dark:hover:bg-white/10 hover:bg-gray-100 transition-colors"
+            >
+              API Reference
+            </a>
+          </div>
+        </div>
+        <div className="lg:col-span-5 hidden lg:block">
+          <div className="relative">
+            <div className="dark:bg-[#1a1d27] bg-white dark:border-[#27272a] border-gray-200 border rounded-xl p-6 shadow-2xl">
+              <div className="space-y-3">
+                <div className="h-8 dark:bg-[#242838] bg-gray-100 rounded"></div>
+                <div className="h-6 dark:bg-[#242838] bg-gray-100 rounded w-3/4"></div>
+                <div className="h-6 dark:bg-[#242838] bg-gray-100 rounded w-5/6"></div>
+                <div className="h-6 dark:bg-[#242838] bg-gray-100 rounded w-2/3"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-Get your documentation site up and running in minutes.
+  {/* Quick Start Section */}
+  <div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+    <h2 className="text-2xl sm:text-3xl font-semibold dark:text-white text-gray-900 mb-4">
+      Quick start
+    </h2>
+    <p className="text-base dark:text-gray-400 text-gray-600 mb-8">
+      Get up and running with AG Grid in minutes
+    </p>
+    
+    <Steps>
+      <Step title="Install the package">
+        Install AG Grid Community or Enterprise edition via npm, yarn, or pnpm.
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
+        <CodeGroup>
+        ```bash npm
+        npm install ag-grid-community
+        ```
+        ```bash yarn
+        yarn add ag-grid-community
+        ```
+        ```bash pnpm
+        pnpm add ag-grid-community
+        ```
+        </CodeGroup>
 
-## Make it yours
+        <Note>For enterprise features like row grouping, pivoting, and Excel export, install `ag-grid-enterprise` instead.</Note>
+      </Step>
 
-Design a docs site that looks great and empowers your users.
+      <Step title="Create your first grid">
+        Import AG Grid and create a grid with column definitions and row data.
 
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
-  </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
-  </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
-  </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
-  </Card>
-</Columns>
+        ```javascript
+        import { createGrid } from 'ag-grid-community';
+        import 'ag-grid-community/styles/ag-grid.css';
+        import 'ag-grid-community/styles/ag-theme-quartz.css';
 
-## Create beautiful pages
+        const gridOptions = {
+          columnDefs: [
+            { field: 'make' },
+            { field: 'model' },
+            { field: 'price' }
+          ],
+          rowData: [
+            { make: 'Tesla', model: 'Model Y', price: 64950 },
+            { make: 'Ford', model: 'F-Series', price: 33850 },
+            { make: 'Toyota', model: 'Corolla', price: 29600 }
+          ]
+        };
 
-Everything you need to create world-class documentation.
+        const gridDiv = document.querySelector('#myGrid');
+        createGrid(gridDiv, gridOptions);
+        ```
+      </Step>
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
+      <Step title="Add the grid container">
+        Create a container element with a theme class and dimensions.
 
-## Need inspiration?
+        ```html
+        <div id="myGrid" class="ag-theme-quartz" style="height: 500px"></div>
+        ```
 
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+        <Tip>AG Grid includes four built-in themes: Quartz, Material, Alpine, and Balham. Each is available in light and dark modes.</Tip>
+      </Step>
+    </Steps>
+  </div>
+
+  {/* Framework Integration */}
+  <div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+    <h2 className="text-2xl sm:text-3xl font-semibold dark:text-white text-gray-900 mb-4">
+      Framework integration
+    </h2>
+    <p className="text-base dark:text-gray-400 text-gray-600 mb-8">
+      Use AG Grid with your favorite framework
+    </p>
+
+    <CardGroup cols={3}>
+      <Card title="React" icon="react" href="/frameworks/react">
+        Official React wrapper with hooks and TypeScript support
+      </Card>
+      <Card title="Angular" icon="angular" href="/frameworks/angular">
+        Native Angular component with full dependency injection
+      </Card>
+      <Card title="Vue" icon="vuejs" href="/frameworks/vue">
+        Vue 3 component with composition API support
+      </Card>
+    </CardGroup>
+  </div>
+
+  {/* Key Features */}
+  <div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+    <h2 className="text-2xl sm:text-3xl font-semibold dark:text-white text-gray-900 mb-4">
+      Powerful features
+    </h2>
+    <p className="text-base dark:text-gray-400 text-gray-600 mb-8">
+      Everything you need to build data-rich applications
+    </p>
+
+    <CardGroup cols={2}>
+      <Card title="Sorting & Filtering" icon="filter" href="/features/sorting">
+        Built-in sorting and filtering with custom filter components
+      </Card>
+      <Card title="Editing" icon="pen-to-square" href="/features/editing">
+        Inline cell editing with validation and custom editors
+      </Card>
+      <Card title="Pagination" icon="list" href="/features/pagination">
+        Client and server-side pagination for large datasets
+      </Card>
+      <Card title="Selection" icon="check-square" href="/features/selection">
+        Single and multi-row selection with keyboard navigation
+      </Card>
+      <Card title="CSV Export" icon="file-csv" href="/features/csv-export">
+        Export grid data to CSV with custom formatting
+      </Card>
+      <Card title="Custom Components" icon="puzzle-piece" href="/customization/custom-components">
+        Create custom cell renderers, editors, and filters
+      </Card>
+    </CardGroup>
+  </div>
+
+  {/* Enterprise Features */}
+  <div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+    <div className="dark:bg-[#1a1d27] bg-gray-50 dark:border-[#27272a] border-gray-200 border rounded-2xl p-8">
+      <h2 className="text-2xl sm:text-3xl font-semibold dark:text-white text-gray-900 mb-4">
+        Enterprise features
+      </h2>
+      <p className="text-base dark:text-gray-400 text-gray-600 mb-8">
+        Advanced capabilities for complex data requirements
+      </p>
+
+      <CardGroup cols={3}>
+        <Card title="Row Grouping" icon="layer-group" href="/enterprise/row-grouping">
+          Group and aggregate data with multi-level hierarchies
+        </Card>
+        <Card title="Pivoting" icon="table-pivot" href="/enterprise/pivoting">
+          Create pivot tables with aggregation functions
+        </Card>
+        <Card title="Integrated Charts" icon="chart-line" href="/enterprise/charts">
+          Built-in charting with AG Charts integration
+        </Card>
+        <Card title="Excel Export" icon="file-excel" href="/enterprise/excel-export">
+          Export to Excel with styling and formulas
+        </Card>
+        <Card title="Master/Detail" icon="sitemap" href="/enterprise/master-detail">
+          Expandable rows with nested detail grids
+        </Card>
+        <Card title="Server-Side Row Model" icon="server" href="/enterprise/overview">
+          Handle millions of rows with lazy loading
+        </Card>
+      </CardGroup>
+    </div>
+  </div>
+
+  {/* API Reference */}
+  <div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+    <h2 className="text-2xl sm:text-3xl font-semibold dark:text-white text-gray-900 mb-4">
+      API reference
+    </h2>
+    <p className="text-base dark:text-gray-400 text-gray-600 mb-8">
+      Explore the complete API documentation
+    </p>
+
+    <CardGroup cols={2}>
+      <Card title="Grid API" icon="code" href="/api/grid-api">
+        Methods for programmatic grid control
+      </Card>
+      <Card title="Grid Options" icon="sliders" href="/api/grid-options">
+        Complete configuration reference
+      </Card>
+      <Card title="Column Properties" icon="columns" href="/api/column-properties">
+        Column definition options and types
+      </Card>
+      <Card title="Events" icon="bolt" href="/api/grid-events">
+        Grid and column event handlers
+      </Card>
+    </CardGroup>
+  </div>
+
+  {/* Community & Support */}
+  <div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+    <div className="dark:bg-gradient-to-br dark:from-[#1a1d27] dark:to-[#242838] bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-8 sm:p-12 text-center">
+      <h2 className="text-2xl sm:text-3xl font-semibold dark:text-white text-gray-900 mb-4">
+        Ready to build something amazing?
+      </h2>
+      <p className="text-base dark:text-gray-400 text-gray-600 mb-8 max-w-2xl mx-auto">
+        Join thousands of developers building enterprise applications with AG Grid
+      </p>
+      <div className="flex flex-wrap justify-center gap-4">
+        <a
+          href="/quickstart"
+          className="inline-flex items-center px-6 py-3 rounded-lg font-semibold text-white transition-colors"
+          style={{ backgroundColor: '#04dcfc' }}
+        >
+          Start Building
+        </a>
+        <a
+          href="https://github.com/ag-grid/ag-grid"
+          className="inline-flex items-center px-6 py-3 rounded-lg font-semibold dark:text-gray-100 text-gray-900 dark:border-[#27272a] border-gray-300 border dark:bg-white/5 bg-white dark:hover:bg-white/10 hover:bg-gray-50 transition-colors"
+        >
+          <svg className="mr-2 w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+            <path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd" />
+          </svg>
+          View on GitHub
+        </a>
+      </div>
+    </div>
+  </div>
+</div>

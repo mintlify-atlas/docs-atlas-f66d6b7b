@@ -1,0 +1,431 @@
+---
+title: Column Properties
+description: Reference for common column properties used in ColDef and column definitions
+---
+
+Column properties define the behavior and appearance of individual columns in AG Grid. These properties are set via the `ColDef` interface.
+
+## Overview
+
+Column properties can be set on individual columns or in `defaultColDef` to apply to all columns:
+
+```javascript
+const gridOptions = {
+  defaultColDef: {
+    sortable: true,
+    filter: true,
+    resizable: true
+  },
+  columnDefs: [
+    { field: 'name', headerName: 'Full Name', pinned: 'left' },
+    { field: 'age', type: 'numericColumn' }
+  ]
+};
+```
+
+## Display Properties
+
+<ParamField path="field" type="ColDefField<TData, TValue>">
+  The field of the row object to get the cell's data from. Deep references into a row object is supported via dot notation, i.e `'address.firstLine'`.
+  
+  ```javascript
+  { field: 'name' }
+  { field: 'address.city' } // nested field
+  { field: 'scores.0' } // array index
+  ```
+</ParamField>
+
+<ParamField path="headerName" type="string">
+  The name to render in the column header. If not specified and field is specified, the field name will be used as the header name.
+  
+  ```javascript
+  { field: 'name', headerName: 'Full Name' }
+  ```
+</ParamField>
+
+<ParamField path="hide" type="boolean | null" default="false">
+  Set to `true` for this column to be hidden.
+  
+  ```javascript
+  { field: 'id', hide: true }
+  ```
+</ParamField>
+
+<ParamField path="initialHide" type="boolean">
+  Same as `hide`, except only applied when creating a new column. Not applied when updating column definitions.
+  
+  **Initial:** This property is only used when creating columns.
+  
+  ```javascript
+  { field: 'advanced', initialHide: true }
+  ```
+</ParamField>
+
+<ParamField path="lockVisible" type="boolean" default="false">
+  Set to `true` to block making column visible / hidden via the UI (API will still work).
+  
+  ```javascript
+  { field: 'name', lockVisible: true }
+  ```
+</ParamField>
+
+## Width Properties
+
+<ParamField path="width" type="number">
+  Initial width in pixels for the cell. If no width or flex properties set, cell width will default to 200 pixels.
+  
+  ```javascript
+  { field: 'name', width: 150 }
+  ```
+</ParamField>
+
+<ParamField path="initialWidth" type="number">
+  Same as `width`, except only applied when creating a new column. Not applied when updating column definitions.
+  
+  **Initial:** This property is only used when creating columns.
+  
+  ```javascript
+  { field: 'name', initialWidth: 200 }
+  ```
+</ParamField>
+
+<ParamField path="minWidth" type="number">
+  Minimum width in pixels for the cell.
+  
+  ```javascript
+  { field: 'name', minWidth: 100, resizable: true }
+  ```
+</ParamField>
+
+<ParamField path="maxWidth" type="number">
+  Maximum width in pixels for the cell.
+  
+  ```javascript
+  { field: 'description', maxWidth: 500, resizable: true }
+  ```
+</ParamField>
+
+<ParamField path="flex" type="number | null">
+  Equivalent to `flex-grow` in CSS. When `flex` is set on one or more columns, any `width` value is ignored and instead the remaining free space in the grid is divided among flex columns in proportion to their flex value.
+  
+  ```javascript
+  { field: 'name', flex: 1 },
+  { field: 'description', flex: 2 } // twice as wide as name
+  ```
+</ParamField>
+
+<ParamField path="resizable" type="boolean" default="true">
+  Set to `false` to disable resizing which is enabled by default.
+  
+  ```javascript
+  { field: 'name', resizable: false }
+  ```
+</ParamField>
+
+## Sorting
+
+<ParamField path="sortable" type="boolean" default="true">
+  Set to `false` to disable sorting which is enabled by default.
+  
+  ```javascript
+  { field: 'actions', sortable: false }
+  ```
+</ParamField>
+
+<ParamField path="sort" type="SortDirection | SortDef">
+  Set the default sort. Can be `'asc'`, `'desc'`, or a `SortDef` object.
+  
+  ```javascript
+  { field: 'age', sort: 'desc' }
+  { field: 'score', sort: { type: 'absolute', direction: 'desc' } }
+  ```
+</ParamField>
+
+<ParamField path="sortIndex" type="number | null">
+  If sorting more than one column by default, specifies order in which the sorting should be applied.
+  
+  ```javascript
+  { field: 'country', sort: 'asc', sortIndex: 0 },
+  { field: 'city', sort: 'asc', sortIndex: 1 }
+  ```
+</ParamField>
+
+<ParamField path="comparator" type="SortComparatorFn<TData, TValue>">
+  Override the default sorting order by providing a custom sort comparator.
+  
+  ```javascript
+  {
+    field: 'name',
+    comparator: (valueA, valueB, nodeA, nodeB, isDescending) => {
+      return valueA.toLowerCase().localeCompare(valueB.toLowerCase());
+    }
+  }
+  ```
+</ParamField>
+
+<ParamField path="unSortIcon" type="boolean" default="false">
+  Set to `true` if you want the unsorted icon to be shown when no sort is applied to this column.
+  
+  ```javascript
+  { field: 'name', sortable: true, unSortIcon: true }
+  ```
+</ParamField>
+
+## Filtering
+
+<ParamField path="filter" type="any">
+  Filter to use for this column. Set to `true` to use the default filter. Set to the name of a provided filter or a custom filter component.
+  
+  ```javascript
+  { field: 'age', filter: 'agNumberColumnFilter' }
+  { field: 'name', filter: true } // uses default filter
+  { field: 'custom', filter: MyCustomFilter }
+  ```
+</ParamField>
+
+<ParamField path="filterParams" type="any">
+  Params to be passed to the filter component specified in `filter`.
+  
+  ```javascript
+  {
+    field: 'age',
+    filter: 'agNumberColumnFilter',
+    filterParams: {
+      buttons: ['apply', 'reset'],
+      closeOnApply: true
+    }
+  }
+  ```
+</ParamField>
+
+<ParamField path="floatingFilter" type="boolean" default="false">
+  Whether to display a floating filter for this column.
+  
+  ```javascript
+  { field: 'name', filter: true, floatingFilter: true }
+  ```
+</ParamField>
+
+## Pinning
+
+<ParamField path="pinned" type="boolean | 'left' | 'right' | null">
+  Pin a column to one side: `right` or `left`. A value of `true` is converted to `'left'`.
+  
+  ```javascript
+  { field: 'name', pinned: 'left' }
+  { field: 'actions', pinned: 'right' }
+  ```
+</ParamField>
+
+<ParamField path="lockPosition" type="boolean | 'left' | 'right'">
+  Lock a column to position to `'left'` or `'right'` to always have this column displayed in that position. `true` is treated as `'left'`.
+  
+  ```javascript
+  { field: 'name', lockPosition: 'left' }
+  ```
+</ParamField>
+
+<ParamField path="lockPinned" type="boolean" default="false">
+  Set to true to block the user pinning the column, the column can only be pinned via definitions or API.
+  
+  ```javascript
+  { field: 'name', pinned: 'left', lockPinned: true }
+  ```
+</ParamField>
+
+## Value Handling
+
+<ParamField path="valueGetter" type="string | ValueGetterFunc<TData, TValue>">
+  Function or expression. Gets the value from your data for display.
+  
+  ```javascript
+  {
+    headerName: 'Full Name',
+    valueGetter: params => `${params.data.firstName} ${params.data.lastName}`
+  }
+  ```
+</ParamField>
+
+<ParamField path="valueFormatter" type="string | ValueFormatterFunc<TData, TValue>">
+  A function or expression to format a value, should return a string.
+  
+  ```javascript
+  {
+    field: 'price',
+    valueFormatter: params => '$' + params.value.toFixed(2)
+  }
+  ```
+</ParamField>
+
+<ParamField path="valueSetter" type="string | ValueSetterFunc<TData, TValue>">
+  Function or expression. Sets the value into your data for saving. Return `true` if the data changed.
+  
+  ```javascript
+  {
+    field: 'price',
+    editable: true,
+    valueSetter: params => {
+      const newValue = parseFloat(params.newValue);
+      if (!isNaN(newValue)) {
+        params.data.price = newValue;
+        return true;
+      }
+      return false;
+    }
+  }
+  ```
+</ParamField>
+
+<ParamField path="valueParser" type="string | ValueParserFunc<TData, TValue>">
+  Function or expression. Parses the value for saving.
+  
+  ```javascript
+  {
+    field: 'age',
+    editable: true,
+    valueParser: params => Number(params.newValue)
+  }
+  ```
+</ParamField>
+
+## Cell Rendering
+
+<ParamField path="cellRenderer" type="any">
+  Provide your own cell Renderer component for this column's cells.
+  
+  ```javascript
+  { field: 'status', cellRenderer: StatusCellRenderer }
+  { field: 'actions', cellRenderer: 'agAnimateShowChangeCellRenderer' }
+  ```
+</ParamField>
+
+<ParamField path="cellRendererParams" type="any">
+  Params to be passed to the `cellRenderer` component.
+  
+  ```javascript
+  {
+    field: 'button',
+    cellRenderer: ButtonCellRenderer,
+    cellRendererParams: {
+      clicked: (data) => console.log('Clicked:', data)
+    }
+  }
+  ```
+</ParamField>
+
+## Cell Editing
+
+<ParamField path="editable" type="boolean | EditableCallback<TData, TValue>" default="false">
+  Set to `true` if this column is editable, otherwise `false`. Can also be a function to have different rows editable.
+  
+  ```javascript
+  { field: 'name', editable: true }
+  { field: 'age', editable: params => params.data.status === 'active' }
+  ```
+</ParamField>
+
+<ParamField path="cellEditor" type="any">
+  Provide your own cell editor component for this column's cells.
+  
+  ```javascript
+  { field: 'country', editable: true, cellEditor: 'agSelectCellEditor' }
+  { field: 'rating', editable: true, cellEditor: CustomRatingEditor }
+  ```
+</ParamField>
+
+<ParamField path="cellEditorParams" type="any">
+  Params to be passed to the `cellEditor` component.
+  
+  ```javascript
+  {
+    field: 'country',
+    editable: true,
+    cellEditor: 'agSelectCellEditor',
+    cellEditorParams: {
+      values: ['USA', 'UK', 'Canada', 'Australia']
+    }
+  }
+  ```
+</ParamField>
+
+<ParamField path="singleClickEdit" type="boolean" default="false">
+  Set to `true` to have cells under this column enter edit mode after single click.
+  
+  ```javascript
+  { field: 'notes', editable: true, singleClickEdit: true }
+  ```
+</ParamField>
+
+## Styling
+
+<ParamField path="cellClass" type="string | string[] | CellClassFunc<TData, TValue>">
+  Class to use for the cell. Can be string, array of strings, or function that returns a string or array of strings.
+  
+  **Module:** `CellStyleModule`
+  
+  ```javascript
+  { field: 'status', cellClass: 'status-cell' }
+  { field: 'priority', cellClass: params => `priority-${params.value}` }
+  ```
+</ParamField>
+
+<ParamField path="cellStyle" type="CellStyle | CellStyleFunc<TData, TValue>">
+  An object of CSS values / or function returning an object of CSS values for a particular cell.
+  
+  **Module:** `CellStyleModule`
+  
+  ```javascript
+  {
+    field: 'status',
+    cellStyle: params => {
+      if (params.value === 'active') {
+        return { backgroundColor: 'lightgreen' };
+      }
+      return null;
+    }
+  }
+  ```
+</ParamField>
+
+<ParamField path="headerClass" type="HeaderClass<TData, TValue>">
+  CSS class to use for the header cell. Can be a string, array of strings, or function.
+  
+  ```javascript
+  { field: 'priority', headerClass: 'priority-header' }
+  ```
+</ParamField>
+
+## Type & Data Type
+
+<ParamField path="type" type="string | string[]">
+  A comma separated string or array of strings containing `ColumnType` keys which can be used as a template for a column. This helps to reduce duplication of properties when you have a lot of common column properties.
+  
+  ```javascript
+  { field: 'age', type: 'numericColumn' }
+  { field: 'date', type: ['dateColumn', 'nonEditableColumn'] }
+  ```
+</ParamField>
+
+<ParamField path="cellDataType" type="boolean | string" default="true">
+  The data type of the cell values for this column. Can either infer the data type from the row data (`true`), define a specific data type (`string`), or have no data type (`false`).
+  
+  ```javascript
+  { field: 'age', cellDataType: 'number' }
+  { field: 'birthDate', cellDataType: 'date' }
+  { field: 'active', cellDataType: 'boolean' }
+  ```
+</ParamField>
+
+## Related APIs
+
+<Card title="Column Definitions" icon="table-columns" href="/api/column-definitions">
+  Complete ColDef interface reference
+</Card>
+
+<Card title="Column Events" icon="bolt" href="/api/column-events">
+  Events fired by column interactions
+</Card>
+
+<Card title="GridApi" icon="code" href="/api/grid-api">
+  Programmatic column control
+</Card>

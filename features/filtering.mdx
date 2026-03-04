@@ -1,0 +1,563 @@
+---
+title: "Column Filtering"
+description: "Implement powerful filtering with built-in filter types and custom filter components"
+---
+
+## Overview
+
+AG Grid provides comprehensive filtering capabilities including built-in filters for text, number, and date columns, as well as support for custom filter components. Filters can be applied via column headers, floating filters, or programmatically through the API.
+
+## Enabling Filters
+
+Enable filtering on columns using the `filter` property:
+
+<CodeGroup>
+```typescript Built-in Filters
+const columnDefs = [
+  {
+    field: 'athlete',
+    filter: true  // Uses default filter based on cell data type
+  },
+  {
+    field: 'age',
+    filter: 'agNumberColumnFilter'  // Specific filter type
+  },
+  {
+    field: 'date',
+    filter: 'agDateColumnFilter'
+  },
+  {
+    field: 'country',
+    filter: 'agTextColumnFilter'
+  }
+];
+```
+
+```typescript Disable Filtering
+const columnDefs = [
+  {
+    field: 'actions',
+    filter: false  // No filter for this column
+  }
+];
+```
+</CodeGroup>
+
+<Note>
+When using AG Grid Enterprise, `filter: true` defaults to the Set Filter. Set `suppressSetFilterByDefault: true` in gridOptions to use Text/Number/Date filters instead based on cell data type.
+</Note>
+
+## Filter Configuration
+
+### Filter Properties
+
+Configure filter behavior using `IFilterDef`:
+
+```typescript
+import { IFilterDef } from 'ag-grid-community';
+
+const columnDefs = [
+  {
+    field: 'athlete',
+    filter: 'agTextColumnFilter',
+    filterParams: {
+      buttons: ['reset', 'apply'],
+      debounceMs: 200,
+      caseSensitive: false,
+      maxNumConditions: 2
+    }
+  }
+];
+```
+
+### Floating Filters
+
+Enable floating filters for quick filtering directly in the header:
+
+```typescript
+const columnDefs = [
+  {
+    field: 'athlete',
+    filter: true,
+    floatingFilter: true,  // Enable floating filter
+    suppressFloatingFilterButton: false  // Show filter button
+  }
+];
+
+// Or enable globally
+const gridOptions = {
+  floatingFilter: true  // Enable for all columns
+};
+```
+
+### Filter Value Getter
+
+Customize which value is used for filtering:
+
+```typescript
+import { ValueGetterFunc } from 'ag-grid-community';
+
+const filterValueGetter: ValueGetterFunc = (params) => {
+  // Filter by full name instead of firstName
+  return `${params.data.firstName} ${params.data.lastName}`;
+};
+
+const columnDefs = [
+  {
+    field: 'firstName',
+    filterValueGetter: filterValueGetter
+  }
+];
+```
+
+## Filter Types
+
+### Text Filter
+
+```typescript
+const columnDefs = [
+  {
+    field: 'country',
+    filter: 'agTextColumnFilter',
+    filterParams: {
+      filterOptions: ['contains', 'notContains', 'equals', 'notEqual', 'startsWith', 'endsWith'],
+      defaultOption: 'contains',
+      trimInput: true,
+      caseSensitive: false
+    }
+  }
+];
+```
+
+### Number Filter
+
+```typescript
+const columnDefs = [
+  {
+    field: 'age',
+    filter: 'agNumberColumnFilter',
+    filterParams: {
+      filterOptions: ['equals', 'notEqual', 'lessThan', 'lessThanOrEqual', 'greaterThan', 'greaterThanOrEqual', 'inRange'],
+      defaultOption: 'greaterThan',
+      includeBlanksInEquals: false,
+      includeBlanksInLessThan: false,
+      includeBlanksInGreaterThan: false
+    }
+  }
+];
+```
+
+### Date Filter
+
+```typescript
+const columnDefs = [
+  {
+    field: 'date',
+    filter: 'agDateColumnFilter',
+    filterParams: {
+      comparator: (filterLocalDateAtMidnight, cellValue) => {
+        const cellDate = new Date(cellValue);
+        if (cellDate < filterLocalDateAtMidnight) return -1;
+        if (cellDate > filterLocalDateAtMidnight) return 1;
+        return 0;
+      },
+      minValidYear: 2000,
+      maxValidYear: 2030,
+      inRangeInclusive: true
+    },
+    dateComponent: 'CustomDateComponent',  // Optional custom date picker
+    dateComponentParams: {}
+  }
+];
+```
+
+## Custom Filters
+
+### Basic Custom Filter
+
+Implement the `IFilter` interface:
+
+```typescript
+import { IFilter, IFilterParams, IDoesFilterPassParams } from 'ag-grid-community';
+
+class CustomFilter implements IFilter {
+  private filterValue: string = '';
+  private eGui: HTMLDivElement;
+  
+  init(params: IFilterParams): void {
+    this.eGui = document.createElement('div');
+    this.eGui.innerHTML = `
+      <input type="text" id="filterInput" placeholder="Filter..." />
+    `;
+    
+    const input = this.eGui.querySelector('#filterInput') as HTMLInputElement;
+    input.addEventListener('input', (e) => {
+      this.filterValue = (e.target as HTMLInputElement).value;
+      params.filterChangedCallback();
+    });
+  }
+  
+  getGui(): HTMLElement {
+    return this.eGui;
+  }
+  
+  doesFilterPass(params: IDoesFilterPassParams): boolean {
+    const { node } = params;
+    const value = params.api.getValue(this.filterValue, node);
+    return value?.toString().toLowerCase().includes(this.filterValue.toLowerCase());
+  }
+  
+  isFilterActive(): boolean {
+    return this.filterValue !== '';
+  }
+  
+  getModel() {
+    return this.filterValue ? { value: this.filterValue } : null;
+  }
+  
+  setModel(model: any): void {
+    this.filterValue = model ? model.value : '';
+  }
+}
+
+const columnDefs = [
+  {
+    field: 'athlete',
+    filter: CustomFilter
+  }
+];
+```
+
+### Filter Handlers (Modern API)
+
+Use filter handlers for improved performance:
+
+```typescript
+import { FilterHandlers } from 'ag-grid-community';
+
+const customFilterHandler = {
+  isFilterActive: (params) => {
+    return params.model != null && params.model.value !== '';
+  },
+  doesFilterPass: (params) => {
+    const { node, model } = params;
+    const cellValue = params.api.getValue(params.column, node);
+    return cellValue?.toString().includes(model.value);
+  }
+};
+
+const gridOptions = {
+  enableFilterHandlers: true,
+  filterHandlers: {
+    'customFilter': customFilterHandler
+  } as FilterHandlers
+};
+
+const columnDefs = [
+  {
+    field: 'athlete',
+    filter: {
+      handler: 'customFilter'
+    }
+  }
+];
+```
+
+## Quick Filter
+
+Implement global search across all columns:
+
+```typescript
+import { QuickFilterMatcher, QuickFilterParser } from 'ag-grid-community';
+
+const gridOptions = {
+  quickFilterText: 'search term',  // Set via grid options
+  
+  // Or control programmatically
+  cacheQuickFilter: true,  // Improve performance
+  includeHiddenColumnsInQuickFilter: false,
+  
+  // Custom parser
+  quickFilterParser: ((quickFilter) => {
+    return quickFilter.split(' ');
+  }) as QuickFilterParser,
+  
+  // Custom matcher
+  quickFilterMatcher: ((quickFilterParts, rowQuickFilterAggregateText) => {
+    return quickFilterParts.every(part => 
+      rowQuickFilterAggregateText.includes(part)
+    );
+  }) as QuickFilterMatcher
+};
+
+// Update via API
+api.setGridOption('quickFilterText', 'new search');
+```
+
+### Column-Specific Quick Filter Text
+
+```typescript
+import { GetQuickFilterText } from 'ag-grid-community';
+
+const columnDefs = [
+  {
+    field: 'medal',
+    getQuickFilterText: ((params) => {
+      // Return custom text for quick filter
+      return params.value === 'Gold' ? 'Winner' : params.value;
+    }) as GetQuickFilterText
+  }
+];
+```
+
+## External Filters
+
+Implement custom filtering logic outside the grid:
+
+```typescript
+import { DoesExternalFilterPass, IsExternalFilterPresent } from 'ag-grid-community';
+
+let externalFilterValue = 'all';
+
+const gridOptions = {
+  isExternalFilterPresent: (() => {
+    return externalFilterValue !== 'all';
+  }) as IsExternalFilterPresent,
+  
+  doesExternalFilterPass: ((node) => {
+    switch (externalFilterValue) {
+      case 'gold':
+        return node.data.medal === 'Gold';
+      case 'silver':
+        return node.data.medal === 'Silver';
+      default:
+        return true;
+    }
+  }) as DoesExternalFilterPass
+};
+
+// Trigger filter update
+function setExternalFilter(value: string) {
+  externalFilterValue = value;
+  api.onFilterChanged();
+}
+```
+
+## Advanced Filter
+
+Enable the Advanced Filter for complex filtering expressions:
+
+```typescript
+import { AdvancedFilterModel } from 'ag-grid-community';
+
+const gridOptions = {
+  enableAdvancedFilter: true,
+  includeHiddenColumnsInAdvancedFilter: false,
+  advancedFilterParent: document.querySelector('#filterContainer'),
+  advancedFilterBuilderParams: {
+    // Customization options
+  }
+};
+
+// Set filter model programmatically
+const filterModel: AdvancedFilterModel = {
+  filterType: 'join',
+  type: 'AND',
+  conditions: [
+    {
+      filterType: 'text',
+      colId: 'athlete',
+      type: 'contains',
+      filter: 'Michael'
+    },
+    {
+      filterType: 'number',
+      colId: 'age',
+      type: 'greaterThan',
+      filter: 20
+    }
+  ]
+};
+
+api.setAdvancedFilterModel(filterModel);
+```
+
+## Filter API Methods
+
+Control filters programmatically:
+
+```typescript
+import { FilterModel, ColumnFilterState } from 'ag-grid-community';
+
+// Get filter model
+const filterModel: FilterModel = api.getFilterModel();
+console.log('Current filters:', filterModel);
+
+// Set filter model
+api.setFilterModel({
+  athlete: {
+    filterType: 'text',
+    type: 'contains',
+    filter: 'Michael'
+  },
+  age: {
+    filterType: 'number',
+    type: 'greaterThan',
+    filter: 25
+  }
+});
+
+// Get filter state (includes UI state)
+const filterState: ColumnFilterState | undefined = api.getFilterState();
+
+// Set filter state
+api.setFilterState(filterState);
+
+// Trigger filter changed event
+import { onFilterChanged } from 'ag-grid-community';
+onFilterChanged(beans, 'api');
+
+// Check if filters are active
+import { isAnyFilterPresent } from 'ag-grid-community';
+const hasFilters = isAnyFilterPresent(beans);
+```
+
+### Column-Specific Filter API
+
+```typescript
+import { IFilter } from 'ag-grid-community';
+
+// Get filter instance
+const filterInstance: IFilter | null = api.getFilterInstance('athlete');
+
+if (filterInstance) {
+  // Get filter model
+  const model = filterInstance.getModel();
+  
+  // Set filter model
+  filterInstance.setModel({
+    filterType: 'text',
+    type: 'equals',
+    filter: 'Michael Phelps'
+  });
+  
+  // Check if active
+  const isActive = filterInstance.isFilterActive();
+}
+
+// Destroy filter
+api.destroyFilter('athlete');
+```
+
+## Filter Events
+
+```typescript
+import { 
+  FilterChangedEvent,
+  FilterModifiedEvent,
+  FilterOpenedEvent 
+} from 'ag-grid-community';
+
+const gridOptions = {
+  onFilterChanged: (event: FilterChangedEvent) => {
+    console.log('Filter changed from:', event.source);
+    console.log('Affected columns:', event.columns);
+  },
+  
+  onFilterModified: (event: FilterModifiedEvent) => {
+    console.log('Filter UI modified for column:', event.column.getColId());
+  },
+  
+  onFilterOpened: (event: FilterOpenedEvent) => {
+    console.log('Filter opened for column:', event.column?.getColId());
+  }
+};
+```
+
+## Common Use Cases
+
+<Accordion title="Filter with Aggregation">
+```typescript
+const gridOptions = {
+  groupAggFiltering: true,  // Apply filters to aggregated rows
+  suppressAggFilteredOnly: false  // Include all rows in aggregations
+};
+```
+</Accordion>
+
+<Accordion title="Always Show Certain Rows">
+```typescript
+import { AlwaysPassFilter } from 'ag-grid-community';
+
+const gridOptions = {
+  alwaysPassFilter: ((node) => {
+    // Always show pinned rows or rows marked as important
+    return node.data?.important === true;
+  }) as AlwaysPassFilter
+};
+```
+</Accordion>
+
+<Accordion title="Tree Data Filtering">
+```typescript
+const gridOptions = {
+  treeData: true,
+  excludeChildrenWhenTreeDataFiltering: true  // Only show parent if it matches
+};
+```
+</Accordion>
+
+## TypeScript Interfaces
+
+```typescript
+// From iFilter.ts
+export interface IFilterDef {
+  filter?: boolean | string | (new () => IFilter) | IFilter;
+  filterParams?: any;
+}
+
+export interface FilterModel {
+  [key: string]: any;
+}
+
+export interface IFilter {
+  isFilterActive(): boolean;
+  doesFilterPass(params: IDoesFilterPassParams): boolean;
+  getModel(): any;
+  setModel(model: any): void;
+}
+
+// Filter API methods
+interface GridApi {
+  getFilterModel(): FilterModel;
+  setFilterModel(model: FilterModel | null): void;
+  getFilterState(): ColumnFilterState | undefined;
+  setFilterState(state: ColumnFilterState | null): void;
+  isAnyFilterPresent(): boolean;
+  onFilterChanged(): void;
+}
+```
+
+## Best Practices
+
+<Steps>
+  <Step title="Choose the right filter type">
+    Use built-in filters when possible. Only create custom filters for unique requirements.
+  </Step>
+  
+  <Step title="Enable floating filters for better UX">
+    Floating filters provide immediate, in-header filtering without opening menus.
+  </Step>
+  
+  <Step title="Use filter handlers for performance">
+    Filter handlers avoid creating component instances for every cell, improving performance with large datasets.
+  </Step>
+  
+  <Step title="Cache quick filter for large datasets">
+    Set `cacheQuickFilter: true` when using quick filter with many rows.
+  </Step>
+  
+  <Step title="Debounce filter updates">
+    Use `debounceMs` in filter params to reduce filter recalculations during typing.
+  </Step>
+</Steps>

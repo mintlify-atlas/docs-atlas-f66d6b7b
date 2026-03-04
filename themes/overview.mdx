@@ -1,0 +1,130 @@
+---
+title: Theming Overview
+description: Learn about AG Grid's theming system and available themes
+---
+
+AG Grid provides a powerful theming system with four built-in themes, each available in light and dark modes. You can use themes as-is or customize them using CSS variables.
+
+## Available Themes
+
+AG Grid includes four professionally designed themes:
+
+<CardGroup cols={2}>
+  <Card title="Quartz" icon="gem" href="/themes/quartz">
+    Modern, clean design with subtle shadows and borders
+  </Card>
+  <Card title="Material" icon="palette" href="/themes/material">
+    Google Material Design inspired theme
+  </Card>
+  <Card title="Alpine" icon="mountain" href="/themes/alpine">
+    Compact, data-dense theme for enterprise applications
+  </Card>
+  <Card title="Balham" icon="table" href="/themes/balham">
+    Professional theme with clear hierarchy
+  </Card>
+</CardGroup>
+
+## Using Themes
+
+### Import Theme Styles
+
+Import both the base grid styles and your chosen theme:
+
+```javascript
+import 'ag-grid-community/styles/ag-grid.css';
+import 'ag-grid-community/styles/ag-theme-quartz.css';
+```
+
+### Apply Theme Class
+
+Add the theme class to your grid container:
+
+```html
+<div id="myGrid" class="ag-theme-quartz" style="height: 500px;"></div>
+```
+
+## Dark Mode
+
+All themes support dark mode. Append `-dark` to the theme class:
+
+```html
+<div id="myGrid" class="ag-theme-quartz-dark" style="height: 500px;"></div>
+```
+
+<Tabs>
+  <Tab title="Quartz Dark">
+    ```html
+    <div class="ag-theme-quartz-dark" style="height: 500px;"></div>
+    ```
+  </Tab>
+  <Tab title="Material Dark">
+    ```html
+    <div class="ag-theme-material-dark" style="height: 500px;"></div>
+    ```
+  </Tab>
+  <Tab title="Alpine Dark">
+    ```html
+    <div class="ag-theme-alpine-dark" style="height: 500px;"></div>
+    ```
+  </Tab>
+  <Tab title="Balham Dark">
+    ```html
+    <div class="ag-theme-balham-dark" style="height: 500px;"></div>
+    ```
+  </Tab>
+</Tabs>
+
+## Theme Customization
+
+Customize themes using CSS variables without modifying the original theme files.
+
+### CSS Variables
+
+```css
+.ag-theme-quartz {
+  --ag-foreground-color: rgb(33, 37, 41);
+  --ag-background-color: rgb(255, 255, 255);
+  --ag-header-background-color: rgb(248, 249, 250);
+  --ag-odd-row-background-color: rgb(248, 249, 250);
+  --ag-row-hover-color: rgb(240, 244, 248);
+}
+```
+
+### Common Customizations
+
+<AccordionGroup>
+  <Accordion title="Change Primary Color">
+    ```css
+    .ag-theme-quartz {
+      --ag-alpine-active-color: #04dcfc;
+    }
+    ```
+  </Accordion>
+  <Accordion title="Adjust Row Height">
+    ```css
+    .ag-theme-quartz {
+      --ag-row-height: 50px;
+      --ag-header-height: 60px;
+    }
+    ```
+  </Accordion>
+  <Accordion title="Custom Fonts">
+    ```css
+    .ag-theme-quartz {
+      --ag-font-family: 'Inter', sans-serif;
+      --ag-font-size: 14px;
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Custom Themes" icon="brush" href="/themes/custom-themes">
+    Create a fully custom theme from scratch
+  </Card>
+  <Card title="Styling Cells" icon="palette" href="/api/column-properties">
+    Apply custom styles to individual cells
+  </Card>
+</CardGroup>
